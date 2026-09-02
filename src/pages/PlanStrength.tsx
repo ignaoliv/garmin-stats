@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import MuscleMap from '../components/MuscleMap'
 import ExercisePicker, { type Ejercicio, musculoEs } from '../components/ExercisePicker'
 import { Card, CardHeader, Insight } from '../components/ui'
+import PlanGenerator from '../components/PlanGenerator'
 import meta from '../data/exercise_meta.json'
 
 const MUSCULOS = meta.musculosPorCategoria as Record<string, { primarios: string[]; secundarios: string[] }>
@@ -94,6 +95,8 @@ export default function PlanStrength() {
             Armá la sesión, mirá qué músculos trabaja y mandala al reloj.
           </p>
         </header>
+
+        <PlanGenerator />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
 

@@ -78,15 +78,23 @@ STEP_REPEAT = {"stepTypeId": 6, "stepTypeKey": "repeat", "displayOrder": 6}
 NO_TARGET = {"workoutTargetTypeId": 1, "workoutTargetTypeKey": "no.target", "displayOrder": 1}
 
 
-def _set_step(order: int, category: str, exercise: str | None, reps: int, weight_kg: float | None) -> dict:
+# Isometric and loaded-carry work is held for time, not counted in reps.
+# Prescribing "32 repetitions of plank" is the giveaway that a plan was written
+# without knowing the difference.
+POR_TIEMPO = {"PLANK", "CARRY", "HIP_STABILITY", "SHOULDER_STABILITY", "WARM_UP", "CARDIO", "RUN"}
+
+
+def _set_step(order: int, category: str, exercise: str | None,
+              reps: int, weight_kg: float | None, duracion_s: int | None = None) -> dict:
     if category not in CATEGORIES:
         raise ValueError(f"categoría inválida: {category!r} (Garmin rechaza con 400)")
+    por_tiempo = duracion_s is not None
     return {
         "type": "ExecutableStepDTO",
         "stepOrder": order,
         "stepType": STEP_INTERVAL,
-        "endCondition": REPS,
-        "endConditionValue": float(reps),
+        "endCondition": TIME if por_tiempo else REPS,
+        "endConditionValue": float(duracion_s if por_tiempo else reps),
         "targetType": NO_TARGET,
         "category": category,
         # Garmin keeps exerciseName only when it matches one of its own keys;
@@ -118,7 +126,8 @@ def build(name: str, bloques: list[dict], description: str | None = None) -> dic
     for b in bloques:
         grupo_order = order
         order += 1
-        hijos = [_set_step(order, b["category"], b.get("exercise"), b["reps"], b.get("weight_kg"))]
+        hijos = [_set_step(order, b["category"], b.get("exercise"),
+                           b.get("reps") or 0, b.get("weight_kg"), b.get("duracion_s"))]
         order += 1
         if b.get("rest_s"):
             hijos.append(_rest_step(order, b["rest_s"]))

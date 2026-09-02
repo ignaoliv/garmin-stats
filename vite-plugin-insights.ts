@@ -47,6 +47,27 @@ export function insightsPlugin(): Plugin {
   return {
     name: 'garmin-activity-insights',
     configureServer(server) {
+      // Plan generation only reads local data and calls the model; no writes.
+      server.middlewares.use('/api/plan-ai', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/plan_ai.py', body)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+          }
+        })
+      })
+
       // Creating a workout writes to the user's Garmin account, so it runs here
       // in Node with the credentials from .env rather than from the browser.
       server.middlewares.use('/api/strength-workout', async (req, res) => {
