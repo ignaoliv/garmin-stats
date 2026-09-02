@@ -170,10 +170,27 @@ def main() -> None:
     ap.add_argument("--test", action="store_true", help='Sube un workout "PRUEBA - borrar"')
     ap.add_argument("--delete", type=int, help="Borra un workout por id")
     ap.add_argument("--dry-run", action="store_true", help="Muestra el JSON sin subir nada")
+    ap.add_argument("--from-stdin", action="store_true",
+                    help='Lee {"name","description","date","bloques":[...]} de stdin, sube y programa')
     args = ap.parse_args()
 
     if args.dry_run:
         print(json.dumps(build("PRUEBA - borrar", TEST), ensure_ascii=False, indent=1))
+        return
+
+    if args.from_stdin:
+        req = json.load(sys.stdin)
+        payload = build(req["name"], req["bloques"], req.get("description"))
+        api = connect()
+        res = api.upload_workout(payload)
+        wid = res.get("workoutId")
+        out = {"workoutId": wid, "programado": None}
+        # Uploading only puts it in the library; the calendar (and therefore the
+        # watch and the phone app) needs the separate schedule call.
+        if req.get("date"):
+            api.schedule_workout(wid, req["date"])
+            out["programado"] = req["date"]
+        print(json.dumps(out, ensure_ascii=False))
         return
 
     api = connect()

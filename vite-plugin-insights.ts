@@ -29,9 +29,46 @@ export function insightsPlugin(): Plugin {
       proc.on('error', fail)
     })
 
+  const runWithInput = (script: string, input: string): Promise<string> =>
+    new Promise((ok, fail) => {
+      const proc = spawn('python3', [resolve(root, script), '--from-stdin'], {
+        cwd: root,
+        timeout: 120_000,
+      })
+      let out = '', err = ''
+      proc.stdout.on('data', d => (out += d))
+      proc.stderr.on('data', d => (err += d))
+      proc.on('close', code => (code === 0 ? ok(out) : fail(new Error(err || `exit ${code}`))))
+      proc.on('error', fail)
+      proc.stdin.write(input)
+      proc.stdin.end()
+    })
+
   return {
     name: 'garmin-activity-insights',
     configureServer(server) {
+      // Creating a workout writes to the user's Garmin account, so it runs here
+      // in Node with the credentials from .env rather than from the browser.
+      server.middlewares.use('/api/strength-workout', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/strength_workout.py', body)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+          }
+        })
+      })
+
       server.middlewares.use('/api/activity-insight', async (req, res) => {
         const id = (req.url || '').replace(/^\//, '').split('?')[0]
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
