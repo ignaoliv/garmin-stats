@@ -1,16 +1,7 @@
 import { useState } from 'react'
 import { Card, CardHeader, Insight, explicarError } from './ui'
+import PlanCalendar, { type SemanaPlan, type BloquePlan } from './PlanCalendar'
 
-interface BloquePlan {
-  category: string
-  sets: number
-  reps?: number
-  duracion_s?: number
-  rest_s: number
-  nota?: string
-}
-interface SesionPlan { nombre: string; dia_offset: number; bloques: BloquePlan[] }
-interface SemanaPlan { numero: number; foco: string; progresion: string; sesiones: SesionPlan[] }
 interface Plan {
   titulo: string
   resumen: string
@@ -161,41 +152,49 @@ export default function PlanGenerator() {
             </ul>
           )}
 
-          <div className="space-y-3">
-            {plan.semanas.map(s => (
-              <div key={s.numero} className="rounded-lg border border-[#28334a] bg-[#131c2e] p-4">
-                <div className="flex items-baseline justify-between gap-3 mb-1">
-                  <h4 className="text-[15px] font-semibold text-[#f1f5f9]">Semana {s.numero} · {s.foco}</h4>
-                </div>
-                <p className="text-[13px] text-[#94a3b8] mb-3">{s.progresion}</p>
-                <div className="space-y-2">
-                  {s.sesiones.map((ses, i) => (
-                    <div key={i} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[14px]">
-                      <span className="text-[#94a3b8] tabular-nums w-[52px] shrink-0">día {ses.dia_offset + 1}</span>
-                      <span className="text-[#f1f5f9] font-medium">{ses.nombre}</span>
-                      <span className="text-[#cbd5e1]">
-                        {ses.bloques.map(b => `${bonito(b.category)} ${fmt(b)}`).join(' · ')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div>
+            <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+              <h4 className="text-[15px] font-semibold text-[#f1f5f9]">El plan en el calendario</h4>
+              <label className="flex items-center gap-2">
+                <span className="text-[13px] text-[#94a3b8]">Empieza el</span>
+                <input type="date" value={inicio} onChange={e => setInicio(e.target.value)}
+                  className="px-3 py-1.5 rounded-lg bg-[#131c2e] border border-[#28334a] text-[14px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]" />
+              </label>
+            </div>
+            <PlanCalendar semanas={plan.semanas} inicio={inicio} />
           </div>
 
-          <div className="rounded-lg border border-[#28334a] p-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="block">
-                <span className="text-[13px] text-[#94a3b8] block mb-1.5">Empezar el</span>
-                <input type="date" value={inicio} onChange={e => setInicio(e.target.value)}
-                  className="px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[15px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]" />
-              </label>
-              <button onClick={enviarTodo} disabled={estado === 'enviando'}
-                className="flex-1 min-w-[220px] py-2.5 px-4 rounded-xl bg-[#fc5200] hover:bg-[#e04a00] text-white
-                           text-[15px] font-semibold transition-colors disabled:opacity-60">
-                {estado === 'enviando' ? 'Enviando…' : `Mandar las ${totalSesiones} sesiones a Garmin`}
-              </button>
+          <details className="rounded-lg border border-[#28334a] bg-[#131c2e]">
+            <summary className="px-4 py-3 text-[14px] font-medium text-[#cbd5e1] cursor-pointer select-none hover:text-[#f1f5f9]">
+              Ver el plan como lista
+            </summary>
+            <div className="px-4 pb-4 space-y-3">
+              {plan.semanas.map(s => (
+                <div key={s.numero}>
+                  <p className="text-[14px] font-semibold text-[#f1f5f9]">Semana {s.numero} · {s.foco}</p>
+                  <p className="text-[13px] text-[#94a3b8] mb-2">{s.progresion}</p>
+                  <div className="space-y-1.5">
+                    {s.sesiones.map((ses, i) => (
+                      <div key={i} className="flex flex-wrap items-baseline gap-x-3 text-[14px]">
+                        <span className="text-[#94a3b8] tabular-nums w-[52px] shrink-0">día {ses.dia_offset + 1}</span>
+                        <span className="text-[#f1f5f9] font-medium">{ses.nombre}</span>
+                        <span className="text-[#cbd5e1]">
+                          {ses.bloques.map(b => `${bonito(b.category)} ${fmt(b)}`).join(' · ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+          </details>
+
+          <div className="rounded-lg border border-[#28334a] p-4">
+            <button onClick={enviarTodo} disabled={estado === 'enviando'}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#fc5200] hover:bg-[#e04a00] text-white
+                         text-[15px] font-semibold transition-colors disabled:opacity-60">
+              {estado === 'enviando' ? 'Enviando…' : `Mandar las ${totalSesiones} sesiones a Garmin`}
+            </button>
             {mensaje && estado !== 'error' && (
               <div className="mt-3"><Insight tone={mensaje.startsWith('Listo') ? 'good' : 'neutral'}>{mensaje}</Insight></div>
             )}
