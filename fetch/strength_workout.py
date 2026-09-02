@@ -29,13 +29,22 @@ ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
 # Garmin's exercise taxonomy (FIT SDK Profile v20.8): 33 categories.
+# Garmin's exercise_category enum, taken from the official FIT SDK profile
+# (garmin-fit-sdk 21.214). The unofficial docs listed only 33 of these.
 CATEGORIES = [
-    "BENCH_PRESS", "CALF_RAISE", "CARDIO", "CARRY", "CHOP", "CORE", "CRUNCH",
-    "CURL", "DEADLIFT", "FLYE", "HIP_RAISE", "HIP_STABILITY", "HIP_SWING",
-    "HYPEREXTENSION", "LATERAL_RAISE", "LEG_CURL", "LEG_RAISE", "LUNGE",
-    "OLYMPIC_LIFT", "PLANK", "PLYO", "PULL_UP", "PUSH_UP", "ROW",
-    "SHOULDER_PRESS", "SHOULDER_STABILITY", "SHRUG", "SIT_UP", "SQUAT",
-    "TOTAL_BODY", "TRICEPS_EXTENSION", "WARM_UP", "RUN",
+    "BANDED_EXERCISES", "BATTLE_ROPE", "BENCH_PRESS", "BIKE",
+    "BIKE_OUTDOOR", "CALF_RAISE", "CARDIO", "CARRY",
+    "CHOP", "CORE", "CRUNCH", "CURL",
+    "DEADLIFT", "ELLIPTICAL", "FLOOR_CLIMB", "FLYE",
+    "HIP_RAISE", "HIP_STABILITY", "HIP_SWING", "HYPEREXTENSION",
+    "INDOOR_BIKE", "INDOOR_ROW", "LADDER", "LATERAL_RAISE",
+    "LEG_CURL", "LEG_RAISE", "LUNGE", "MOVE",
+    "OLYMPIC_LIFT", "PLANK", "PLYO", "POSE",
+    "PULL_UP", "PUSH_UP", "ROW", "RUN",
+    "RUN_INDOOR", "SANDBAG", "SHOULDER_PRESS", "SHOULDER_STABILITY",
+    "SHRUG", "SIT_UP", "SLED", "SLEDGE_HAMMER",
+    "SQUAT", "STAIR_STEPPER", "SUSPENSION", "TIRE",
+    "TOTAL_BODY", "TRICEPS_EXTENSION", "WARM_UP",
 ]
 
 KILOGRAM = {"unitId": 8, "unitKey": "kilogram", "factor": 1000.0}
