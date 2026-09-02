@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import MuscleMap from '../components/MuscleMap'
 import ExercisePicker, { type Ejercicio, musculoEs } from '../components/ExercisePicker'
-import { Card, CardHeader, Insight } from '../components/ui'
+import { Card, CardHeader, Insight, explicarError } from '../components/ui'
 import PlanGenerator from '../components/PlanGenerator'
 import meta from '../data/exercise_meta.json'
 
@@ -81,7 +81,7 @@ export default function PlanStrength() {
           : 'Subido a tu biblioteca de Garmin (sin fecha, no aparece en el calendario).',
       )
     } catch (e) {
-      setEstado('error'); setMensaje((e as Error).message)
+      setEstado('error'); setMensaje(explicarError(e))
     }
   }
 

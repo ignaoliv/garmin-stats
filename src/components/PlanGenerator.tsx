@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardHeader, Insight } from './ui'
+import { Card, CardHeader, Insight, explicarError } from './ui'
 
 interface BloquePlan {
   category: string
@@ -51,7 +51,7 @@ export default function PlanGenerator() {
       if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`)
       setPlan(body); setEstado('idle')
     } catch (e) {
-      setEstado('error'); setMensaje((e as Error).message)
+      setEstado('error'); setMensaje(explicarError(e))
     }
   }
 
@@ -60,6 +60,7 @@ export default function PlanGenerator() {
     setEstado('enviando'); setMensaje('')
     const base = new Date(inicio + 'T00:00:00')
     let ok = 0, fallo = 0
+    let motivo = ''
     for (const sem of plan.semanas) {
       for (const ses of sem.sesiones) {
         const f = new Date(base)
@@ -86,13 +87,13 @@ export default function PlanGenerator() {
           if (!r.ok || body.error) throw new Error(body.error)
           ok++
           setMensaje(`Enviando… ${ok} sesiones creadas`)
-        } catch { fallo++ }
+        } catch (e) { fallo++; if (!motivo) motivo = explicarError(e) }
       }
     }
     setEstado('idle')
     setMensaje(fallo === 0
       ? `Listo: ${ok} sesiones creadas y agendadas desde el ${base.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.`
-      : `${ok} creadas, ${fallo} fallaron. Garmin suele limitar cuando son muchas seguidas; probá de nuevo en un rato.`)
+      : `${ok} creadas, ${fallo} fallaron. ${motivo}`)
   }
 
   const totalSesiones = plan?.semanas.reduce((n, s) => n + s.sesiones.length, 0) ?? 0

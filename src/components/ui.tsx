@@ -1,6 +1,24 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+/**
+ * Turn a raw fetch failure into something the user can act on.
+ *
+ * These endpoints live in the Vite dev server, so the common failure is simply
+ * that it is not running — and "Failed to fetch" says nothing about that.
+ */
+export function explicarError(e: unknown): string {
+  const m = e instanceof Error ? e.message : String(e)
+  if (/failed to fetch|networkerror|load failed/i.test(m)) {
+    return 'No se pudo conectar con el servidor. Verificá que "npm run dev" esté corriendo; ' +
+           'si lo iniciaste antes de la última actualización, reinicialo para que tome los endpoints nuevos.'
+  }
+  if (/429|rate.?limit/i.test(m)) {
+    return 'Garmin está limitando la cuenta por demasiadas conexiones seguidas. Esperá unos minutos y reintentá.'
+  }
+  return m
+}
+
 /** Panel surface. One border, one radius, no glow — everything sits on this. */
 export function Card({ children, className = '', id }: { children: ReactNode; className?: string; id?: string }) {
   return (
