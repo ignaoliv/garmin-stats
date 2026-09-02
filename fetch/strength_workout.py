@@ -44,7 +44,9 @@ KILOGRAM = {"unitId": 8, "unitKey": "kilogram", "factor": 1000.0}
 # documented publicly, so an unknown name is dropped rather than sent: Garmin
 # accepts anything here and then stores it blank, which looks like a silent
 # bug. Without a name the watch still shows the category, which is enough.
-_CATALOG_FILE = ROOT / "public" / "data" / "exercise_catalog.json"
+# Reference data, not personal downloads: lives in src/data/ so it is
+# versioned with the code (public/data/ is gitignored).
+_CATALOG_FILE = ROOT / "src" / "data" / "exercise_catalog.json"
 CATALOG: dict[str, list[str]] = (
     json.loads(_CATALOG_FILE.read_text()) if _CATALOG_FILE.exists() else {}
 )
