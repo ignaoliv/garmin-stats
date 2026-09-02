@@ -37,3 +37,7 @@ dist/data/**
 *.njsproj
 *.sln
 *.sw?
+
+# Cache de Python
+__pycache__/
+*.pyc

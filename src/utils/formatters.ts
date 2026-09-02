@@ -49,32 +49,5 @@ export function formatRelativeTime(isoString: string): string {
   return `Hace ${Math.floor(days / 365)} años`
 }
 
-export function sportLabel(sport: Sport): string {
-  const labels: Record<Sport, string> = {
-    running: 'Running',
-    cycling: 'Ciclismo',
-    swimming: 'Natación',
-    other: 'Otro',
-  }
-  return labels[sport] ?? sport
-}
-
-export function sportIcon(sport: Sport): string {
-  const icons: Record<Sport, string> = {
-    running: '🏃',
-    cycling: '🚴',
-    swimming: '🏊',
-    other: '⚡',
-  }
-  return icons[sport] ?? '⚡'
-}
-
-export function sportColor(sport: Sport): string {
-  const colors: Record<Sport, string> = {
-    running: '#ef4444',
-    cycling: '#f97316',
-    swimming: '#3b82f6',
-    other: '#8b5cf6',
-  }
-  return colors[sport] ?? '#6b7280'
-}
+// Sport naming/colour lives in sports.ts (single source of truth for the taxonomy).
+export { sportLabel, sportIcon, sportColor } from './sports'

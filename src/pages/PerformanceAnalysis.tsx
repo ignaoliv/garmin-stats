@@ -19,10 +19,10 @@ const RAMP_COLOR: Record<string, string> = { ok: '#3b82f6', warn: '#eab308', hig
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5">
+    <div className="bg-[#172033] border border-[#28334a] rounded-xl p-5">
       <div className="mb-4">
-        <div className="text-sm font-medium text-slate-200">{title}</div>
-        {sub && <div className="text-xs text-slate-500 mt-0.5">{sub}</div>}
+        <div className="text-[14px] font-medium text-[#f1f5f9]">{title}</div>
+        {sub && <div className="text-[13px] text-[#94a3b8] mt-0.5">{sub}</div>}
       </div>
       {children}
     </div>
@@ -32,7 +32,7 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
 // ─── Insight chip ─────────────────────────────────────────────────────────────
 function Insight({ label, color }: { label: string; color: string }) {
   return (
-    <div className="text-xs px-2.5 py-1 rounded-full border"
+    <div className="text-[13px] px-2.5 py-1 rounded-full border"
       style={{ borderColor: color + '40', background: color + '12', color }}>
       {label}
     </div>
@@ -40,6 +40,37 @@ function Insight({ label, color }: { label: string; color: string }) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
+/** VO2max reference bands, low to high. One source for legend, areas and line. */
+const VO2_BANDS = [
+  { min: 0,  max: 48, label: 'Mejorable',  range: '<48',   color: '#f87171' },
+  { min: 48, max: 55, label: 'Buena',      range: '48–54', color: '#fbbf24' },
+  { min: 55, max: 60, label: 'Excelente',  range: '55–59', color: '#38bdf8' },
+  { min: 60, max: 99, label: 'Elite',      range: '≥60',   color: '#34d399' },
+]
+
+const vo2Band = (v: number) => VO2_BANDS.find(b => v >= b.min && v < b.max) ?? VO2_BANDS[0]
+
+/**
+ * Hard-stop gradient stops for the line stroke.
+ *
+ * An SVG gradient runs top (0) to bottom (1) while the y-scale runs the other
+ * way, so each band boundary maps to (max - value) / (max - min) and gets two
+ * stops at the same offset to switch colour abruptly rather than blending.
+ */
+function vo2GradientStops([min, max]: [number, number]) {
+  const at = (v: number) => `${(((max - v) / (max - min)) * 100).toFixed(2)}%`
+  const stops: React.ReactElement[] = []
+  const visible = VO2_BANDS.filter(b => b.max > min && b.min < max)
+  visible.forEach((b, i) => {
+    const top = Math.min(b.max, max)
+    const bottom = Math.max(b.min, min)
+    stops.push(<stop key={`${b.label}-a`} offset={at(top)} stopColor={b.color} />)
+    stops.push(<stop key={`${b.label}-b`} offset={at(bottom)} stopColor={b.color} />)
+    void i
+  })
+  return stops
+}
 
 export default function PerformanceAnalysis() {
   const activities = useActivityStore(s => s.activities)
@@ -55,24 +86,31 @@ export default function PerformanceAnalysis() {
     ? Math.round(weeklyLoad.slice(-8).reduce((s, w) => s + w.tss, 0) / Math.min(weeklyLoad.length, 8))
     : 0
 
-  const vo2Label = currentVo2
-    ? currentVo2 >= 60 ? 'Elite' : currentVo2 >= 55 ? 'Excelente' : currentVo2 >= 48 ? 'Buena' : currentVo2 >= 42 ? 'Moderada' : 'Mejorable'
-    : null
+  // An explicit domain is what lets the gradient stops line up with the bands;
+  // 'auto' would leave the pixel mapping unknown. Padded so the line never
+  // touches the frame.
+  const vo2Values = vo2Points.map(p => p.vo2max).filter((v): v is number => typeof v === 'number')
+  const vo2Domain: [number, number] = vo2Values.length
+    ? [Math.floor(Math.min(...vo2Values) - 2), Math.ceil(Math.max(...vo2Values) + 2)]
+    : [30, 60]
+
+  // Same band table as the chart, so the header label and the colour agree.
+  const vo2Label = currentVo2 ? vo2Band(currentVo2).label : null
 
   const insights = deriveInsights({ balance, efTrend, weeklyLoad, heatmap, cadenceData })
 
   if (activities.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+      <div className="flex-1 flex items-center justify-center text-[#94a3b8] text-[14px]">
         Sin datos. Ejecuta el script de sync primero.
       </div>
     )
   }
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
-      <h1 className="text-xl font-bold text-slate-100 mb-1">Análisis de Rendimiento</h1>
-      <p className="text-sm text-slate-500 mb-5">Forma física, puntos de mejora y estado actual</p>
+    <div className="flex-1 p-6 overflow-y-auto page-in">
+      <h1 className="text-xl font-bold text-[#f1f5f9] mb-1">Análisis de Rendimiento</h1>
+      <p className="text-[14px] text-[#94a3b8] mb-5">Forma física, puntos de mejora y estado actual</p>
 
       {insights.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
@@ -92,11 +130,11 @@ export default function PerformanceAnalysis() {
           {efData.some(d => d.run || d.bike) ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={efData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} width={36} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} width={36} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 11 }}
                   formatter={(v: unknown, n: unknown) => [Number(v).toFixed(2), String(n)]}
                 />
                 <Line type="monotone" dataKey="run"  name="Running EF" stroke="#ef4444" dot={{ r: 3 }} strokeWidth={2} connectNulls />
@@ -106,7 +144,7 @@ export default function PerformanceAnalysis() {
           ) : (
             <Empty label="Sin datos suficientes" />
           )}
-          <p className="text-xs text-slate-600 mt-2">Running: km/h ÷ bpm × 100. Cycling: W ÷ bpm. Sube = mejoras.</p>
+          <p className="text-[13px] text-[#94a3b8] mt-2">Running: km/h ÷ bpm × 100. Cycling: W ÷ bpm. Sube = mejoras.</p>
         </Section>
 
         {/* 2 · Triathlon Balance */}
@@ -119,21 +157,21 @@ export default function PerformanceAnalysis() {
               const color = Math.abs(row.gap) < 8 ? '#22c55e' : Math.abs(row.gap) < 15 ? '#eab308' : '#ef4444'
               return (
                 <div key={row.sport}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300">{row.emoji} {row.sport}</span>
+                  <div className="flex justify-between text-[13px] mb-1">
+                    <span className="text-[#cbd5e1]">{row.emoji} {row.sport}</span>
                     <span style={{ color }}>
                       {row.actual}% real · {row.ideal}% ideal · {row.gap > 0 ? '+' : ''}{row.gap}pp · {row.hours}h
                     </span>
                   </div>
-                  <div className="relative h-2.5 bg-slate-700 rounded-full">
+                  <div className="relative h-2.5 bg-[#1e2942] rounded-full">
                     <div className="h-2.5 rounded-full" style={{ width: `${Math.min(row.actual, 100)}%`, background: color }} />
-                    <div className="absolute top-0 h-2.5 w-0.5 bg-slate-300" style={{ left: `${row.ideal}%` }} />
+                    <div className="absolute top-0 h-2.5 w-0.5 bg-[#cbd5e1]" style={{ left: `${row.ideal}%` }} />
                   </div>
                 </div>
               )
             })}
           </div>
-          <p className="text-xs text-slate-600 mt-3">Línea blanca = objetivo ideal. Rojo = desbalance importante.</p>
+          <p className="text-[13px] text-[#94a3b8] mt-3">Línea blanca = objetivo ideal. Rojo = desbalance importante.</p>
         </Section>
 
         {/* 3 · Cadence vs Speed */}
@@ -144,11 +182,11 @@ export default function PerformanceAnalysis() {
           {cadenceData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <ScatterChart margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="cadencia" name="Cadencia" unit=" spm" tick={{ fill: '#64748b', fontSize: 10 }} type="number" domain={['auto', 'auto']} />
-                <YAxis dataKey="velocidad" name="Velocidad" unit=" km/h" tick={{ fill: '#64748b', fontSize: 10 }} width={42} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
+                <XAxis dataKey="cadencia" name="Cadencia" unit=" spm" tick={{ fill: '#94a3b8', fontSize: 12 }} type="number" domain={['auto', 'auto']} />
+                <YAxis dataKey="velocidad" name="Velocidad" unit=" km/h" tick={{ fill: '#94a3b8', fontSize: 12 }} width={42} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 11 }}
                   formatter={(v: unknown, n: unknown) => [String(v), String(n)]}
                 />
                 <ReferenceArea x1={170} x2={180} fill="#22c55e" fillOpacity={0.08} />
@@ -167,6 +205,9 @@ export default function PerformanceAnalysis() {
         </Section>
 
         {/* 4 · VO2max Trend */}
+        {/* Bands are the reference the legend promises; the line is coloured by
+            the band it sits in, via a gradient whose stops are pinned to the
+            y-scale, instead of a flat hue that means nothing. */}
         <Section
           title="Tendencia VO2max"
           sub={currentVo2 ? `Actual: ${currentVo2.toFixed(1)} ml/kg/min — ${vo2Label}` : 'Estimado por Garmin'}
@@ -174,25 +215,51 @@ export default function PerformanceAnalysis() {
           {vo2Points.length > 1 ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={vo2Points} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} interval={Math.floor(vo2Points.length / 6)} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                <defs>
+                  <linearGradient id="vo2Bands" x1="0" y1="0" x2="0" y2="1">
+                    {vo2GradientStops(vo2Domain)}
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
+                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} interval={Math.floor(vo2Points.length / 6)} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} width={38} domain={vo2Domain} allowDataOverflow />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
-                  formatter={(v: unknown) => [Number(v).toFixed(1), 'VO2max']}
+                  contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: unknown) => [`${Number(v).toFixed(1)} — ${vo2Band(Number(v)).label}`, 'VO2max']}
                 />
-                <ReferenceArea y1={55} y2={70} fill="#22c55e" fillOpacity={0.05} />
-                <ReferenceArea y1={48} y2={55} fill="#3b82f6" fillOpacity={0.05} />
-                <Line type="monotone" dataKey="vo2max" stroke="#a855f7" dot={{ r: 3 }} strokeWidth={2} />
+                {/* No background band here on purpose: every recorded value sits
+                    inside a single band, so a wash across the whole plot would
+                    say nothing. The band is carried by the line's own colour. */}
+                <Line
+                  type="monotone"
+                  dataKey="vo2max"
+                  stroke="url(#vo2Bands)"
+                  strokeWidth={2.5}
+                  isAnimationActive={false}
+                  dot={(props: { cx?: number; cy?: number; payload?: { vo2max?: number }; index?: number }) => (
+                    <circle
+                      key={props.index}
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={3}
+                      fill={vo2Band(props.payload?.vo2max ?? 0).color}
+                      stroke="#101826"
+                      strokeWidth={1}
+                    />
+                  )}
+                />
               </LineChart>
             </ResponsiveContainer>
           ) : (
             <Empty label={vo2Points.length === 0 ? 'Sin datos VO2max' : 'Pocas mediciones aún'} />
           )}
           <div className="flex gap-3 mt-2 flex-wrap">
-            {[['≥60', 'Elite', '#22c55e'], ['55–59', 'Excelente', '#3b82f6'], ['48–54', 'Buena', '#eab308'], ['<48', 'Mejorable', '#ef4444']].map(
-              ([r, l, c]) => <span key={r} className="text-xs" style={{ color: c }}>{r} {l}</span>
-            )}
+            {VO2_BANDS.slice().reverse().map(b => (
+              <span key={b.label} className="flex items-center gap-1.5 text-[13px] text-[#cbd5e1]">
+                <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: b.color }} />
+                {b.range} {b.label}
+              </span>
+            ))}
           </div>
         </Section>
 
@@ -204,15 +271,15 @@ export default function PerformanceAnalysis() {
           {weeklyLoad.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weeklyLoad} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="week" tick={{ fill: '#64748b', fontSize: 10 }} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} width={36} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
+                <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} width={36} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 11 }}
                   formatter={(v: unknown) => [String(v), 'TSS']}
                 />
                 <ReferenceLine y={avgWeeklyTSS} stroke="#475569" strokeDasharray="4 2"
-                  label={{ value: 'media', fill: '#64748b', fontSize: 9 }} />
+                  label={{ value: 'media', fill: '#94a3b8', fontSize: 9 }} />
                 <Bar dataKey="tss" radius={[3, 3, 0, 0]}>
                   {weeklyLoad.map((w, i) => (
                     <Cell key={i} fill={RAMP_COLOR[w.riskLevel]} />
@@ -238,7 +305,7 @@ export default function PerformanceAnalysis() {
               const maxH = Math.max(...data, 0.01)
               return (
                 <div key={sport} className="flex items-center gap-2">
-                  <div className="w-5 text-sm">{emoji}</div>
+                  <div className="w-5 text-[14px]">{emoji}</div>
                   <div className="flex gap-0.5 flex-1">
                     {data.map((h, i) => (
                       <div
@@ -275,7 +342,7 @@ export default function PerformanceAnalysis() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Empty({ label }: { label: string }) {
-  return <div className="h-48 flex items-center justify-center text-slate-600 text-sm">{label}</div>
+  return <div className="h-48 flex items-center justify-center text-[#94a3b8] text-[14px]">{label}</div>
 }
 
 function deriveInsights({

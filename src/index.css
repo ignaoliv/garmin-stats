@@ -1,34 +1,192 @@
 @import "tailwindcss";
 
 @theme {
-  --color-garmin-blue: #0079c1;
-  --color-garmin-dark: #003d6b;
-  --color-run: #ef4444;
-  --color-ride: #f97316;
-  --color-swim: #3b82f6;
-  --color-other: #8b5cf6;
+  /* ── Sport palette ────────────────────────────────────────────────────────
+     Validated as a set against the app surface (#0f172a): all six slots pass
+     the lightness band, chroma floor, CVD separation (worst adjacent ΔE 8.4)
+     and ≥3:1 contrast. Assign in order; never cycle. */
+  --color-sport-cycling:  #3987e5;
+  --color-sport-strength: #d95926;
+  --color-sport-cardio:   #199e70;
+  --color-sport-walking:  #c98500;
+  --color-sport-running:  #d55181;
+  --color-sport-swimming: #9085e9;
+  --color-sport-other:    #7c8aa3;
 
-  --color-zone1: #22c55e;
-  --color-zone2: #84cc16;
-  --color-zone3: #eab308;
-  --color-zone4: #f97316;
-  --color-zone5: #ef4444;
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-surface-base:  #101826;
+  --color-surface-card:  #172033;
+  --color-surface-sunk:  #131c2e;
+  --color-surface-line:  #28334a;
+
+  /* Strava-style accent. Reserved for interface chrome — navigation, links,
+     primary actions. Never used as a data-series colour, so it can never be
+     mistaken for a sport. */
+  --color-accent:        #fc5200;
+  --color-accent-soft:   #ff7a3d;
+
+  /* ── Ink ──────────────────────────────────────────────────────────────────
+     Contrast vs the card surface: primary 14.7:1, secondary 10.9:1,
+     muted 6.3:1. The previous slate-500/600 labels sat at 3.4:1 and 2.1:1,
+     under the 4.5:1 WCAG AA floor — that was the core legibility problem. */
+  --color-ink-primary:   #f1f5f9;
+  --color-ink-secondary: #cbd5e1;
+  --color-ink-muted:     #94a3b8;
+
+  /* ── Status (reserved: never reused as a series colour) ───────────────── */
+  --color-state-good:     #34d399;
+  --color-state-warning:  #fbbf24;
+  --color-state-serious:  #fb923c;
+  --color-state-critical: #f87171;
+
+  /* ── HR zones (sequential: one ramp, cool → hot) ──────────────────────── */
+  --color-zone1: #38bdf8;
+  --color-zone2: #34d399;
+  --color-zone3: #fbbf24;
+  --color-zone4: #fb923c;
+  --color-zone5: #f87171;
 }
 
-* {
-  box-sizing: border-box;
+/* Rotating halo for the AI brief. A conic gradient spun by transform: the
+   ring reads as "thinking" without dragging attention off the text. */
+@keyframes halo-spin {
+  to { transform: rotate(1turn); }
 }
+@keyframes halo-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+.halo-ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, transparent 0deg, #fc5200 70deg, #ff9a5c 140deg, transparent 220deg, transparent 360deg);
+  animation: halo-spin 3.2s linear infinite, halo-breathe 2.6s ease-in-out infinite;
+}
+.halo-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #172033;
+}
+@media (prefers-reduced-motion: reduce) {
+  .halo-ring::before { animation: none; opacity: 0.7; }
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Short, eased, and always with a reduced-motion escape hatch. Durations stay
+   under 260ms so the interface feels responsive rather than animated. */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.panel-in  { animation: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fade-in   { animation: fade-in 180ms ease-out both; }
+.modal-in  { animation: modal-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rise-in   { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Stagger for lists and grids: each child comes in a beat after the previous. */
+.stagger > * { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 45ms; }
+.stagger > *:nth-child(3) { animation-delay: 90ms; }
+.stagger > *:nth-child(4) { animation-delay: 135ms; }
+.stagger > *:nth-child(5) { animation-delay: 180ms; }
+.stagger > *:nth-child(6) { animation-delay: 225ms; }
+.stagger > *:nth-child(7) { animation-delay: 270ms; }
+.stagger > *:nth-child(8) { animation-delay: 315ms; }
+.stagger > *:nth-child(9) { animation-delay: 360ms; }
+.stagger > *:nth-child(10) { animation-delay: 405ms; }
+.stagger > *:nth-child(11) { animation-delay: 450ms; }
+.stagger > *:nth-child(12) { animation-delay: 495ms; }
+
+/* Cards lift very slightly on hover so rows feel touchable. */
+/* Page-level entrance: top-level sections rise in one after another. Slightly
+   longer and softer than the in-card stagger so a whole screen settles rather
+   than snapping. */
+.page-in > * { animation: rise-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.page-in > *:nth-child(1)  { animation-delay: 0ms; }
+.page-in > *:nth-child(2)  { animation-delay: 50ms; }
+.page-in > *:nth-child(3)  { animation-delay: 100ms; }
+.page-in > *:nth-child(4)  { animation-delay: 150ms; }
+.page-in > *:nth-child(5)  { animation-delay: 200ms; }
+.page-in > *:nth-child(6)  { animation-delay: 250ms; }
+.page-in > *:nth-child(7)  { animation-delay: 300ms; }
+.page-in > *:nth-child(8)  { animation-delay: 340ms; }
+.page-in > *:nth-child(9)  { animation-delay: 380ms; }
+.page-in > *:nth-child(n+10) { animation-delay: 420ms; }
+
+.lift { transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease; }
+.lift:hover { transform: translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-in, .fade-in, .modal-in, .rise-in,
+  .stagger > *, .page-in > * { animation: none; }
+  .lift:hover { transform: none; }
+}
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #101826;
+  color: #f1f5f9;
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Leaflet overrides */
-.leaflet-container {
-  background: #1e293b;
-  border-radius: 0.5rem;
+/* Recharts marks its wrapper focusable, so a plain click left the browser's
+   focus ring drawn around the whole chart. Drop it for pointer focus but keep
+   it for :focus-visible, which is what keyboard users actually need. */
+.recharts-wrapper:focus:not(:focus-visible),
+.recharts-surface:focus:not(:focus-visible),
+.recharts-wrapper *:focus:not(:focus-visible) {
+  outline: none;
 }
+.recharts-wrapper:focus-visible {
+  outline: 2px solid #fc5200;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.recharts-surface { overflow: visible; }
+
+.leaflet-container {
+  background: #131c2e;
+  border-radius: 0.75rem;
+}
+
+/* Desaturate + invert the OSM raster into a muted dark basemap so the route,
+   not the streets, is what reads first. */
+.map-filtered .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.92) contrast(0.88);
+}
+
+
+.leaflet-control-attribution {
+  background: rgba(19, 28, 46, 0.82) !important;
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: #cbd5e1 !important; }
+
+.leaflet-bar a {
+  background: #172033 !important;
+  color: #f1f5f9 !important;
+  border-color: #28334a !important;
+}
+.leaflet-bar a:hover { background: #1e2942 !important; }

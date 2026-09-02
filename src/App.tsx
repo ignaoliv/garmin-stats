@@ -10,6 +10,8 @@ import ZoneAnalysis from './pages/ZoneAnalysis'
 import Records from './pages/Records'
 import Settings from './pages/Settings'
 import PerformanceAnalysis from './pages/PerformanceAnalysis'
+import Strength from './pages/Strength'
+import Progress from './pages/Progress'
 
 export default function App() {
   const loadActivities = useActivityStore(s => s.loadActivities)
@@ -30,6 +32,8 @@ export default function App() {
             <Route path="/activities" element={<Activities />} />
             <Route path="/activity/:id" element={<ActivityDetailPage />} />
             <Route path="/fitness" element={<FitnessChartPage />} />
+            <Route path="/fuerza" element={<Strength />} />
+            <Route path="/progreso" element={<Progress />} />
             <Route path="/zones" element={<ZoneAnalysis />} />
             <Route path="/records" element={<Records />} />
             <Route path="/performance" element={<PerformanceAnalysis />} />

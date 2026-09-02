@@ -10,9 +10,9 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto max-w-xl">
-      <h1 className="text-xl font-bold text-slate-100 mb-1">Ajustes</h1>
-      <p className="text-sm text-slate-500 mb-8">Parámetros fisiológicos para los cálculos de zonas y TSS.</p>
+    <div className="flex-1 p-6 overflow-y-auto page-in max-w-xl">
+      <h1 className="text-xl font-bold text-[#f1f5f9] mb-1">Ajustes</h1>
+      <p className="text-[14px] text-[#94a3b8] mb-8">Parámetros fisiológicos para los cálculos de zonas y TSS.</p>
 
       <div className="space-y-6">
         <Field
@@ -46,7 +46,7 @@ export default function Settings() {
         />
 
         <div>
-          <label className="block text-sm text-slate-300 mb-1">
+          <label className="block text-[14px] text-[#cbd5e1] mb-1">
             Ritmo en Umbral (Running)
           </label>
           <div className="flex items-center gap-2">
@@ -56,24 +56,24 @@ export default function Settings() {
               min={3}
               max={8}
               onChange={e => set('thresholdPace', Number(e.target.value) * 60 + (settings.thresholdPace % 60))}
-              className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+              className="w-20 bg-[#172033] border border-[#28334a] rounded-lg px-3 py-2 text-[14px] text-[#f1f5f9]"
             />
-            <span className="text-slate-500">min</span>
+            <span className="text-[#94a3b8]">min</span>
             <input
               type="number"
               value={settings.thresholdPace % 60}
               min={0}
               max={59}
               onChange={e => set('thresholdPace', Math.floor(settings.thresholdPace / 60) * 60 + Number(e.target.value))}
-              className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+              className="w-20 bg-[#172033] border border-[#28334a] rounded-lg px-3 py-2 text-[14px] text-[#f1f5f9]"
             />
-            <span className="text-slate-500">seg /km</span>
+            <span className="text-[#94a3b8]">seg /km</span>
           </div>
-          <p className="text-xs text-slate-600 mt-1">Tu ritmo en umbral láctico corriendo. Usado para calcular TSS de running.</p>
+          <p className="text-[13px] text-[#94a3b8] mt-1">Tu ritmo en umbral láctico corriendo. Usado para calcular TSS de running.</p>
         </div>
       </div>
 
-      <div className="mt-8 p-4 bg-slate-800/40 border border-slate-700/50 rounded-xl text-xs text-slate-500 space-y-1">
+      <div className="mt-8 p-4 bg-[#172033] border border-[#28334a] rounded-xl text-[13px] text-[#94a3b8] space-y-1">
         <p>Los ajustes se guardan localmente en tu navegador (localStorage).</p>
         <p>Cambiarlos afecta retroactivamente a todos los cálculos de CTL/ATL/TSB y zonas.</p>
       </div>
@@ -94,7 +94,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm text-slate-300 mb-1">{label}</label>
+      <label className="block text-[14px] text-[#cbd5e1] mb-1">{label}</label>
       <div className="flex items-center gap-3">
         <input
           type="number"
@@ -102,9 +102,9 @@ function Field({
           min={min}
           max={max}
           onChange={e => onChange(Number(e.target.value))}
-          className="w-28 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+          className="w-28 bg-[#172033] border border-[#28334a] rounded-lg px-3 py-2 text-[14px] text-[#f1f5f9]"
         />
-        <span className="text-slate-500 text-sm">{unit}</span>
+        <span className="text-[#94a3b8] text-[14px]">{unit}</span>
         <input
           type="range"
           min={min}
@@ -114,7 +114,7 @@ function Field({
           className="flex-1 accent-blue-500"
         />
       </div>
-      {hint && <p className="text-xs text-slate-600 mt-1">{hint}</p>}
+      {hint && <p className="text-[13px] text-[#94a3b8] mt-1">{hint}</p>}
     </div>
   )
 }

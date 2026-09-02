@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
+import {
+  AreaChart, Area, BarChart, Bar, Cell, ReferenceArea, ReferenceLine,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import { useActivityStore } from '../stores/activityStore'
-import { formatDuration, formatPace, sportIcon, sportColor } from '../utils/formatters'
+import { formatDuration, formatPace } from '../utils/formatters'
+import { sportColor, sportIcon, sportLabel } from '../utils/sports'
 import { daysAgo } from '../utils/date'
 import { useFitnessHistory } from '../hooks/useFitnessHistory'
 import { useWeekComparison } from '../hooks/useWeekComparison'
@@ -8,20 +13,20 @@ import { useSportVolume } from '../hooks/useSportVolume'
 import { useTrainingStreak } from '../hooks/useTrainingStreak'
 import { useZoneDistribution } from '../hooks/useZoneDistribution'
 import { useWeeklyLoad } from '../hooks/useWeeklyLoad'
-import RadialProgress from '../components/RadialProgress'
-import FormBadge from '../components/FormBadge'
-import DeltaBadge from '../components/DeltaBadge'
-import {
-  AreaChart, Area, XAxis, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis,
-} from 'recharts'
+import { useStrength } from '../hooks/useStrength'
+import { useACWR, useConsistencyHeatmap } from '../hooks/useTrainingInsights'
+import Heatmap from '../components/Heatmap'
+import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
+import InsightsCard from '../components/InsightsCard'
+import StepsCard from '../components/StepsCard'
 
-// ─── Loading / Empty states ───────────────────────────────────────────────────
+const AXIS = { fill: '#94a3b8', fontSize: 12 }
+const GRID = '#28334a'
 
 function LoadingScreen() {
   return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="text-slate-400 animate-pulse text-sm">Cargando...</div>
+      <div className="text-[#cbd5e1] animate-pulse text-[15px]">Cargando tus entrenamientos…</div>
     </div>
   )
 }
@@ -29,19 +34,27 @@ function LoadingScreen() {
 function EmptyScreen() {
   return (
     <div className="flex-1 p-8 max-w-2xl">
-      <div className="bg-amber-950/40 border border-amber-800/50 rounded-xl p-6">
-        <h2 className="text-amber-300 font-medium text-lg mb-2">Sin datos de Garmin</h2>
-        <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300 space-y-1 mt-3">
+      <Card className="p-6">
+        <h2 className="text-[#fbbf24] font-semibold text-lg mb-2">Sin datos de Garmin</h2>
+        <p className="text-[15px] text-[#cbd5e1] mb-4">Ejecutá estos comandos para descargar tus actividades:</p>
+        <div className="bg-[#0b1425] border border-[#28334a] rounded-lg p-4 font-mono text-[13px] text-[#cbd5e1] space-y-1.5">
           <div>cp .env.example .env</div>
-          <div>cd fetch && pip install -r requirements.txt</div>
-          <div>python3 sync.py --limit 20</div>
+          <div>cd fetch &amp;&amp; pip install -r requirements.txt</div>
+          <div>python3 fetch/sync.py --limit 20</div>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+/** Plain-language reading of the training-balance number. */
+function formStatus(tsb: number): { label: string; tone: 'good' | 'warning' | 'neutral'; text: string; color: string } {
+  if (tsb > 15)  return { label: 'Muy descansado', tone: 'neutral', color: '#38bdf8', text: 'Estás fresco pero perdiendo forma. Buen momento para competir, o para volver a cargar.' }
+  if (tsb > 5)   return { label: 'Descansado',     tone: 'good',    color: '#34d399', text: 'Recuperado y con la carga bajo control. Podés meter una sesión fuerte.' }
+  if (tsb > -10) return { label: 'En equilibrio',  tone: 'good',    color: '#34d399', text: 'Carga y descanso balanceados. Es la zona donde se construye forma de manera sostenible.' }
+  if (tsb > -25) return { label: 'Entrenando fuerte', tone: 'warning', color: '#fbbf24', text: 'Estás acumulando fatiga a propósito. Sostenible unas semanas, pero planificá una de descarga.' }
+  return { label: 'Sobrecargado', tone: 'warning', color: '#fb923c', text: 'La fatiga supera bastante a tu forma. Bajá el volumen unos días para asimilar el trabajo.' }
+}
 
 export default function Dashboard() {
   const activities = useActivityStore(s => s.activities)
@@ -51,10 +64,13 @@ export default function Dashboard() {
 
   const { current: fitness, sparkPoints } = useFitnessHistory()
   const { current: week, previous: lastWeek } = useWeekComparison()
-  const { bySport: sportHours, totalHours, percentages } = useSportVolume(30)
+  const { ranked: sportVolume, totalHours, totalCount } = useSportVolume(30)
   const streak = useTrainingStreak()
-  const { slices: zoneSlices, isAerobicFocused } = useZoneDistribution(30)
+  const { slices: zoneSlices, isAerobicFocused, estimadas: zonasEstimadas } = useZoneDistribution(30)
   const weeklyLoad = useWeeklyLoad(16)
+  const strength = useStrength(12)
+  const acwr = useACWR(120)
+  const heat = useConsistencyHeatmap(182)
 
   if (loading) return <LoadingScreen />
   if (error || activities.length === 0) return <EmptyScreen />
@@ -62,270 +78,422 @@ export default function Dashboard() {
   const tsb = fitness?.tsb ?? 0
   const ctl = fitness?.ctl ?? 0
   const atl = fitness?.atl ?? 0
-  const tsbColor = tsb > 10 ? '#22c55e' : tsb > -5 ? '#3b82f6' : tsb > -15 ? '#eab308' : tsb > -25 ? '#f97316' : '#ef4444'
-  const maxWeekTSS = Math.max(...weeklyLoad.map(w => w.tss), 1)
+  const form = formStatus(tsb)
+  const vo2 = stats?.vo2maxHistory?.length ? stats.vo2maxHistory.at(-1)!.value : null
+  const aerobicPct = zoneSlices.slice(0, 2).reduce((s, z) => s + z.pct, 0)
+  const avgWeeklyTSS = weeklyLoad.length ? weeklyLoad.reduce((s, w) => s + w.tss, 0) / weeklyLoad.length : 0
+  const avgStrengthPerWeek = strength.weekly.length
+    ? strength.weekly.reduce((s, w) => s + w.sessions, 0) / strength.weekly.length
+    : 0
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#080f1e]">
+    <div className="flex-1 overflow-y-auto bg-[#101826]">
+      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden px-6 pt-7 pb-6"
-        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #0c1a3a 50%, #0f172a 100%)' }}>
-        <div className="absolute top-0 left-1/4 w-96 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: tsbColor }} />
-
-        {/* Form title row */}
-        <div className="flex items-start justify-between mb-6">
+        {/* ── Page header ────────────────────────────────────────────────── */}
+        <header className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">Estado de forma</div>
-            <div className="flex items-center gap-3">
-              <span className="text-4xl font-black" style={{ color: tsbColor, textShadow: `0 0 30px ${tsbColor}66` }}>
-                {tsb > 0 ? '+' : ''}{Math.round(tsb)}
-              </span>
+            <h1 className="text-2xl font-bold text-[#f1f5f9]">Resumen</h1>
+            <p className="text-[14px] text-[#94a3b8] mt-1">
+              {activities.length.toLocaleString('es-ES')} actividades registradas
+              {stats?.syncedAt && (
+                <> · última sincronización {new Date(stats.syncedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</>
+              )}
+            </p>
+          </div>
+          {streak > 1 && (
+            <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#172033] border border-[#28334a]">
+              <span className="text-xl">🔥</span>
               <div>
-                <FormBadge tsb={tsb} />
-                <div className="text-xs text-slate-500 mt-1.5">Forma = Fitness − Fatiga</div>
+                <div className="text-[15px] font-bold text-[#fbbf24] leading-tight">{streak} días seguidos</div>
+                <div className="text-[13px] text-[#94a3b8]">entrenando</div>
               </div>
             </div>
-          </div>
+          )}
+        </header>
 
-          {/* VO2max */}
-          {stats?.vo2maxHistory?.length ? (
-            <div className="text-right">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">VO2max</div>
-              <div className="text-3xl font-black text-purple-400" style={{ textShadow: '0 0 20px #a855f766' }}>
-                {stats.vo2maxHistory.at(-1)!.value.toFixed(1)}
+        <InsightsCard />
+
+        {/* ── Training balance ───────────────────────────────────────────── */}
+        <Card className="p-5">
+          <CardHeader
+            title="Estado de forma"
+            hint="Forma = Fitness − Fatiga. Positivo es descanso; negativo, carga acumulada."
+            action={{ to: '/fitness', label: 'Ver detalle →' }}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+            <div>
+              <div className="flex items-end gap-3 mb-2">
+                <span className="text-[56px] leading-none font-bold tabular-nums" style={{ color: form.color }}>
+                  {tsb > 0 ? '+' : ''}{Math.round(tsb)}
+                </span>
+                <span
+                  className="mb-2 px-2.5 py-1 rounded-lg text-[13px] font-semibold border"
+                  style={{ color: form.color, borderColor: `${form.color}66`, background: `${form.color}1a` }}
+                >
+                  {form.label}
+                </span>
               </div>
-              <div className="text-xs text-slate-500">ml/kg/min</div>
-            </div>
-          ) : null}
-        </div>
+              <p className="text-[14px] text-[#cbd5e1] leading-relaxed mb-4">{form.text}</p>
 
-        {/* CTL / ATL radials + streak */}
-        <div className="flex items-center gap-8 mb-6">
-          <div className="flex items-center gap-3">
-            <RadialProgress value={ctl} max={100} color="#3b82f6" size={72} stroke={6}>
-              <span className="text-base font-bold text-blue-300">{Math.round(ctl)}</span>
-            </RadialProgress>
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Fitness</div>
-              <div className="text-xs text-slate-400">CTL · 42 días</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <RadialProgress value={atl} max={100} color="#f97316" size={72} stroke={6}>
-              <span className="text-base font-bold text-orange-300">{Math.round(atl)}</span>
-            </RadialProgress>
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Fatiga</div>
-              <div className="text-xs text-slate-400">ATL · 7 días</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 ml-auto">
-            {streak > 1 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
-                style={{ borderColor: '#f59e0b40', background: '#f59e0b10' }}>
-                <span className="text-lg">🔥</span>
-                <div>
-                  <div className="text-sm font-bold text-amber-400">{streak} días</div>
-                  <div className="text-xs text-slate-500">racha activa</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#3987e5' }} />
+                    <span className="text-[13px] text-[#94a3b8]">Fitness</span>
+                  </div>
+                  <div className="text-xl font-bold text-[#f1f5f9] tabular-nums">{Math.round(ctl)}</div>
+                  <div className="text-[12px] text-[#94a3b8]">media 42 días</div>
+                </div>
+                <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#d95926' }} />
+                    <span className="text-[13px] text-[#94a3b8]">Fatiga</span>
+                  </div>
+                  <div className="text-xl font-bold text-[#f1f5f9] tabular-nums">{Math.round(atl)}</div>
+                  <div className="text-[12px] text-[#94a3b8]">media 7 días</div>
                 </div>
               </div>
-            )}
-            <div className="text-right">
-              <div className="text-xs text-slate-500">{stats?.totalActivities ?? activities.length} actividades</div>
-              {stats?.syncedAt && (
-                <div className="text-xs text-slate-600">
-                  Sync: {new Date(stats.syncedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+
+              {vo2 !== null && (
+                <div className="mt-3 flex items-baseline gap-2 px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a]">
+                  <span className="text-[13px] text-[#94a3b8]">VO₂max</span>
+                  <span className="text-lg font-bold text-[#f1f5f9] tabular-nums">{vo2.toFixed(1)}</span>
+                  <span className="text-[13px] text-[#94a3b8]">ml/kg/min</span>
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Fitness sparkline */}
-        <div className="h-20">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkPoints} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id="gCTL" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gATL" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="date" hide />
-              <Tooltip
-                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
-                formatter={(v: unknown, n: unknown) => [String(v), String(n)]}
-              />
-              <Area type="monotone" dataKey="ctl" name="Fitness" stroke="#3b82f6" strokeWidth={2} fill="url(#gCTL)" dot={false} />
-              <Area type="monotone" dataKey="atl" name="Fatiga" stroke="#f97316" strokeWidth={1.5} fill="url(#gATL)" dot={false} strokeDasharray="3 2" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="flex gap-4 mt-1">
-          <LegendDot color="#3b82f6" label="Fitness (CTL)" />
-          <LegendDot color="#f97316" label="Fatiga (ATL)" />
-        </div>
-      </div>
-
-      {/* ── Body ─────────────────────────────────────────────────────────── */}
-      <div className="px-6 py-5 space-y-5">
-
-        {/* Week comparison */}
-        <section>
-          <SectionHeader left="Esta semana" right="vs semana anterior" />
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { label: 'Sesiones',    value: week.count,            prev: lastWeek.count,            fmt: (v: number) => String(v),              unit: '' },
-              { label: 'Distancia',   value: week.distance,         prev: lastWeek.distance,         fmt: (v: number) => v.toFixed(1),           unit: 'km' },
-              { label: 'Tiempo',      value: week.duration / 3600,  prev: lastWeek.duration / 3600,  fmt: (v: number) => v.toFixed(1),           unit: 'h' },
-              { label: 'Carga (TSS)', value: week.tss,              prev: lastWeek.tss,              fmt: (v: number) => Math.round(v).toString(), unit: '' },
-            ].map(({ label, value, prev, fmt, unit }) => (
-              <div key={label} className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-4 hover:border-slate-600/60 transition-colors">
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">{label}</div>
-                <div className="text-2xl font-bold text-slate-100 mb-1">
-                  {fmt(value)}<span className="text-sm text-slate-500 ml-1">{unit}</span>
-                </div>
-                <DeltaBadge value={value - prev} unit={unit ? ` ${unit}` : ''} />
+            <div>
+              <ResponsiveContainer width="100%" height={210}>
+                <AreaChart data={sparkPoints} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                  <defs>
+                    <linearGradient id="gCTL" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3987e5" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#3987e5" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={44} />
+                  <YAxis tick={AXIS} tickLine={false} axisLine={false} width={46} />
+                  <Tooltip
+                    content={<ChartTooltip formatter={(v) => String(Math.round(Number(v)))} />}
+                    cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 3' }}
+                  />
+                  <Area type="monotone" dataKey="ctl" name="Fitness" stroke="#3987e5" strokeWidth={2} fill="url(#gCTL)" dot={false} />
+                  <Area type="monotone" dataKey="atl" name="Fatiga" stroke="#d95926" strokeWidth={2} fill="none" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div className="flex gap-4 mt-2 pl-8">
+                <LegendItem color="#3987e5" label="Fitness (CTL)" />
+                <LegendItem color="#d95926" label="Fatiga (ATL)" />
               </div>
-            ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* ── This week ──────────────────────────────────────────────────── */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-[15px] font-semibold text-[#f1f5f9]">Esta semana</h2>
+            <span className="text-[13px] text-[#94a3b8]">comparado con la semana anterior</span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+            <StatTile label="Sesiones"  value={String(week.count)}                 delta={week.count - lastWeek.count} />
+            <StatTile label="Distancia" value={week.distance.toFixed(1)} unit="km" delta={week.distance - lastWeek.distance} deltaUnit=" km" />
+            <StatTile label="Tiempo"    value={(week.duration / 3600).toFixed(1)} unit="h" delta={(week.duration - lastWeek.duration) / 3600} deltaUnit=" h" />
+            <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
           </div>
         </section>
 
-        {/* Sport rings + Zone radar */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* ── Sport mix + HR zones ───────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-          <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-5">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-4">Volumen · últimos 30 días</div>
-            <div className="flex items-center justify-around">
-              {([
-                { sport: 'running' as const,  label: 'Running',  color: '#ef4444', max: 20 },
-                { sport: 'cycling' as const,  label: 'Ciclismo', color: '#f97316', max: 30 },
-                { sport: 'swimming' as const, label: 'Natación', color: '#3b82f6', max: 8  },
-              ]).map(({ sport, label, color, max }) => (
-                <div key={sport} className="flex flex-col items-center gap-2">
-                  <RadialProgress value={sportHours[sport].hours} max={max} color={color} size={80} stroke={7}>
-                    <div className="text-center">
-                      <div className="text-sm font-bold" style={{ color }}>{sportHours[sport].hours.toFixed(1)}</div>
-                      <div className="text-xs text-slate-600">h</div>
-                    </div>
-                  </RadialProgress>
-                  <div className="text-center">
-                    <div className="text-xs font-medium text-slate-300">{sportIcon(sport)} {label}</div>
-                    <div className="text-xs text-slate-600">de {max}h ref.</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-700/50 text-xs text-slate-500 text-center">
-              Total: <span className="text-slate-300 font-medium">{totalHours.toFixed(1)}h</span>
-              {totalHours > 0 && (
-                <> · R {Math.round(percentages.running)}% · C {Math.round(percentages.cycling)}% · N {Math.round(percentages.swimming)}%</>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-5">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Zonas FC · 30 días</div>
-            <div className="text-xs mb-2" style={{ color: isAerobicFocused ? '#22c55e' : '#eab308' }}>
-              {isAerobicFocused ? '✅ Buena base aeróbica (Z1+Z2 >60%)' : '⚠️ Añade más entrenamiento en Z1–Z2'}
-            </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <RadarChart data={zoneSlices} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
-                <PolarGrid stroke="#334155" />
-                <PolarAngleAxis dataKey="zone" tick={{ fill: '#64748b', fontSize: 10 }} />
-                <Radar dataKey="pct" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} strokeWidth={1.5} />
-                <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
-                  formatter={(v: unknown) => [`${v}%`, 'Tiempo']}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-              {zoneSlices.map(z => (
-                <span key={z.zone} className="text-xs" style={{ color: z.color }}>{z.zone} {z.pct}%</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Weekly TSS bar chart */}
-        <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-5">
-          <SectionHeader left="Carga semanal (TSS) · 16 semanas" rightLink={{ to: '/fitness', label: 'Ver completo →' }} />
-          <div className="flex items-end gap-1 h-20">
-            {weeklyLoad.map((w, i) => {
-              const isCurrentWeek = i === weeklyLoad.length - 1
-              return (
-                <div key={w.week} className="flex-1 flex flex-col items-center" title={`${w.week}: ${w.tss} TSS`}>
-                  <div
-                    className="w-full rounded-t transition-all"
-                    style={{
-                      height: `${Math.max((w.tss / maxWeekTSS) * 100, 2)}%`,
-                      background: isCurrentWeek ? 'linear-gradient(to top, #3b82f6, #60a5fa)' : '#334155',
-                      boxShadow: isCurrentWeek ? '0 0 8px #3b82f660' : 'none',
-                    }}
+          <Card className="p-5">
+            <CardHeader
+              title="En qué entrenaste"
+              hint={`Últimos 30 días · ${totalHours.toFixed(1)} h en ${totalCount} sesiones`}
+            />
+            {sportVolume.length === 0 ? (
+              <p className="text-[14px] text-[#94a3b8] py-8 text-center">Sin actividades en los últimos 30 días.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={Math.max(sportVolume.length * 42, 130)}>
+                <BarChart data={sportVolume} layout="vertical" margin={{ top: 0, right: 56, bottom: 0, left: 0 }} barCategoryGap="22%">
+                  <CartesianGrid stroke={GRID} strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} unit=" h" />
+                  <YAxis type="category" dataKey="label" tick={{ ...AXIS, fill: '#cbd5e1' }} tickLine={false} axisLine={false} width={82} />
+                  <Tooltip
+                    cursor={{ fill: '#ffffff08' }}
+                    content={
+                      <ChartTooltip
+                        formatter={(v, _n, row) =>
+                          `${Number(v).toFixed(1)} h · ${row?.count ?? 0} sesiones · ${Math.round(Number(row?.pct ?? 0))}%`
+                        }
+                      />
+                    }
                   />
-                </div>
-              )
-            })}
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-xs text-slate-600">{weeklyLoad[0]?.week}</span>
-            <span className="text-xs text-blue-400 font-medium">
-              esta semana {week.tss > 0 ? `${Math.round(week.tss)} TSS` : ''}
-            </span>
-          </div>
+                  <Bar dataKey="hours" name="Volumen" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                    {sportVolume.map(s => <Cell key={s.sport} fill={s.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 pt-3 border-t border-[#28334a]">
+              {sportVolume.map(s => (
+                <LegendItem key={s.sport} color={s.color} label={`${sportIcon(s.sport)} ${s.label}`} value={`${Math.round(s.pct)}%`} />
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <CardHeader title="Zonas de frecuencia cardíaca" hint={zonasEstimadas === 0
+                ? 'Tiempo medido por Garmin · últimos 30 días'
+                : `Últimos 30 días · ${zonasEstimadas} ${zonasEstimadas === 1 ? 'sesión estimada' : 'sesiones estimadas'}`} />
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={zoneSlices} layout="vertical" margin={{ top: 0, right: 48, bottom: 0, left: 0 }} barCategoryGap="20%">
+                <CartesianGrid stroke={GRID} strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} unit="%" domain={[0, 'dataMax']} />
+                <YAxis type="category" dataKey="zone" tick={{ ...AXIS, fill: '#cbd5e1' }} tickLine={false} axisLine={false} width={104} />
+                <Tooltip cursor={{ fill: '#ffffff08' }} content={<ChartTooltip formatter={(v) => `${v}% del tiempo`} />} />
+                <Bar dataKey="pct" name="Tiempo" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                  {zoneSlices.map(z => <Cell key={z.zone} fill={z.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 pt-3 border-t border-[#28334a]">
+              <Insight tone={isAerobicFocused ? 'good' : 'warning'}>
+                {isAerobicFocused
+                  ? `Buena base aeróbica: ${Math.round(aerobicPct)}% del tiempo en Z1–Z2, por encima del 60% recomendado.`
+                  : `Solo ${Math.round(aerobicPct)}% del tiempo en Z1–Z2. Lo habitual es apuntar a más del 60% en zonas bajas.`}
+              </Insight>
+            </div>
+          </Card>
         </div>
 
-        {/* Recent activities */}
+        {/* ── Injury-risk ratio ──────────────────────────────────────────── */}
+        <Card className="p-5">
+          <CardHeader
+            title="Riesgo de sobrecarga"
+            hint="Relación entre tu carga de los últimos 7 días y tu base de las últimas 4 semanas"
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+            <div>
+              <div className="flex items-end gap-3 mb-3">
+                <span className="text-[52px] leading-none font-bold tabular-nums" style={{ color: acwr.color }}>
+                  {acwr.current.toFixed(2)}
+                </span>
+                <span
+                  className="mb-2 px-2.5 py-1 rounded-lg text-[13px] font-semibold border"
+                  style={{ color: acwr.color, borderColor: `${acwr.color}66`, background: `${acwr.color}1a` }}
+                >
+                  {acwr.label}
+                </span>
+              </div>
+
+              {/* Zone rail: shows where the number sits, not just its colour. */}
+              <div className="relative h-2.5 rounded-full overflow-hidden flex mb-1.5">
+                <div style={{ width: '40%', background: '#38bdf8' }} />
+                <div style={{ width: '25%', background: '#34d399' }} />
+                <div style={{ width: '10%', background: '#fbbf24' }} />
+                <div style={{ width: '25%', background: '#f87171' }} />
+                <div
+                  className="absolute top-[-3px] w-1 h-[17px] rounded-full bg-[#f1f5f9] border border-[#101826]"
+                  style={{ left: `calc(${Math.min(Math.max((acwr.current / 2) * 100, 0), 99)}% - 2px)` }}
+                />
+              </div>
+              <div className="flex justify-between text-[12px] text-[#94a3b8] mb-3">
+                <span>0</span><span>0.8</span><span>1.3</span><span>1.5</span><span>2.0</span>
+              </div>
+
+              <p className="text-[14px] text-[#cbd5e1] leading-relaxed">{acwr.advice}</p>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-3 py-2.5">
+                  <div className="text-[13px] text-[#94a3b8] mb-1">Carga aguda</div>
+                  <div className="text-lg font-bold text-[#f1f5f9] tabular-nums">{acwr.acute}</div>
+                  <div className="text-[12px] text-[#94a3b8]">TSS · 7 días</div>
+                </div>
+                <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-3 py-2.5">
+                  <div className="text-[13px] text-[#94a3b8] mb-1">Carga crónica</div>
+                  <div className="text-lg font-bold text-[#f1f5f9] tabular-nums">{acwr.chronic}</div>
+                  <div className="text-[12px] text-[#94a3b8]">TSS · media semanal 28d</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <ResponsiveContainer width="100%" height={230}>
+                <AreaChart data={acwr.series} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                  <defs>
+                    <linearGradient id="gRatio" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#34d399" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#34d399" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={44} />
+                  <YAxis tick={AXIS} tickLine={false} axisLine={false} width={44} domain={[0, 2]} />
+                  <ReferenceArea y1={0.8} y2={1.3} fill="#34d399" fillOpacity={0.08} />
+                  <ReferenceLine y={1.3} stroke="#fbbf24" strokeDasharray="4 3" strokeWidth={1.5} />
+                  <ReferenceLine y={0.8} stroke="#38bdf8" strokeDasharray="4 3" strokeWidth={1.5} />
+                  <Tooltip
+                    content={<ChartTooltip formatter={(v, _n, row) => `${v} · agudo ${row?.acute ?? 0} / crónico ${row?.chronic ?? 0} TSS`} />}
+                    cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 3' }}
+                  />
+                  <Area type="monotone" dataKey="ratio" name="Ratio agudo:crónico" stroke="#34d399" strokeWidth={2} fill="url(#gRatio)" dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-4 mt-2 pl-6">
+                <LegendItem color="#34d399" label="Ratio agudo:crónico" />
+                <span className="flex items-center gap-2 text-[13px] text-[#cbd5e1]">
+                  <span className="w-4 h-2 rounded-[2px] inline-block" style={{ background: '#34d39929', border: '1px solid #34d39966' }} />
+                  Zona segura (0,8–1,3)
+                </span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* ── Strength ───────────────────────────────────────────────────── */}
+        {strength.totalSessions > 0 && (
+          <Card className="p-5">
+            <CardHeader
+              title="🏋️ Fuerza"
+              hint={`${strength.totalSessions} sesiones registradas · ${strength.totalHours.toFixed(0)} h acumuladas`}
+              action={{ to: '/fuerza', label: 'Ver análisis completo →' }}
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-[repeat(3,150px)_1fr] gap-4 items-start">
+              <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
+                <div className="text-[13px] text-[#94a3b8] mb-1">Últimos 30 días</div>
+                <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums">{strength.last30}</div>
+                <div className="text-[13px] text-[#94a3b8]">sesiones</div>
+              </div>
+              <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
+                <div className="text-[13px] text-[#94a3b8] mb-1">Duración media</div>
+                <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums">{strength.avgMinutes}</div>
+                <div className="text-[13px] text-[#94a3b8]">minutos</div>
+              </div>
+              <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
+                <div className="text-[13px] text-[#94a3b8] mb-1">Racha</div>
+                <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums">{strength.weekStreak}</div>
+                <div className="text-[13px] text-[#94a3b8]">semanas seguidas</div>
+              </div>
+
+              <div>
+                <div className="text-[13px] text-[#94a3b8] mb-2">Sesiones por semana · últimas 12</div>
+                <ResponsiveContainer width="100%" height={104}>
+                  <BarChart data={strength.weekly} margin={{ top: 4, right: 62, bottom: 0, left: -26 }} barCategoryGap="26%">
+                    <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={22} />
+                    <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} allowDecimals={false} />
+                    <Tooltip
+                      cursor={{ fill: '#ffffff08' }}
+                      content={<ChartTooltip formatter={(v, _n, row) => `${v} sesiones · ${row?.minutes ?? 0} min`} />}
+                    />
+                    <ReferenceLine
+                      y={avgStrengthPerWeek}
+                      stroke="#cbd5e1"
+                      strokeDasharray="5 4"
+                      strokeWidth={1.5}
+                      label={{ value: `media ${avgStrengthPerWeek.toFixed(1)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
+                    />
+                    <Bar dataKey="sessions" name="Sesiones" fill="#d95926" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* ── Weekly load ────────────────────────────────────────────────── */}
+        <Card className="p-5">
+          <CardHeader
+            title="Carga semanal"
+            hint="TSS por semana · últimas 16 semanas"
+            action={{ to: '/fitness', label: 'Ver detalle →' }}
+          />
+          <ResponsiveContainer width="100%" height={190}>
+            <BarChart data={weeklyLoad} margin={{ top: 4, right: 66, bottom: 0, left: -16 }} barCategoryGap="20%">
+              <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="week" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={18} />
+              <YAxis tick={AXIS} tickLine={false} axisLine={false} width={46} />
+              <Tooltip
+                cursor={{ fill: '#ffffff08' }}
+                content={<ChartTooltip formatter={(v, _n, row) => `${v} TSS${row?.rampPct ? ` · ${Number(row.rampPct) > 0 ? '+' : ''}${row.rampPct}% vs semana previa` : ''}`} />}
+              />
+              <ReferenceLine
+                y={avgWeeklyTSS}
+                stroke="#cbd5e1"
+                strokeDasharray="5 4"
+                strokeWidth={1.5}
+                label={{ value: `media ${Math.round(avgWeeklyTSS)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
+              />
+              <Bar dataKey="tss" name="Carga" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                {weeklyLoad.map((w, i) => (
+                  <Cell key={w.week} fill={i === weeklyLoad.length - 1 ? '#3987e5' : '#33456b'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#28334a]">
+            <LegendItem color="#3987e5" label="Semana en curso" value={`${Math.round(week.tss)} TSS`} />
+            <LegendItem color="#33456b" label="Semanas anteriores" />
+          </div>
+        </Card>
+
+        <StepsCard windowDays={30} />
+
+        {/* ── Consistency ────────────────────────────────────────────────── */}
+        <Card className="p-5">
+          <CardHeader
+            title="Constancia"
+            hint="Últimos 6 meses · cada cuadro es un día, más brillante = más carga"
+            action={{ to: '/progreso', label: 'Ver año completo →' }}
+          />
+          <Heatmap days={heat.days} weeks={heat.weeks} monthTicks={heat.monthTicks} cell={13} gap={3} />
+        </Card>
+
+        {/* ── Recent activities ──────────────────────────────────────────── */}
         <section>
-          <SectionHeader left="Últimas actividades" rightLink={{ to: '/activities', label: 'Ver todas →' }} />
-          <div className="space-y-2">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-[15px] font-semibold text-[#f1f5f9]">Últimas actividades</h2>
+            <Link to="/activities" className="text-[13px] font-medium text-[#fc5200] hover:text-[#ff7a3d]">Ver todas →</Link>
+          </div>
+          <div className="space-y-2 stagger">
             {activities.slice(0, 6).map(a => (
               <Link
                 key={a.id}
                 to={`/activity/${a.id}`}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-slate-700/40 bg-slate-800/30 hover:bg-slate-800/70 hover:border-slate-600/50 transition-all group"
+                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-[#28334a] bg-[#172033] hover:border-[#3a4767] hover:bg-[#1e2942] lift"
               >
-                <div className="w-2 h-2 rounded-full shrink-0"
-                  style={{ background: sportColor(a.sport), boxShadow: `0 0 6px ${sportColor(a.sport)}88` }} />
+                <span
+                  className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-base"
+                  style={{ background: `${sportColor(a.sport)}26`, border: `1px solid ${sportColor(a.sport)}59` }}
+                >
+                  {sportIcon(a.sport)}
+                </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-slate-200 truncate group-hover:text-white">{a.title}</div>
-                  <div className="text-xs text-slate-500">
-                    {daysAgo(a.startTime) === 0 ? 'Hoy' : daysAgo(a.startTime) === 1 ? 'Ayer' : `Hace ${daysAgo(a.startTime)}d`}
-                    {' · '}{sportIcon(a.sport)}
+                  <div className="text-[15px] font-medium text-[#f1f5f9] truncate">{a.title}</div>
+                  <div className="text-[13px] text-[#94a3b8]">
+                    {sportLabel(a.sport)} · {daysAgo(a.startTime) === 0 ? 'hoy' : daysAgo(a.startTime) === 1 ? 'ayer' : `hace ${daysAgo(a.startTime)} días`}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-5 shrink-0 text-right">
+                <div className="flex items-center gap-6 shrink-0 text-right tabular-nums">
                   {a.distance > 0 && (
-                    <div>
-                      <div className="text-sm font-bold text-slate-200">
-                        {a.distance.toFixed(1)}<span className="text-xs text-slate-500 ml-0.5">km</span>
+                    <div className="hidden sm:block">
+                      <div className="text-[15px] font-semibold text-[#f1f5f9]">{a.distance.toFixed(1)} km</div>
+                      <div className="text-[13px] text-[#94a3b8]">
+                        {a.avgPace ? formatPace(a.avgPace) : a.avgSpeed ? `${a.avgSpeed.toFixed(1)} km/h` : ''}
                       </div>
-                      {a.avgPace && <div className="text-xs text-slate-500">{formatPace(a.avgPace)}</div>}
-                      {a.avgSpeed && !a.avgPace && <div className="text-xs text-slate-500">{a.avgSpeed.toFixed(1)} km/h</div>}
                     </div>
                   )}
                   <div>
-                    <div className="text-sm font-bold text-slate-200">{formatDuration(a.duration)}</div>
-                    {a.avgHR > 0 && <div className="text-xs text-slate-500">{a.avgHR} bpm</div>}
+                    <div className="text-[15px] font-semibold text-[#f1f5f9]">{formatDuration(a.duration)}</div>
+                    <div className="text-[13px] text-[#94a3b8]">{a.avgHR > 0 ? `${a.avgHR} bpm` : '—'}</div>
                   </div>
-                  {a.tss != null && (
-                    <div className="w-10 text-right">
-                      <div className="text-sm font-bold" style={{ color: sportColor(a.sport) }}>{Math.round(a.tss)}</div>
-                      <div className="text-xs text-slate-600">TSS</div>
-                    </div>
-                  )}
-                  <div className="text-slate-600 group-hover:text-slate-400 text-xs">→</div>
                 </div>
               </Link>
             ))}
@@ -334,37 +502,6 @@ export default function Dashboard() {
 
         <div className="h-2" />
       </div>
-    </div>
-  )
-}
-
-// ─── Shared layout helpers ────────────────────────────────────────────────────
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-slate-500">
-      <span className="w-3 h-0.5 rounded inline-block" style={{ background: color }} />
-      {label}
-    </span>
-  )
-}
-
-function SectionHeader({
-  left,
-  right,
-  rightLink,
-}: {
-  left: string
-  right?: string
-  rightLink?: { to: string; label: string }
-}) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="text-xs text-slate-500 uppercase tracking-widest">{left}</div>
-      {right && <div className="text-xs text-slate-600">{right}</div>}
-      {rightLink && (
-        <Link to={rightLink.to} className="text-xs text-blue-400 hover:text-blue-300">{rightLink.label}</Link>
-      )}
     </div>
   )
 }

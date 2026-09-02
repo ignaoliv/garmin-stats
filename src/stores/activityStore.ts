@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ActivitySummary, ActivityDetail, GlobalStats, UserSettings } from '../types/garmin'
 import { DEFAULT_SETTINGS } from '../types/garmin'
+import { sportOf } from '../utils/sports'
 
 interface ActivityState {
   activities: ActivitySummary[]
@@ -32,7 +33,9 @@ export const useActivityStore = create<ActivityState>()(
         try {
           const res = await fetch('/data/activities.json')
           if (!res.ok) throw new Error(`No se encontró /data/activities.json (status ${res.status})`)
-          const data: ActivitySummary[] = await res.json()
+          const raw: ActivitySummary[] = await res.json()
+          // Resolve the sport once, here, so every page/hook agrees on the taxonomy.
+          const data = raw.map(a => ({ ...a, sport: sportOf(a) }))
           data.sort((a, b) => b.startTime.localeCompare(a.startTime))
           set({ activities: data, loading: false })
         } catch (e) {
@@ -61,7 +64,10 @@ export const useActivityStore = create<ActivityState>()(
         try {
           const res = await fetch(`/data/activity_${id}.json`)
           if (!res.ok) return null
-          const detail: ActivityDetail = await res.json()
+          const raw: ActivityDetail = await res.json()
+          // Same taxonomy resolution the summary list gets — otherwise the detail
+          // page shows the raw Garmin bucket ("Otro") for a mapped sport.
+          const detail: ActivityDetail = { ...raw, sport: sportOf(raw) }
           set(state => ({ detailCache: { ...state.detailCache, [id]: detail } }))
           return detail
         } catch {

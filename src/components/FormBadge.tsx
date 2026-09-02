@@ -22,7 +22,7 @@ function Badge({ color, label }: { color: string; label: string }) {
   const p = PALETTE[color]
   return (
     <span
-      className="px-2.5 py-1 rounded-full text-xs font-bold border"
+      className="px-2.5 py-1 rounded-full text-[13px] font-bold border"
       style={{ borderColor: p.border, background: p.bg, color: p.text }}
     >
       {label}

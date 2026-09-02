@@ -1,4 +1,11 @@
-export type Sport = 'running' | 'cycling' | 'swimming' | 'other'
+export type Sport =
+  | 'running'
+  | 'cycling'
+  | 'swimming'
+  | 'strength'
+  | 'cardio'
+  | 'walking'
+  | 'other'
 
 export interface HRZone {
   zone: number
@@ -6,6 +13,31 @@ export interface HRZone {
   seconds: number
   lowBPM: number | null
   highBPM: number | null
+}
+
+export interface StrengthExercise {
+  name: string
+  sets: number
+  reps: number
+  volumeKg: number      // Σ reps × peso
+  maxWeightKg: number
+}
+
+export interface StrengthDetail {
+  exercises: StrengthExercise[]
+  totalSets: number
+  totalReps: number
+  totalVolumeKg: number
+}
+
+export interface StreamPoint {
+  seconds: number
+  km: number
+  hr: number | null
+  speed: number | null       // km/h
+  power: number | null       // watts
+  cadence: number | null
+  elevation: number | null   // m
 }
 
 export interface Lap {
@@ -23,6 +55,10 @@ export interface ActivitySummary {
   id: number
   title: string
   sport: Sport
+  rawSport?: string | null  // Garmin activityType.typeKey, kept for accurate grouping
+  workoutId?: number | null // set when the session ran a planned workout
+  zonasFC?: number[]        // real seconds per HR zone [z1..z5], straight from Garmin
+  tssOrigen?: string        // 'trimp-stream' when computed from the per-second stream
   startTime: string    // ISO local datetime
   distance: number     // km
   duration: number     // seconds
@@ -51,6 +87,8 @@ export interface ActivityDetail extends ActivitySummary {
   gpxCoords: [number, number][]  // [lat, lon] pairs
   avgStrideLength?: number | null
   trainingEffect?: number | null
+  strength?: StrengthDetail    // only present on gym sessions
+  streams?: StreamPoint[]      // downsampled in-activity time series
 }
 
 export interface FitnessPoint {

@@ -13,17 +13,17 @@ export default function ActivityCard({ activity: a, compact }: Props) {
   return (
     <Link
       to={`/activity/${a.id}`}
-      className="block bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 hover:border-slate-500/70 hover:bg-slate-800 transition-colors"
+      className="block bg-[#172033] border border-[#28334a] rounded-xl p-4 hover:border-[#3a4767] hover:bg-[#172033] transition-colors"
     >
       {/* Header row */}
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xl">{sportIcon(a.sport)}</span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-slate-200 truncate">{a.title}</div>
-          <div className="text-xs text-slate-500">{formatRelativeTime(a.startTime)} · {sportLabel(a.sport)}</div>
+          <div className="text-[14px] font-medium text-[#f1f5f9] truncate">{a.title}</div>
+          <div className="text-[13px] text-[#94a3b8]">{formatRelativeTime(a.startTime)} · {sportLabel(a.sport)}</div>
         </div>
         {a.aerobicTE != null && (
-          <div className="text-xs px-2 py-0.5 rounded-full border" style={{ color, borderColor: color + '40', background: color + '15' }}>
+          <div className="text-[13px] px-2 py-0.5 rounded-full border" style={{ color, borderColor: color + '40', background: color + '15' }}>
             TE {a.aerobicTE.toFixed(1)}
           </div>
         )}
@@ -57,8 +57,8 @@ export default function ActivityCard({ activity: a, compact }: Props) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-sm font-medium text-slate-200">{value}</div>
+      <div className="text-[13px] text-[#94a3b8]">{label}</div>
+      <div className="text-[14px] font-medium text-[#f1f5f9]">{value}</div>
     </div>
   )
 }

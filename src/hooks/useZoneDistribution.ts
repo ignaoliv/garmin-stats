@@ -14,6 +14,8 @@ export interface ZoneSlice {
 export interface ZoneDistributionData {
   slices: ZoneSlice[]
   isAerobicFocused: boolean
+  /** Sessions that had no real zone data and fell back to the estimate. */
+  estimadas: number
 }
 
 export function useZoneDistribution(windowDays = 30, sport: Sport | 'all' = 'all'): ZoneDistributionData {
@@ -28,9 +30,18 @@ export function useZoneDistribution(windowDays = 30, sport: Sport | 'all' = 'all
     )
 
     const totals = [0, 0, 0, 0, 0]
+    let estimadas = 0
     for (const a of recent) {
-      const zones = estimateZonesFromHR(a.avgHR, a.duration, settings.maxHR)
-      zones.forEach(z => { totals[z.zone - 1] += z.seconds / 3600 })
+      // Garmin's own per-zone seconds when the sync captured them. The estimate
+      // below drops the entire session into a single zone based on average
+      // heart rate, which turns an interval workout into one flat block.
+      if (a.zonasFC && a.zonasFC.length === 5 && a.zonasFC.some(s => s > 0)) {
+        a.zonasFC.forEach((s, i) => { totals[i] += s / 3600 })
+      } else {
+        estimateZonesFromHR(a.avgHR, a.duration, settings.maxHR)
+          .forEach(z => { totals[z.zone - 1] += z.seconds / 3600 })
+        estimadas++
+      }
     }
 
     const total = totals.reduce((s, v) => s + v, 0) || 1
@@ -42,6 +53,6 @@ export function useZoneDistribution(windowDays = 30, sport: Sport | 'all' = 'all
     }))
 
     const aerobicPct = slices[0].pct + slices[1].pct
-    return { slices, isAerobicFocused: aerobicPct >= 60 }
+    return { slices, isAerobicFocused: aerobicPct >= 60, estimadas }
   }, [activities, settings.maxHR, windowDays, sport])
 }

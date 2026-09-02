@@ -118,6 +118,12 @@ def fetch_activity_splits(api, activity_id: int) -> dict:
     return result or {}
 
 
+def fetch_activity_exercise_sets(api, activity_id: int) -> dict:
+    """Sets, reps and load for gym sessions. Only Garmin's strength types carry it."""
+    result = _try(api.get_activity_exercise_sets, activity_id, label=f"sets {activity_id}")
+    return result or {}
+
+
 def fetch_gpx_coords(api, activity_id: int) -> list:
     """Return [[lat, lon], ...] from GPX download, or [] on failure."""
     import re
@@ -150,6 +156,10 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Max activities to sync (for testing)")
     parser.add_argument("--since", type=str, default=None, help="Only sync activities after this date (YYYY-MM-DD)")
     parser.add_argument("--no-gpx", action="store_true", help="Skip GPS data download (faster)")
+    parser.add_argument("--refresh-sport", type=str, default=None,
+                        help="Re-download details for one sport even if cached (e.g. --refresh-sport strength)")
+    parser.add_argument("--refresh-all", action="store_true",
+                        help="Re-download every activity detail, ignoring the cache")
     args = parser.parse_args()
 
     from normalizer import normalize_summary, normalize_detail
@@ -182,7 +192,7 @@ def main():
         activity_id = summary["id"]
         detail_path = output_dir / f"activity_{activity_id}.json"
 
-        if detail_path.exists():
+        if detail_path.exists() and not args.refresh_all and args.refresh_sport != summary.get("sport"):
             print(f"  [{i+1}/{len(summaries)}] {activity_id} — already cached, skipping")
             continue
 
@@ -192,9 +202,16 @@ def main():
         hr_zones = fetch_activity_hr_zones(api, activity_id)
         splits = fetch_activity_splits(api, activity_id)
         gpx_coords = [] if args.no_gpx else fetch_gpx_coords(api, activity_id)
+        # Only strength sessions have exercise sets; asking for the rest is a
+        # wasted round trip against a rate-limited API.
+        exercise_sets = (
+            fetch_activity_exercise_sets(api, activity_id)
+            if summary.get("sport") == "strength"
+            else {}
+        )
 
         try:
-            full = normalize_detail(summary, details, hr_zones, splits, gpx_coords)
+            full = normalize_detail(summary, details, hr_zones, splits, gpx_coords, exercise_sets)
             save_json(detail_path, full)
         except Exception as e:
             print(f"  WARNING: Failed to process detail for {activity_id}: {e}")
@@ -202,7 +219,38 @@ def main():
         # Rate limiting — critical to avoid Garmin banning the account
         time.sleep(0.5)
 
-    # Step 4: Compute and save global stats
+    # Step 4: Archive the training calendar.
+    # Garmin deletes one-off workouts once they are executed, so a plan that is
+    # not captured before the session is gone for good. Piggy-backing on the
+    # sync means the archive stays current without remembering a second command.
+    try:
+        from plan import archive_plan
+        archive_plan(api, months_back=2)
+    except Exception as e:
+        print(f"  aviso: no se pudo archivar el plan ({str(e)[:90]})")
+
+    # Daily step counts live on the wellness endpoint, not on activities, and
+    # exist for days with no workout at all — so they ride along with the sync.
+    try:
+        from steps import archive_steps
+        archive_steps(api, days=120)
+    except Exception as e:
+        print(f"  aviso: no se pudieron bajar los pasos ({str(e)[:90]})")
+
+    try:
+        from wellness import archive_wellness
+        archive_wellness(api, days=30)
+    except Exception as e:
+        print(f"  aviso: no se pudo bajar la recuperación ({str(e)[:90]})")
+
+    # Real HR zones and stream-derived TSS, folded back into the summaries.
+    try:
+        import subprocess
+        subprocess.run(["python3", str(Path(__file__).parent / "enrich.py")], check=False)
+    except Exception as e:
+        print(f"  aviso: no se pudo enriquecer activities.json ({str(e)[:80]})")
+
+    # Step 5: Compute and save global stats
     stats = compute_stats(summaries)
     save_json(output_dir / "stats.json", stats)
     print(f"\nDone! Saved stats → public/data/stats.json")

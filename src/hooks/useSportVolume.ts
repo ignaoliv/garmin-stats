@@ -1,22 +1,25 @@
 import { useMemo } from 'react'
 import { useActivityStore } from '../stores/activityStore'
 import { isoDateOffset } from '../utils/date'
+import { SPORTS, SPORT_META } from '../utils/sports'
 import type { Sport } from '../types/garmin'
 
 export interface SportVolume {
+  sport: Sport
+  label: string
+  color: string
   hours: number
   count: number
+  pct: number
 }
-
-export type SportVolumeMap = Record<Sport, SportVolume>
 
 export interface SportsVolumeData {
-  bySport: SportVolumeMap
+  /** Every tracked sport, biggest first, zero-volume ones dropped. */
+  ranked: SportVolume[]
+  bySport: Record<Sport, SportVolume>
   totalHours: number
-  percentages: Record<Sport, number>
+  totalCount: number
 }
-
-const SPORTS: Sport[] = ['running', 'cycling', 'swimming']
 
 export function useSportVolume(windowDays = 30): SportsVolumeData {
   const activities = useActivityStore(s => s.activities)
@@ -25,24 +28,25 @@ export function useSportVolume(windowDays = 30): SportsVolumeData {
     const cutoff = isoDateOffset(windowDays)
     const recent = activities.filter(a => a.startTime.slice(0, 10) >= cutoff)
 
+    const all: Sport[] = [...SPORTS, 'other']
     const bySport = Object.fromEntries(
-      SPORTS.map(s => [s, { hours: 0, count: 0 }])
-    ) as SportVolumeMap
+      all.map(s => [s, { sport: s, label: SPORT_META[s].label, color: SPORT_META[s].color, hours: 0, count: 0, pct: 0 }])
+    ) as Record<Sport, SportVolume>
 
     for (const a of recent) {
-      const sport = a.sport as Sport
-      if (Object.hasOwn(bySport, sport)) {
-        bySport[sport].hours += a.duration / 3600
-        bySport[sport].count += 1
-      }
+      const bucket = bySport[a.sport] ?? bySport.other
+      bucket.hours += a.duration / 3600
+      bucket.count += 1
     }
 
-    const totalHours = SPORTS.reduce((s, sp) => s + bySport[sp].hours, 0)
+    const totalHours = all.reduce((s, sp) => s + bySport[sp].hours, 0)
+    for (const s of all) bySport[s].pct = totalHours > 0 ? (bySport[s].hours / totalHours) * 100 : 0
 
-    const percentages = Object.fromEntries(
-      SPORTS.map(s => [s, totalHours > 0 ? bySport[s].hours / totalHours * 100 : 0])
-    ) as Record<Sport, number>
+    const ranked = all
+      .map(s => bySport[s])
+      .filter(v => v.count > 0)
+      .sort((a, b) => b.hours - a.hours)
 
-    return { bySport, totalHours, percentages }
+    return { ranked, bySport, totalHours, totalCount: recent.length }
   }, [activities, windowDays])
 }

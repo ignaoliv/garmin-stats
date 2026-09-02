@@ -21,7 +21,7 @@ export function useWeeklyLoad(windowWeeks = 16): WeekLoadPoint[] {
       const rampPct = prevTSS > 0 ? ((w.totalTSS - prevTSS) / prevTSS) * 100 : 0
       const riskLevel = rampPct > 15 ? 'high' : rampPct > 8 ? 'warn' : 'ok'
       return {
-        week: w.weekStart.slice(5),
+        week: new Date(w.weekStart + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
         tss: Math.round(w.totalTSS),
         rampPct: +rampPct.toFixed(0),
         riskLevel,

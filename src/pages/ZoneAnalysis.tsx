@@ -56,19 +56,19 @@ export default function ZoneAnalysis() {
   }, [filtered, settings.maxHR])
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
+    <div className="flex-1 p-6 overflow-y-auto page-in">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Análisis de Zonas</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Distribución del tiempo por zonas de FC</p>
+          <h1 className="text-xl font-bold text-[#f1f5f9]">Análisis de Zonas</h1>
+          <p className="text-[14px] text-[#94a3b8] mt-0.5">Distribución del tiempo por zonas de FC</p>
         </div>
-        <div className="flex bg-slate-800 rounded-lg p-0.5 gap-0.5">
+        <div className="flex bg-[#172033] rounded-lg p-0.5 gap-0.5">
           {(['all', 'running', 'cycling', 'swimming'] as const).map(s => (
             <button
               key={s}
               onClick={() => setSport(s)}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                sport === s ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-md text-[14px] transition-colors ${
+                sport === s ? 'bg-blue-600 text-white' : 'text-[#cbd5e1] hover:text-[#f1f5f9]'
               }`}
             >
               {s === 'all' ? 'Todos' : s === 'running' ? '🏃' : s === 'cycling' ? '🚴' : '🏊'}
@@ -82,31 +82,31 @@ export default function ZoneAnalysis() {
           const pct = totalSeconds > 0 ? (zoneSeconds[i] / totalSeconds) * 100 : 0
           return (
             <div key={def.zone} className="flex items-center gap-4">
-              <div className="w-6 text-xs font-medium" style={{ color: def.color }}>Z{def.zone}</div>
-              <div className="w-24 text-xs text-slate-400">{def.name}</div>
-              <div className="flex-1 bg-slate-800 rounded-full h-3">
+              <div className="w-6 text-[13px] font-medium" style={{ color: def.color }}>Z{def.zone}</div>
+              <div className="w-24 text-[13px] text-[#cbd5e1]">{def.name}</div>
+              <div className="flex-1 bg-[#172033] rounded-full h-3">
                 <div
                   className="h-3 rounded-full transition-all"
                   style={{ width: `${pct}%`, background: def.color }}
                 />
               </div>
-              <div className="w-16 text-xs text-slate-300 text-right font-mono">{formatDuration(zoneSeconds[i])}</div>
-              <div className="w-10 text-xs text-slate-500 text-right">{pct.toFixed(0)}%</div>
+              <div className="w-16 text-[13px] text-[#cbd5e1] text-right font-mono">{formatDuration(zoneSeconds[i])}</div>
+              <div className="w-10 text-[13px] text-[#94a3b8] text-right">{pct.toFixed(0)}%</div>
             </div>
           )
         })}
       </div>
 
       {weeklyZoneData.length > 0 && (
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-4">Distribución semanal (últimas 24 semanas)</div>
+        <div className="bg-[#172033] border border-[#28334a] rounded-xl p-4">
+          <div className="text-[13px] text-[#94a3b8] uppercase tracking-wider mb-4">Distribución semanal (últimas 24 semanas)</div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={weeklyZoneData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} unit="h" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
+              <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} unit="h" />
               <Tooltip
-                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: '#94a3b8' }}
                 formatter={(v: unknown) => [`${Number(v).toFixed(1)}h`]}
               />
@@ -118,7 +118,7 @@ export default function ZoneAnalysis() {
         </div>
       )}
 
-      <p className="mt-4 text-xs text-slate-600">
+      <p className="mt-4 text-[13px] text-[#94a3b8]">
         Zonas estimadas en base a FC media y FCmax configurada ({settings.maxHR} bpm).
       </p>
     </div>

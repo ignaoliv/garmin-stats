@@ -35,19 +35,19 @@ export default function FitnessChartPage() {
   const current = fitnessHistory[fitnessHistory.length - 1]
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
+    <div className="flex-1 p-6 overflow-y-auto page-in">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Fitness & Forma</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Modelo de carga CTL/ATL/TSB</p>
+          <h1 className="text-xl font-bold text-[#f1f5f9]">Fitness & Forma</h1>
+          <p className="text-[14px] text-[#94a3b8] mt-0.5">Modelo de carga CTL/ATL/TSB</p>
         </div>
-        <div className="flex bg-slate-800 rounded-lg p-0.5 gap-0.5">
+        <div className="flex bg-[#172033] rounded-lg p-0.5 gap-0.5">
           {RANGES.map(r => (
             <button
               key={r.days}
               onClick={() => setRange(r.days)}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                range === r.days ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-md text-[14px] transition-colors ${
+                range === r.days ? 'bg-blue-600 text-white' : 'text-[#cbd5e1] hover:text-[#f1f5f9]'
               }`}
             >
               {r.label}
@@ -58,25 +58,25 @@ export default function FitnessChartPage() {
 
       {current && (
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-slate-800/60 border border-blue-500/20 rounded-xl p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Fitness (CTL)</div>
-            <div className="text-3xl font-bold text-blue-400 mt-1">{Math.round(current.ctl)}</div>
-            <div className="text-xs text-slate-500 mt-1">Carga crónica 42 días</div>
+          <div className="bg-[#172033] border border-blue-500/20 rounded-xl p-4">
+            <div className="text-[13px] text-[#94a3b8] uppercase tracking-wider">Fitness (CTL)</div>
+            <div className="text-3xl font-bold text-[#fc5200] mt-1">{Math.round(current.ctl)}</div>
+            <div className="text-[13px] text-[#94a3b8] mt-1">Carga crónica 42 días</div>
           </div>
-          <div className="bg-slate-800/60 border border-orange-500/20 rounded-xl p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Fatiga (ATL)</div>
+          <div className="bg-[#172033] border border-orange-500/20 rounded-xl p-4">
+            <div className="text-[13px] text-[#94a3b8] uppercase tracking-wider">Fatiga (ATL)</div>
             <div className="text-3xl font-bold text-orange-400 mt-1">{Math.round(current.atl)}</div>
-            <div className="text-xs text-slate-500 mt-1">Carga aguda 7 días</div>
+            <div className="text-[13px] text-[#94a3b8] mt-1">Carga aguda 7 días</div>
           </div>
-          <div className="bg-slate-800/60 border border-green-500/20 rounded-xl p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Forma (TSB)</div>
+          <div className="bg-[#172033] border border-green-500/20 rounded-xl p-4">
+            <div className="text-[13px] text-[#94a3b8] uppercase tracking-wider">Forma (TSB)</div>
             <div
               className="text-3xl font-bold mt-1"
               style={{ color: current.tsb > 5 ? '#22c55e' : current.tsb < -20 ? '#ef4444' : current.tsb < -10 ? '#f97316' : '#eab308' }}
             >
               {current.tsb > 0 ? '+' : ''}{Math.round(current.tsb)}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-[13px] text-[#94a3b8] mt-1">
               {current.tsb > 5 ? '😴 Descansado' : current.tsb > -5 ? '✅ Óptimo' : current.tsb > -20 ? '😓 Fatigado' : '🔴 Muy fatigado'}
             </div>
           </div>
@@ -84,19 +84,19 @@ export default function FitnessChartPage() {
       )}
 
       {data.length > 0 ? (
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
+        <div className="bg-[#172033] border border-[#28334a] rounded-xl p-4">
           <ResponsiveContainer width="100%" height={360}>
             <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
               <XAxis
                 dataKey="date"
-                tick={{ fill: '#64748b', fontSize: 11 }}
+                tick={{ fill: '#94a3b8', fontSize: 12 }}
                 tickFormatter={d => formatShortDate(d)}
                 interval={Math.floor(data.length / 8)}
               />
-              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
               <Tooltip
-                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: '#94a3b8' }}
                 formatter={(value: unknown, name: unknown) => [Math.round(Number(value) * 10) / 10, String(name)]}
               />
@@ -109,13 +109,13 @@ export default function FitnessChartPage() {
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="text-center py-16 text-slate-500 text-sm">
+        <div className="text-center py-16 text-[#94a3b8] text-[14px]">
           No hay suficientes datos para calcular el modelo de carga.
         </div>
       )}
 
-      <div className="mt-6 bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 text-xs text-slate-500 space-y-1">
-        <p><span className="text-blue-400">Fitness (CTL)</span> — Media exponencial de 42 días del TSS diario.</p>
+      <div className="mt-6 bg-[#172033] border border-[#28334a] rounded-xl p-4 text-[13px] text-[#94a3b8] space-y-1">
+        <p><span className="text-[#fc5200]">Fitness (CTL)</span> — Media exponencial de 42 días del TSS diario.</p>
         <p><span className="text-orange-400">Fatiga (ATL)</span> — Media exponencial de 7 días. Fatiga acumulada reciente.</p>
         <p><span className="text-green-400">Forma (TSB)</span> = CTL − ATL. Positivo = descansado. Zona óptima de competición: −10 a +5.</p>
       </div>

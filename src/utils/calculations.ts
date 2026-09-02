@@ -91,11 +91,11 @@ export interface ZoneDef {
 }
 
 export const HR_ZONE_DEFS: ZoneDef[] = [
-  { zone: 1, name: 'Recovery', color: '#22c55e', minPct: 0, maxPct: 0.6 },
-  { zone: 2, name: 'Aerobic', color: '#84cc16', minPct: 0.6, maxPct: 0.7 },
-  { zone: 3, name: 'Tempo', color: '#eab308', minPct: 0.7, maxPct: 0.8 },
-  { zone: 4, name: 'Threshold', color: '#f97316', minPct: 0.8, maxPct: 0.9 },
-  { zone: 5, name: 'VO2max', color: '#ef4444', minPct: 0.9, maxPct: 1.0 },
+  { zone: 1, name: 'Z1 Suave', color: '#38bdf8', minPct: 0, maxPct: 0.6 },
+  { zone: 2, name: 'Z2 Aeróbico', color: '#34d399', minPct: 0.6, maxPct: 0.7 },
+  { zone: 3, name: 'Z3 Tempo', color: '#fbbf24', minPct: 0.7, maxPct: 0.8 },
+  { zone: 4, name: 'Z4 Umbral', color: '#fb923c', minPct: 0.8, maxPct: 0.9 },
+  { zone: 5, name: 'Z5 Máximo', color: '#f87171', minPct: 0.9, maxPct: 1.0 },
 ]
 
 export function getZoneBPM(maxHR: number): { zone: number; low: number; high: number }[] {
@@ -152,7 +152,9 @@ export function aggregateByWeek(activities: ActivitySummary[], settings: UserSet
     const diff = (day === 0 ? -6 : 1 - day)
     const monday = new Date(d)
     monday.setDate(d.getDate() + diff)
-    const weekKey = monday.toISOString().slice(0, 10)
+    // Build the key from LOCAL date parts. toISOString() converts to UTC, which
+    // pushed evening activities onto the next day and split one week into two.
+    const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
 
     if (!weeks[weekKey]) {
       weeks[weekKey] = {

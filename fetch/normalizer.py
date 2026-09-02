@@ -6,23 +6,55 @@ types that mirror these structures.
 """
 
 SPORT_MAP = {
+    # endurance
     "running": "running",
     "trail_running": "running",
     "treadmill_running": "running",
+    "track_running": "running",
+    "indoor_running": "running",
+    "virtual_run": "running",
     "cycling": "cycling",
+    "road_biking": "cycling",
     "road_cycling": "cycling",
     "indoor_cycling": "cycling",
     "virtual_ride": "cycling",
     "mountain_biking": "cycling",
+    "gravel_cycling": "cycling",
+    "cyclocross": "cycling",
+    "track_cycling": "cycling",
+    "commuting": "cycling",
     "swimming": "swimming",
     "open_water_swimming": "swimming",
+    "lap_swimming": "swimming",
     "pool_swimming": "swimming",
+    # gym work — previously collapsed into "other", which hid it from the app
+    "strength_training": "strength",
+    "indoor_strength": "strength",
+    "pilates": "strength",
+    "yoga": "strength",
+    "breathwork": "strength",
+    "indoor_cardio": "cardio",
+    "cardio_training": "cardio",
+    "hiit": "cardio",
+    "elliptical": "cardio",
+    "indoor_rowing": "cardio",
+    "rowing_v2": "cardio",
+    "stair_climbing": "cardio",
+    "walking": "walking",
+    "casual_walking": "walking",
+    "speed_walking": "walking",
+    "hiking": "walking",
 }
 
 
 def _sport(activity: dict) -> str:
-    raw = activity.get("activityType", {}).get("typeKey", "other").lower()
-    return SPORT_MAP.get(raw, "other")
+    return SPORT_MAP.get(_raw_sport(activity), "other")
+
+
+def _raw_sport(activity: dict) -> str:
+    """Garmin's own activityType key, kept verbatim so the frontend can regroup
+    without a re-sync when the taxonomy changes."""
+    return (activity.get("activityType") or {}).get("typeKey", "other").lower()
 
 
 def _safe(d: dict, *keys, default=None):
@@ -45,6 +77,8 @@ def normalize_summary(activity: dict) -> dict:
         "id": activity.get("activityId"),
         "title": activity.get("activityName", "Untitled"),
         "sport": sport,
+        "rawSport": _raw_sport(activity),
+        "workoutId": activity.get("workoutId"),  # set when the activity ran a planned workout
         "startTime": activity.get("startTimeLocal") or activity.get("startTimeGMT"),
         "distance": round((_safe(activity, "distance") or 0) / 1000, 2),  # km
         "duration": round(_safe(activity, "duration") or 0),  # seconds
@@ -73,7 +107,7 @@ def normalize_summary(activity: dict) -> dict:
     return summary
 
 
-def normalize_detail(summary: dict, details: dict, hr_zones_raw: list, splits_raw: dict, gpx_coords: list) -> dict:
+def normalize_detail(summary: dict, details: dict, hr_zones_raw: list, splits_raw: dict, gpx_coords: list, exercise_sets_raw: dict | None = None) -> dict:
     """Merges summary + activity details + HR zones + splits + GPS into the full ActivityDetail."""
     detail = dict(summary)
 
@@ -87,12 +121,16 @@ def normalize_detail(summary: dict, details: dict, hr_zones_raw: list, splits_ra
     )
     detail["laps"] = _normalize_laps(laps_data, summary.get("sport"))
 
+    if exercise_sets_raw:
+        detail["strength"] = normalize_exercise_sets(exercise_sets_raw)
+
     # HR zones from get_activity_hr_in_timezones (returns a list directly)
     # or fall back to whatever details has
     hr_zones = hr_zones_raw or _safe(details, "heartRateZones") or []
     detail["hrZones"] = _normalize_hr_zones(hr_zones)
 
     detail["gpxCoords"] = gpx_coords or []
+    detail["streams"] = normalize_streams(details)
 
     # Extra metrics from the details summaryDTO if present
     metrics = _safe(details, "summaryDTO") or {}
@@ -160,3 +198,131 @@ def _normalize_hr_zones(hr_zones: list) -> list:
             "highBPM": zone.get("zoneHighBoundary") or zone.get("highBPM"),
         })
     return result
+
+
+# ─── Strength: exercise sets ──────────────────────────────────────────────────
+
+def normalize_exercise_sets(raw: dict) -> dict:
+    """
+    Turns Garmin's exercise-set payload into per-exercise totals.
+
+    Garmin reports weight in grams and only for sets the watch actually
+    captured, so sets without a load still count toward reps and volume time.
+    """
+    sets = (raw or {}).get("exerciseSets") or []
+    exercises: dict[str, dict] = {}
+    total_reps = 0
+    total_volume_kg = 0.0
+    working_sets = 0
+
+    for s in sets:
+        if (s.get("setType") or "").upper() != "ACTIVE":
+            continue
+        info = (s.get("exercises") or [{}])[0]
+        name = (info.get("name") or info.get("category") or "Desconocido").replace("_", " ").title()
+        reps = s.get("repetitionCount") or 0
+        weight_kg = round((s.get("weight") or 0) / 1000, 2)
+
+        e = exercises.setdefault(name, {"name": name, "sets": 0, "reps": 0, "volumeKg": 0.0, "maxWeightKg": 0.0})
+        e["sets"] += 1
+        e["reps"] += reps
+        e["volumeKg"] = round(e["volumeKg"] + reps * weight_kg, 1)
+        e["maxWeightKg"] = max(e["maxWeightKg"], weight_kg)
+
+        working_sets += 1
+        total_reps += reps
+        total_volume_kg += reps * weight_kg
+
+    return {
+        "exercises": sorted(exercises.values(), key=lambda x: -x["volumeKg"]),
+        "totalSets": working_sets,
+        "totalReps": total_reps,
+        "totalVolumeKg": round(total_volume_kg, 1),
+    }
+
+
+# ─── Time series (streams) ────────────────────────────────────────────────────
+
+# Garmin returns a descriptor list plus a parallel array of metric rows. These
+# are the channels worth keeping; anything else is dropped to keep files small.
+STREAM_KEYS = {
+    "directHeartRate": "hr",
+    "directSpeed": "speed",              # m/s
+    "directPower": "power",              # watts
+    "directBikeCadence": "cadence",
+    "directRunCadence": "cadence",
+    "directDoubleCadence": "cadence",
+    "directElevation": "elevation",      # m
+    "sumDistance": "distance",           # m
+    "sumDuration": "seconds",
+    "sumElapsedDuration": "seconds",
+}
+
+MAX_STREAM_POINTS = 300
+
+
+def normalize_streams(details: dict) -> list:
+    """
+    Flattens Garmin's activityDetailMetrics into [{seconds, distance, hr, ...}].
+
+    Downsampled by averaging into at most MAX_STREAM_POINTS buckets: a three-hour
+    ride is ~11k samples, which would bloat every detail file for a chart that
+    cannot resolve more than a few hundred pixels anyway.
+    """
+    descriptors = details.get("metricDescriptors") or []
+    rows = details.get("activityDetailMetrics") or []
+    if not descriptors or not rows:
+        return []
+
+    index = {}
+    for d in descriptors:
+        field = STREAM_KEYS.get(d.get("key"))
+        if field and field not in index:
+            index[field] = d.get("metricsIndex")
+
+    if "seconds" not in index and "distance" not in index:
+        return []
+
+    points = []
+    for row in rows:
+        metrics = row.get("metrics") or []
+        point = {}
+        for field, i in index.items():
+            if i is None or i >= len(metrics):
+                continue
+            v = metrics[i]
+            if v is None:
+                continue
+            point[field] = v
+        if point:
+            points.append(point)
+
+    if not points:
+        return []
+
+    # Bucket-average down to a chartable number of points.
+    step = max(1, len(points) // MAX_STREAM_POINTS)
+    out = []
+    for i in range(0, len(points), step):
+        chunk = points[i:i + step]
+        agg = {}
+        for field in index:
+            vals = [c[field] for c in chunk if field in c]
+            if not vals:
+                continue
+            if field in ("seconds", "distance"):
+                agg[field] = vals[-1]          # cumulative channels: take the edge
+            else:
+                agg[field] = sum(vals) / len(vals)
+        if not agg:
+            continue
+        out.append({
+            "seconds": round(agg.get("seconds", 0)),
+            "km": round(agg.get("distance", 0) / 1000, 3),
+            "hr": round(agg["hr"]) if "hr" in agg else None,
+            "speed": round(agg["speed"] * 3.6, 1) if "speed" in agg else None,
+            "power": round(agg["power"]) if "power" in agg else None,
+            "cadence": round(agg["cadence"]) if "cadence" in agg else None,
+            "elevation": round(agg["elevation"]) if "elevation" in agg else None,
+        })
+    return out
