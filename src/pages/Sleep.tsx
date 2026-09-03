@@ -1,7 +1,9 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  LineChart, Line, Area, ComposedChart } from 'recharts'
 import { useSleep, type NocheEvaluada } from '../hooks/useSleep'
 import { Card, CardHeader, Insight, LegendItem, ChartTooltip } from '../components/ui'
 import Ring from '../components/Ring'
+import MetricasDisponibles from '../components/MetricasDisponibles'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -56,6 +58,21 @@ export default function Sleep() {
       </div>
     )
   }
+
+  // SpO2 and breathing rate are the two things this watch reports that Oura
+  // does not headline, so they get their own trend rather than a tile that only
+  // shows last night.
+  const oxigeno = s.noches
+    .filter(n => n.spo2_medio != null)
+    .map(n => ({
+      fecha: new Date(n.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+      medio: n.spo2_medio,
+      minimo: n.spo2_minimo,
+      respiracion: n.respiracion_media,
+    }))
+
+  const resp = s.noches.map(n => n.respiracion_media).filter((v): v is number => v != null)
+  const mediaResp = resp.length ? resp.reduce((a, b) => a + b, 0) / resp.length : null
 
   const grafico = s.noches.map(n => ({
     fecha: new Date(n.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
@@ -142,6 +159,59 @@ export default function Sleep() {
           </div>
         </Card>
 
+        {oxigeno.length > 1 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="p-5">
+              <CardHeader
+                title="Oxigenación nocturna"
+                hint="Saturación media y mínima de cada noche · por debajo de 90% de forma repetida conviene consultarlo"
+              />
+              <ResponsiveContainer width="100%" height={200}>
+                <ComposedChart data={oxigeno} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="fecha" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} />
+                  <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} domain={[80, 100]} unit="%" />
+                  <Tooltip content={<ChartTooltip formatter={(v, n) => `${v}% ${String(n).toLowerCase()}`} />}
+                    cursor={{ stroke: 'var(--color-ink-faint)', strokeWidth: 1, strokeDasharray: '4 3' }} />
+                  <ReferenceLine y={90} stroke="var(--color-state-warning)" strokeDasharray="5 4" strokeWidth={1.5}
+                    label={{ value: '90%', position: 'right', fill: 'var(--color-state-warning)', fontSize: 11, dx: -4 }} />
+                  <Area type="monotone" dataKey="minimo" name="Mínimo" stroke="none" fill="var(--color-sport-swimming)" fillOpacity={0.18} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="medio" name="Media" stroke="var(--color-sport-swimming)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="minimo" name="Mínimo" stroke="var(--color-sport-swimming)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.06]">
+                <LegendItem color="var(--color-sport-swimming)" label="Media de la noche" />
+                <span className="flex items-center gap-2 text-[13px] text-ink-secondary">
+                  <span className="w-4 h-0 border-t-2 border-dashed inline-block" style={{ borderColor: 'var(--color-sport-swimming)' }} />
+                  Mínimo alcanzado
+                </span>
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <CardHeader
+                title="Frecuencia respiratoria"
+                hint="Es muy estable en cada persona: una subida sostenida suele adelantarse a un resfrío o a fatiga acumulada"
+              />
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={oxigeno} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="fecha" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} />
+                  <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} domain={['dataMin - 2', 'dataMax + 2']} />
+                  <Tooltip content={<ChartTooltip formatter={(v) => `${v} respiraciones por minuto`} />}
+                    cursor={{ stroke: 'var(--color-ink-faint)', strokeWidth: 1, strokeDasharray: '4 3' }} />
+                  {mediaResp !== null && (
+                    <ReferenceLine y={mediaResp} stroke="var(--color-ink-secondary)" strokeDasharray="5 4" strokeWidth={1.5}
+                      label={{ value: `tu media ${mediaResp.toFixed(1)}`, position: 'right', fill: 'var(--color-ink-secondary)', fontSize: 11, dx: -4 }} />
+                  )}
+                  <Line type="monotone" dataKey="respiracion" name="Respiración" stroke="var(--color-sport-cardio)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          </div>
+        )}
+
         {s.medias && s.noches.length > 2 && (
           <Card className="p-5">
             <CardHeader title="Promedios" hint={`Sobre las ${s.noches.length} noches registradas`} />
@@ -161,45 +231,7 @@ export default function Sleep() {
           </Card>
         )}
 
-        <Card className="p-5">
-          <CardHeader title="Qué mide Oura y qué podemos reproducir" hint="Con los datos que da tu Venu" />
-          <div className="overflow-x-auto">
-            <table className="w-full text-[14px] min-w-[520px]">
-              <thead>
-                <tr className="text-[13px] text-ink-muted text-left border-b border-surface-line">
-                  <th className="pb-2 pr-4 font-medium">Métrica de Oura</th>
-                  <th className="pb-2 pr-4 font-medium">Acá</th>
-                  <th className="pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['Duración total', 'sí', 'Idéntica'],
-                  ['Eficiencia', 'sí', 'Dormido sobre tiempo en cama'],
-                  ['Sueño profundo', 'sí', 'Garmin separa las fases'],
-                  ['REM', 'sí', 'Garmin separa las fases'],
-                  ['Continuidad', 'sí', 'Tiempo despierto durante la noche'],
-                  ['Latencia', 'parcial', 'Garmin no reporta cuánto tardaste en dormirte'],
-                  ['Regularidad horaria', 'parcial', 'Necesita varias noches seguidas'],
-                  ['Balance de HRV', 'no', 'El Venu no registra HRV'],
-                  ['Temperatura corporal', 'no', 'El Venu no la mide'],
-                  ['SpO₂ nocturno', 'extra', 'Oura no lo destaca; tu reloj sí lo da'],
-                  ['Frecuencia respiratoria', 'extra', 'Lo mismo'],
-                ].map(([m, e, n]) => (
-                  <tr key={m} className="border-b border-surface-line last:border-0">
-                    <td className="py-2 pr-4 text-ink-primary">{m}</td>
-                    <td className="py-2 pr-4">
-                      <span className="text-[13px] font-medium" style={{
-                        color: e === 'sí' ? '#34d399' : e === 'no' ? '#f87171' : e === 'extra' ? '#38bdf8' : '#fbbf24',
-                      }}>{e}</span>
-                    </td>
-                    <td className="py-2 text-ink-muted text-[13px]">{n}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <MetricasDisponibles />
 
         <div className="h-2" />
       </div>
