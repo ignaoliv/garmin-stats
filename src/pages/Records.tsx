@@ -8,11 +8,11 @@ import type { PR } from '../utils/calculations'
 function PRTable({ title, prs, icon }: { title: string; prs: PR[]; icon: string }) {
   if (prs.length === 0) return null
   return (
-    <div className="bg-[#172033] border border-[#28334a] rounded-xl p-4">
-      <h2 className="text-[14px] font-medium text-[#f1f5f9] mb-4">{icon} {title}</h2>
+    <div className="bg-surface-card border border-surface-line rounded-xl p-4">
+      <h2 className="text-[14px] font-medium text-ink-primary mb-4">{icon} {title}</h2>
       <table className="w-full text-[14px]">
         <thead>
-          <tr className="text-left text-[13px] text-[#94a3b8] border-b border-[#28334a]">
+          <tr className="text-left text-[13px] text-ink-muted border-b border-surface-line">
             <th className="pb-2 pr-4">Distancia</th>
             <th className="pb-2 pr-4">Tiempo</th>
             <th className="pb-2 pr-4">Ritmo</th>
@@ -21,12 +21,12 @@ function PRTable({ title, prs, icon }: { title: string; prs: PR[]; icon: string 
         </thead>
         <tbody>
           {prs.map(pr => (
-            <tr key={pr.label} className="border-b border-[#28334a]/60 hover:bg-[#172033]">
-              <td className="py-2.5 pr-4 font-medium text-[#f1f5f9]">{pr.label}</td>
-              <td className="py-2.5 pr-4 font-mono text-[#f1f5f9]">{formatDuration(pr.duration)}</td>
-              <td className="py-2.5 pr-4 font-mono text-[#cbd5e1]">{formatPace(pr.pace)}</td>
+            <tr key={pr.label} className="border-b border-surface-line/60 hover:bg-surface-card">
+              <td className="py-2.5 pr-4 font-medium text-ink-primary">{pr.label}</td>
+              <td className="py-2.5 pr-4 font-mono text-ink-primary">{formatDuration(pr.duration)}</td>
+              <td className="py-2.5 pr-4 font-mono text-ink-secondary">{formatPace(pr.pace)}</td>
               <td className="py-2.5">
-                <Link to={`/activity/${pr.activityId}`} className="text-[#fc5200] hover:text-[#ff7a3d]">
+                <Link to={`/activity/${pr.activityId}`} className="text-accent hover:text-accent-soft">
                   {pr.date}
                 </Link>
               </td>
@@ -45,11 +45,11 @@ export default function Records() {
 
   return (
     <div className="flex-1 p-6 overflow-y-auto page-in">
-      <h1 className="text-xl font-bold text-[#f1f5f9] mb-1">Récords Personales</h1>
-      <p className="text-[14px] text-[#94a3b8] mb-6">Mejores tiempos por distancia</p>
+      <h1 className="text-xl font-bold text-ink-primary mb-1">Récords Personales</h1>
+      <p className="text-[14px] text-ink-muted mb-6">Mejores tiempos por distancia</p>
 
       {!hasAny ? (
-        <div className="text-center py-16 text-[#94a3b8] text-[14px]">
+        <div className="text-center py-16 text-ink-muted text-[14px]">
           No hay suficientes datos para calcular récords.
         </div>
       ) : (

@@ -74,10 +74,10 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
     return (
       <Card className="p-5">
         <div className="flex items-center gap-3">
-          <span className="w-4 h-4 rounded-full border-2 border-[#fc5200] border-t-transparent animate-spin" />
+          <span className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <div>
-            <p className="text-[15px] font-medium text-[#f1f5f9]">Analizando esta sesión…</p>
-            <p className="text-[13px] text-[#94a3b8] mt-0.5">Puede tardar unos segundos. Se guarda para la próxima vez.</p>
+            <p className="text-[15px] font-medium text-ink-primary">Analizando esta sesión…</p>
+            <p className="text-[13px] text-ink-muted mt-0.5">Puede tardar unos segundos. Se guarda para la próxima vez.</p>
           </div>
         </div>
       </Card>
@@ -87,8 +87,8 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
   if (state === 'error') {
     return (
       <Card className="p-5">
-        <p className="text-[14px] text-[#94a3b8]">
-          No se pudo generar el análisis: <span className="text-[#cbd5e1]">{error}</span>
+        <p className="text-[14px] text-ink-muted">
+          No se pudo generar el análisis: <span className="text-ink-secondary">{error}</span>
         </p>
       </Card>
     )
@@ -102,8 +102,8 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
     <Card className="p-5">
       <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-[#fc5200] mb-1">{data.tipo_sesion}</p>
-          <h2 className="text-[19px] font-bold text-[#f1f5f9] leading-snug">{data.titular}</h2>
+          <p className="text-[13px] font-medium text-accent mb-1">{data.tipo_sesion}</p>
+          <h2 className="text-[19px] font-bold text-ink-primary leading-snug">{data.titular}</h2>
         </div>
         {showPlan && (
           <span
@@ -115,12 +115,12 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
         )}
       </div>
 
-      <p className="text-[15px] text-[#cbd5e1] leading-relaxed mb-4">{data.resumen}</p>
+      <p className="text-[15px] text-ink-secondary leading-relaxed mb-4">{data.resumen}</p>
 
       <ul className="space-y-2 mb-4">
         {data.observaciones?.map((o, i) => (
-          <li key={i} className="flex gap-2.5 text-[14px] text-[#cbd5e1] leading-relaxed">
-            <span className="text-[#64748b] shrink-0">·</span>
+          <li key={i} className="flex gap-2.5 text-[14px] text-ink-secondary leading-relaxed">
+            <span className="text-ink-faint shrink-0">·</span>
             <span>{o}</span>
           </li>
         ))}
@@ -129,11 +129,11 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
       {showPlan && data.cumplimiento.detalle && (
         <div className="rounded-lg border p-3.5 mb-4" style={{ borderColor: `${v.color}40`, background: `${v.color}0f` }}>
           <p className="text-[13px] font-semibold mb-1" style={{ color: v.color }}>Contra el plan</p>
-          <p className="text-[14px] text-[#cbd5e1] leading-relaxed">{data.cumplimiento.detalle}</p>
+          <p className="text-[14px] text-ink-secondary leading-relaxed">{data.cumplimiento.detalle}</p>
         </div>
       )}
 
-      <p className="text-[12px] text-[#94a3b8] pt-3 border-t border-[#28334a]">
+      <p className="text-[12px] text-ink-muted pt-3 border-t border-surface-line">
         Análisis generado con {data.modelo}. No es consejo médico.
       </p>
     </Card>

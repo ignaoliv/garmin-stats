@@ -77,7 +77,7 @@ function Body({
           }),
         )}
       </svg>
-      <figcaption className="text-[12px] text-[#94a3b8]">{etiqueta}</figcaption>
+      <figcaption className="text-[12px] text-ink-muted">{etiqueta}</figcaption>
     </figure>
   )
 }
@@ -97,7 +97,7 @@ export default function MuscleMap({
       </div>
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3">
         {[[PRIMARY, 'Primarios'], [SECONDARY, 'Secundarios'], [IDLE, 'Sin trabajar']].map(([c, l]) => (
-          <span key={l} className="flex items-center gap-1.5 text-[13px] text-[#cbd5e1]">
+          <span key={l} className="flex items-center gap-1.5 text-[13px] text-ink-secondary">
             <span className="w-3 h-3 rounded-full inline-block" style={{ background: c }} />
             {l}
           </span>

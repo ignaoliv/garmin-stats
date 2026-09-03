@@ -19,10 +19,10 @@ const RAMP_COLOR: Record<string, string> = { ok: '#3b82f6', warn: '#eab308', hig
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#172033] border border-[#28334a] rounded-xl p-5">
+    <div className="bg-surface-card border border-surface-line rounded-xl p-5">
       <div className="mb-4">
-        <div className="text-[14px] font-medium text-[#f1f5f9]">{title}</div>
-        {sub && <div className="text-[13px] text-[#94a3b8] mt-0.5">{sub}</div>}
+        <div className="text-[14px] font-medium text-ink-primary">{title}</div>
+        {sub && <div className="text-[13px] text-ink-muted mt-0.5">{sub}</div>}
       </div>
       {children}
     </div>
@@ -101,7 +101,7 @@ export default function PerformanceAnalysis() {
 
   if (activities.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[#94a3b8] text-[14px]">
+      <div className="flex-1 flex items-center justify-center text-ink-muted text-[14px]">
         Sin datos. Ejecuta el script de sync primero.
       </div>
     )
@@ -109,8 +109,8 @@ export default function PerformanceAnalysis() {
 
   return (
     <div className="flex-1 p-6 overflow-y-auto page-in">
-      <h1 className="text-xl font-bold text-[#f1f5f9] mb-1">Análisis de Rendimiento</h1>
-      <p className="text-[14px] text-[#94a3b8] mb-5">Forma física, puntos de mejora y estado actual</p>
+      <h1 className="text-xl font-bold text-ink-primary mb-1">Análisis de Rendimiento</h1>
+      <p className="text-[14px] text-ink-muted mb-5">Forma física, puntos de mejora y estado actual</p>
 
       {insights.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
@@ -144,7 +144,7 @@ export default function PerformanceAnalysis() {
           ) : (
             <Empty label="Sin datos suficientes" />
           )}
-          <p className="text-[13px] text-[#94a3b8] mt-2">Running: km/h ÷ bpm × 100. Cycling: W ÷ bpm. Sube = mejoras.</p>
+          <p className="text-[13px] text-ink-muted mt-2">Running: km/h ÷ bpm × 100. Cycling: W ÷ bpm. Sube = mejoras.</p>
         </Section>
 
         {/* 2 · Triathlon Balance */}
@@ -158,20 +158,20 @@ export default function PerformanceAnalysis() {
               return (
                 <div key={row.sport}>
                   <div className="flex justify-between text-[13px] mb-1">
-                    <span className="text-[#cbd5e1]">{row.emoji} {row.sport}</span>
+                    <span className="text-ink-secondary">{row.emoji} {row.sport}</span>
                     <span style={{ color }}>
                       {row.actual}% real · {row.ideal}% ideal · {row.gap > 0 ? '+' : ''}{row.gap}pp · {row.hours}h
                     </span>
                   </div>
-                  <div className="relative h-2.5 bg-[#1e2942] rounded-full">
+                  <div className="relative h-2.5 bg-surface-hover rounded-full">
                     <div className="h-2.5 rounded-full" style={{ width: `${Math.min(row.actual, 100)}%`, background: color }} />
-                    <div className="absolute top-0 h-2.5 w-0.5 bg-[#cbd5e1]" style={{ left: `${row.ideal}%` }} />
+                    <div className="absolute top-0 h-2.5 w-0.5 bg-ink-secondary" style={{ left: `${row.ideal}%` }} />
                   </div>
                 </div>
               )
             })}
           </div>
-          <p className="text-[13px] text-[#94a3b8] mt-3">Línea blanca = objetivo ideal. Rojo = desbalance importante.</p>
+          <p className="text-[13px] text-ink-muted mt-3">Línea blanca = objetivo ideal. Rojo = desbalance importante.</p>
         </Section>
 
         {/* 3 · Cadence vs Speed */}
@@ -255,7 +255,7 @@ export default function PerformanceAnalysis() {
           )}
           <div className="flex gap-3 mt-2 flex-wrap">
             {VO2_BANDS.slice().reverse().map(b => (
-              <span key={b.label} className="flex items-center gap-1.5 text-[13px] text-[#cbd5e1]">
+              <span key={b.label} className="flex items-center gap-1.5 text-[13px] text-ink-secondary">
                 <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: b.color }} />
                 {b.range} {b.label}
               </span>
@@ -342,7 +342,7 @@ export default function PerformanceAnalysis() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Empty({ label }: { label: string }) {
-  return <div className="h-48 flex items-center justify-center text-[#94a3b8] text-[14px]">{label}</div>
+  return <div className="h-48 flex items-center justify-center text-ink-muted text-[14px]">{label}</div>
 }
 
 function deriveInsights({

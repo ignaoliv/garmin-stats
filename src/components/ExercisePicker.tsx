@@ -42,10 +42,10 @@ function Animacion({ imagenes, alt, activo }: { imagenes: string[]; alt: string;
   }, [activo, imagenes.length])
 
   if (!imagenes.length) {
-    return <div className="w-full aspect-[4/3] rounded-lg bg-[#131c2e] grid place-items-center text-[13px] text-[#64748b]">sin imagen</div>
+    return <div className="w-full aspect-[4/3] rounded-lg bg-surface-sunk grid place-items-center text-[13px] text-ink-faint">sin imagen</div>
   }
   return (
-    <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-[#131c2e]">
+    <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-sunk">
       {imagenes.map((src, i) => (
         <img
           key={src}
@@ -97,33 +97,33 @@ export default function ExercisePicker({
   }, [todos, q, musculo, equipo])
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-[#060c17]/85 backdrop-blur-sm fade-in flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
+    <div className="fixed inset-0 z-[1000] bg-surface-scrim/85 backdrop-blur-sm fade-in flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
       onClick={onClose} role="dialog" aria-modal="true" aria-label="Elegir ejercicio">
-      <div className="w-full max-w-[1000px] my-auto rounded-2xl border border-[#28334a] bg-[#172033] shadow-2xl modal-in"
+      <div className="w-full max-w-[1000px] my-auto rounded-2xl glass-strong modal-in"
         onClick={e => e.stopPropagation()}>
 
-        <div className="px-5 pt-4 pb-3 border-b border-[#28334a] flex items-start justify-between gap-4">
+        <div className="px-5 pt-4 pb-3 border-b border-surface-line flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[19px] font-bold text-[#f1f5f9]">Elegir ejercicio</h2>
-            <p className="text-[13px] text-[#94a3b8] mt-0.5">
+            <h2 className="text-[19px] font-bold text-ink-primary">Elegir ejercicio</h2>
+            <p className="text-[13px] text-ink-muted mt-0.5">
               {todos ? `${resultados.length} de ${todos.length} ejercicios` : 'Cargando…'}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2942] transition-colors" aria-label="Cerrar">✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-surface-hover transition-colors" aria-label="Cerrar">✕</button>
         </div>
 
-        <div className="px-5 py-3 border-b border-[#28334a] grid grid-cols-1 sm:grid-cols-[1fr_160px_160px] gap-2.5">
+        <div className="px-5 py-3 border-b border-surface-line grid grid-cols-1 sm:grid-cols-[1fr_160px_160px] gap-2.5">
           <input
             value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar por nombre o músculo…"
-            className="px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[14px] text-[#f1f5f9] placeholder:text-[#64748b] focus:outline-none focus:border-[#fc5200]"
+            className="px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[14px] text-ink-primary placeholder:text-ink-faint focus:outline-none focus:border-accent"
           />
           <select value={musculo} onChange={e => setMusculo(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[14px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]">
+            className="px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[14px] text-ink-primary focus:outline-none focus:border-accent">
             <option value="">Todos los músculos</option>
             {musculos.map(m => <option key={m} value={m}>{musculoEs(m)}</option>)}
           </select>
           <select value={equipo} onChange={e => setEquipo(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[14px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]">
+            className="px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[14px] text-ink-primary focus:outline-none focus:border-accent">
             <option value="">Todo el equipamiento</option>
             {equipos.map(x => <option key={x} value={x}>{x}</option>)}
           </select>
@@ -131,17 +131,17 @@ export default function ExercisePicker({
 
         <div className="p-5 max-h-[62vh] overflow-y-auto">
           {!todos ? (
-            <p className="text-[14px] text-[#94a3b8] text-center py-10">Cargando ejercicios…</p>
+            <p className="text-[14px] text-ink-muted text-center py-10">Cargando ejercicios…</p>
           ) : resultados.length === 0 ? (
-            <p className="text-[14px] text-[#94a3b8] text-center py-10">Ningún ejercicio coincide con la búsqueda.</p>
+            <p className="text-[14px] text-ink-muted text-center py-10">Ningún ejercicio coincide con la búsqueda.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {resultados.slice(0, 120).map(e => (
                 <button key={e.id} onClick={() => setDetalle(e)}
-                  className="text-left rounded-xl border border-[#28334a] bg-[#131c2e] p-2 hover:border-[#fc5200] transition-colors">
+                  className="text-left rounded-xl border border-surface-line bg-surface-sunk p-2 hover:border-accent transition-colors">
                   <Animacion imagenes={e.imagenes} alt={e.nombre} activo />
-                  <p className="text-[13px] font-medium text-[#f1f5f9] mt-2 leading-snug line-clamp-2">{e.nombre}</p>
-                  <p className="text-[12px] text-[#94a3b8] mt-0.5">
+                  <p className="text-[13px] font-medium text-ink-primary mt-2 leading-snug line-clamp-2">{e.nombre}</p>
+                  <p className="text-[12px] text-ink-muted mt-0.5">
                     {e.primarios.map(musculoEs).join(', ') || '—'}
                   </p>
                 </button>
@@ -149,7 +149,7 @@ export default function ExercisePicker({
             </div>
           )}
           {todos && resultados.length > 120 && (
-            <p className="text-[13px] text-[#94a3b8] text-center mt-4">
+            <p className="text-[13px] text-ink-muted text-center mt-4">
               Mostrando 120 de {resultados.length}. Afiná la búsqueda para ver el resto.
             </p>
           )}
@@ -157,41 +157,41 @@ export default function ExercisePicker({
       </div>
 
       {detalle && (
-        <div className="fixed inset-0 z-[1001] bg-[#060c17]/90 flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
+        <div className="fixed inset-0 z-[1001] bg-surface-scrim/90 flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
           onClick={() => setDetalle(null)}>
-          <div className="w-full max-w-[720px] my-auto rounded-2xl border border-[#28334a] bg-[#172033] shadow-2xl modal-in"
+          <div className="w-full max-w-[720px] my-auto rounded-2xl glass-strong modal-in"
             onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-4 pb-3 border-b border-[#28334a] flex items-start justify-between gap-4">
+            <div className="px-5 pt-4 pb-3 border-b border-surface-line flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-[18px] font-bold text-[#f1f5f9]">{detalle.nombre}</h3>
-                <p className="text-[13px] text-[#94a3b8] mt-0.5">
+                <h3 className="text-[18px] font-bold text-ink-primary">{detalle.nombre}</h3>
+                <p className="text-[13px] text-ink-muted mt-0.5">
                   {[detalle.equipo, detalle.nivel && NIVEL_ES[detalle.nivel], detalle.mecanica].filter(Boolean).join(' · ')}
                 </p>
               </div>
-              <button onClick={() => setDetalle(null)} className="w-8 h-8 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2942]" aria-label="Cerrar">✕</button>
+              <button onClick={() => setDetalle(null)} className="w-8 h-8 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-surface-hover" aria-label="Cerrar">✕</button>
             </div>
 
             <div className="p-5 grid grid-cols-1 sm:grid-cols-[260px_1fr] gap-5">
               <div>
                 <Animacion imagenes={detalle.imagenes} alt={detalle.nombre} activo />
                 <div className="mt-3 space-y-1.5">
-                  <p className="text-[13px] text-[#cbd5e1]">
-                    <span className="text-[#94a3b8]">Primarios: </span>
+                  <p className="text-[13px] text-ink-secondary">
+                    <span className="text-ink-muted">Primarios: </span>
                     {detalle.primarios.map(musculoEs).join(', ') || '—'}
                   </p>
                   {detalle.secundarios.length > 0 && (
-                    <p className="text-[13px] text-[#cbd5e1]">
-                      <span className="text-[#94a3b8]">Secundarios: </span>
+                    <p className="text-[13px] text-ink-secondary">
+                      <span className="text-ink-muted">Secundarios: </span>
                       {detalle.secundarios.map(musculoEs).join(', ')}
                     </p>
                   )}
                 </div>
               </div>
               <div>
-                <h4 className="text-[13px] font-semibold text-[#94a3b8] mb-2">Cómo se hace</h4>
+                <h4 className="text-[13px] font-semibold text-ink-muted mb-2">Cómo se hace</h4>
                 <ol className="space-y-2 list-decimal list-inside">
                   {detalle.instrucciones.map((ins, i) => (
-                    <li key={i} className="text-[14px] text-[#cbd5e1] leading-relaxed">{ins}</li>
+                    <li key={i} className="text-[14px] text-ink-secondary leading-relaxed">{ins}</li>
                   ))}
                 </ol>
               </div>
@@ -199,13 +199,13 @@ export default function ExercisePicker({
 
             <div className="px-5 pb-5 flex flex-wrap gap-3 items-center">
               <button onClick={() => { onPick(detalle); onClose() }}
-                className="px-5 py-2.5 rounded-xl bg-[#fc5200] hover:bg-[#e04a00] text-white text-[15px] font-semibold transition-colors">
+                className="px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-press text-white text-[15px] font-semibold transition-colors">
                 Usar este ejercicio
               </button>
               {!detalle.claveGarmin && (
-                <span className="text-[12px] text-[#94a3b8] max-w-[380px] leading-relaxed">
+                <span className="text-[12px] text-ink-muted max-w-[380px] leading-relaxed">
                   Garmin no tiene una clave propia para este movimiento: en el reloj se va a ver
-                  como <strong className="text-[#cbd5e1]">{detalle.categoria.replace(/_/g, ' ').toLowerCase()}</strong>.
+                  como <strong className="text-ink-secondary">{detalle.categoria.replace(/_/g, ' ').toLowerCase()}</strong>.
                 </span>
               )}
             </div>

@@ -5,7 +5,7 @@ interface Props {
 }
 
 export default function DeltaBadge({ value, unit = '', decimals = 1 }: Props) {
-  if (Math.abs(value) < 0.5) return <span className="text-[13px] text-[#94a3b8]">= igual</span>
+  if (Math.abs(value) < 0.5) return <span className="text-[13px] text-ink-muted">= igual</span>
 
   const up = value > 0
   const formatted = Math.abs(value).toFixed(value % 1 === 0 ? 0 : decimals)

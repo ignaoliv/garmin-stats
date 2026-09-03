@@ -40,7 +40,7 @@ export default function Strength() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-[#cbd5e1] animate-pulse text-[15px]">Cargando…</div>
+        <div className="text-ink-secondary animate-pulse text-[15px]">Cargando…</div>
       </div>
     )
   }
@@ -49,10 +49,10 @@ export default function Strength() {
     return (
       <div className="flex-1 p-8 max-w-2xl">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-[#f1f5f9] mb-2">Sin sesiones de fuerza</h2>
-          <p className="text-[15px] text-[#cbd5e1]">
+          <h2 className="text-lg font-semibold text-ink-primary mb-2">Sin sesiones de fuerza</h2>
+          <p className="text-[15px] text-ink-secondary">
             No se encontraron actividades de fuerza. Se detectan por el tipo que envía Garmin
-            (<code className="text-[#94a3b8]">strength_training</code>) o por el título de la sesión.
+            (<code className="text-ink-muted">strength_training</code>) o por el título de la sesión.
           </p>
         </Card>
       </div>
@@ -67,12 +67,12 @@ export default function Strength() {
   const trend = s.last30 - s.prev30
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#101826]">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
 
         <header>
-          <h1 className="text-2xl font-bold text-[#f1f5f9]">🏋️ Fuerza</h1>
-          <p className="text-[14px] text-[#94a3b8] mt-1">
+          <h1 className="text-2xl font-bold text-ink-primary">🏋️ Fuerza</h1>
+          <p className="text-[14px] text-ink-muted mt-1">
             {s.totalSessions} sesiones · {s.totalHours.toFixed(0)} horas acumuladas
             {s.lastSession && <> · última {daysAgo(s.lastSession.startTime) === 0 ? 'hoy' : `hace ${daysAgo(s.lastSession.startTime)} días`}</>}
           </p>
@@ -112,7 +112,7 @@ export default function Strength() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#28334a]">
+          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
             <LegendItem color={STRENGTH} label="Semanas anteriores" />
             <LegendItem color="#3987e5" label="Semana en curso" />
           </div>
@@ -150,9 +150,9 @@ export default function Strength() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="mt-3 pt-3 border-t border-[#28334a]">
+            <div className="mt-3 pt-3 border-t border-surface-line">
               <Insight tone="neutral">
-                Tu día fuerte es el <strong className="text-[#f1f5f9]">{favouriteDay.day.toLowerCase()}</strong>, con {favouriteDay.sessions} sesiones.
+                Tu día fuerte es el <strong className="text-ink-primary">{favouriteDay.day.toLowerCase()}</strong>, con {favouriteDay.sessions} sesiones.
               </Insight>
             </div>
           </Card>
@@ -167,7 +167,7 @@ export default function Strength() {
               <Row label="Tiempo total bajo carga" value={`${s.totalHours.toFixed(0)} h`} />
               <Row label="Promedio histórico" value={`${s.avgPerWeek.toFixed(1)} sesiones/semana`} />
             </div>
-            <div className="mt-4 pt-3 border-t border-[#28334a]">
+            <div className="mt-4 pt-3 border-t border-surface-line">
               <Insight tone="neutral">
                 Garmin no envía series, repeticiones ni kilos en el resumen de actividad.
                 Para eso hace falta pedir el detalle de ejercicios en la sincronización.
@@ -219,9 +219,9 @@ export default function Strength() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="mt-3 pt-3 border-t border-[#28334a]">
+            <div className="mt-3 pt-3 border-t border-surface-line">
               <Insight tone="neutral">
-                Casi siempre entrenás fuerza a las <strong className="text-[#f1f5f9]">{patterns.peakHour}</strong>.
+                Casi siempre entrenás fuerza a las <strong className="text-ink-primary">{patterns.peakHour}</strong>.
               </Insight>
             </div>
           </Card>
@@ -242,13 +242,13 @@ export default function Strength() {
 
         {/* ── Session log ────────────────────────────────────────────────── */}
         <section>
-          <h2 className="text-[15px] font-semibold text-[#f1f5f9] mb-3">Historial de sesiones</h2>
+          <h2 className="text-[15px] font-semibold text-ink-primary mb-3">Historial de sesiones</h2>
           <div className="space-y-2">
             {s.sessions.slice(0, 20).map(a => (
               <Link
                 key={a.id}
                 to={`/activity/${a.id}`}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-[#28334a] bg-[#172033] hover:border-[#3a4767] hover:bg-[#1e2942] lift"
+                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-surface-line bg-surface-card hover:border-surface-line-strong hover:bg-surface-hover lift"
               >
                 <span
                   className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-base"
@@ -257,30 +257,30 @@ export default function Strength() {
                   🏋️
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-medium text-[#f1f5f9] truncate">{a.title}</div>
-                  <div className="text-[13px] text-[#94a3b8]">
+                  <div className="text-[15px] font-medium text-ink-primary truncate">{a.title}</div>
+                  <div className="text-[13px] text-ink-muted">
                     {new Date(a.startTime).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </div>
                 </div>
                 <div className="flex items-center gap-6 shrink-0 text-right tabular-nums">
                   <div>
-                    <div className="text-[15px] font-semibold text-[#f1f5f9]">{formatDuration(a.duration)}</div>
-                    <div className="text-[13px] text-[#94a3b8]">duración</div>
+                    <div className="text-[15px] font-semibold text-ink-primary">{formatDuration(a.duration)}</div>
+                    <div className="text-[13px] text-ink-muted">duración</div>
                   </div>
                   <div className="hidden sm:block">
-                    <div className="text-[15px] font-semibold text-[#f1f5f9]">{a.avgHR > 0 ? a.avgHR : '—'}</div>
-                    <div className="text-[13px] text-[#94a3b8]">bpm medio</div>
+                    <div className="text-[15px] font-semibold text-ink-primary">{a.avgHR > 0 ? a.avgHR : '—'}</div>
+                    <div className="text-[13px] text-ink-muted">bpm medio</div>
                   </div>
                   <div className="hidden sm:block">
-                    <div className="text-[15px] font-semibold text-[#f1f5f9]">{a.calories || '—'}</div>
-                    <div className="text-[13px] text-[#94a3b8]">kcal</div>
+                    <div className="text-[15px] font-semibold text-ink-primary">{a.calories || '—'}</div>
+                    <div className="text-[13px] text-ink-muted">kcal</div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
           {s.sessions.length > 20 && (
-            <p className="text-[13px] text-[#94a3b8] mt-3">
+            <p className="text-[13px] text-ink-muted mt-3">
               Mostrando 20 de {s.sessions.length} sesiones.
             </p>
           )}
@@ -294,9 +294,9 @@ export default function Strength() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 pb-3 border-b border-[#28334a] last:border-0 last:pb-0">
-      <span className="text-[14px] text-[#cbd5e1]">{label}</span>
-      <span className="text-[15px] font-semibold text-[#f1f5f9] tabular-nums whitespace-nowrap">{value}</span>
+    <div className="flex items-baseline justify-between gap-4 pb-3 border-b border-surface-line last:border-0 last:pb-0">
+      <span className="text-[14px] text-ink-secondary">{label}</span>
+      <span className="text-[15px] font-semibold text-ink-primary tabular-nums whitespace-nowrap">{value}</span>
     </div>
   )
 }

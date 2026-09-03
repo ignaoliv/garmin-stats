@@ -190,7 +190,7 @@ export default function ActivityMap({ coords, height = 420, color = ROUTE_GREEN 
   if (coords.length === 0) {
     return (
       <div
-        className="rounded-xl bg-[#131c2e] border border-[#28334a] flex items-center justify-center text-[#94a3b8] text-[14px]"
+        className="rounded-xl bg-surface-sunk border border-surface-line flex items-center justify-center text-ink-muted text-[14px]"
         style={{ height }}
       >
         Esta actividad no tiene recorrido GPS
@@ -202,14 +202,14 @@ export default function ActivityMap({ coords, height = 420, color = ROUTE_GREEN 
     <div className="relative h-full">
       <div
         ref={containerRef}
-        className="rounded-xl overflow-hidden border border-[#28334a] w-full h-full"
+        className="rounded-xl overflow-hidden border border-surface-line w-full h-full"
         style={{ height }}
       />
       <button
         onClick={() => setReplayKey(k => k + 1)}
         className="absolute top-3 right-3 z-[500] px-3 py-1.5 rounded-lg text-[13px] font-medium
-                   bg-[#101826]/90 border border-[#28334a] text-[#cbd5e1]
-                   hover:text-[#f1f5f9] hover:border-[#3a4767] transition-colors"
+                   bg-surface-base/90 border border-surface-line text-ink-secondary
+                   hover:text-ink-primary hover:border-surface-line-strong transition-colors"
         title="Volver a reproducir el recorrido"
       >
         ▶ Reproducir

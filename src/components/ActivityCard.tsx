@@ -13,14 +13,14 @@ export default function ActivityCard({ activity: a, compact }: Props) {
   return (
     <Link
       to={`/activity/${a.id}`}
-      className="block bg-[#172033] border border-[#28334a] rounded-xl p-4 hover:border-[#3a4767] hover:bg-[#172033] transition-colors"
+      className="block bg-surface-card border border-surface-line rounded-xl p-4 hover:border-surface-line-strong hover:bg-surface-card transition-colors"
     >
       {/* Header row */}
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xl">{sportIcon(a.sport)}</span>
         <div className="flex-1 min-w-0">
-          <div className="text-[14px] font-medium text-[#f1f5f9] truncate">{a.title}</div>
-          <div className="text-[13px] text-[#94a3b8]">{formatRelativeTime(a.startTime)} · {sportLabel(a.sport)}</div>
+          <div className="text-[14px] font-medium text-ink-primary truncate">{a.title}</div>
+          <div className="text-[13px] text-ink-muted">{formatRelativeTime(a.startTime)} · {sportLabel(a.sport)}</div>
         </div>
         {a.aerobicTE != null && (
           <div className="text-[13px] px-2 py-0.5 rounded-full border" style={{ color, borderColor: color + '40', background: color + '15' }}>
@@ -57,8 +57,8 @@ export default function ActivityCard({ activity: a, compact }: Props) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[13px] text-[#94a3b8]">{label}</div>
-      <div className="text-[14px] font-medium text-[#f1f5f9]">{value}</div>
+      <div className="text-[13px] text-ink-muted">{label}</div>
+      <div className="text-[14px] font-medium text-ink-primary">{value}</div>
     </div>
   )
 }

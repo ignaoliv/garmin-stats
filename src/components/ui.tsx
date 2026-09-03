@@ -22,7 +22,7 @@ export function explicarError(e: unknown): string {
 /** Panel surface. One border, one radius, no glow — everything sits on this. */
 export function Card({ children, className = '', id }: { children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={`bg-[#172033] border border-[#28334a] rounded-xl ${className}`}>
+    <section id={id} className={`glass rounded-2xl ${className}`}>
       {children}
     </section>
   )
@@ -44,13 +44,13 @@ export function CardHeader({
   return (
     <div className="flex items-baseline justify-between gap-4 mb-4">
       <div>
-        <h2 className="text-[15px] font-semibold text-[#f1f5f9] leading-tight">{title}</h2>
-        {hint && <p className="text-[13px] text-[#94a3b8] mt-0.5">{hint}</p>}
+        <h2 className="text-[15px] font-semibold text-ink-primary leading-tight">{title}</h2>
+        {hint && <p className="text-[13px] text-ink-muted mt-0.5">{hint}</p>}
       </div>
       {action && (
         <Link
           to={action.to}
-          className="text-[13px] font-medium text-[#fc5200] hover:text-[#ff7a3d] shrink-0 whitespace-nowrap"
+          className="text-[13px] font-medium text-accent hover:text-accent-soft shrink-0 whitespace-nowrap"
         >
           {action.label}
         </Link>
@@ -82,17 +82,17 @@ export function StatTile({
   accent?: string
 }) {
   return (
-    <div className="bg-[#172033] border border-[#28334a] rounded-xl px-4 py-3.5">
+    <div className="bg-surface-card border border-surface-line rounded-xl px-4 py-3.5">
       <div className="flex items-center gap-2 mb-1.5">
         {accent && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: accent }} />}
-        <span className="text-[13px] font-medium text-[#94a3b8]">{label}</span>
+        <span className="text-[13px] font-medium text-ink-muted">{label}</span>
       </div>
-      <div className="text-[28px] leading-none font-bold text-[#f1f5f9] tabular-nums">
+      <div className="text-[28px] leading-none font-bold text-ink-primary tabular-nums">
         {value}
-        {unit && <span className="text-[15px] font-medium text-[#94a3b8] ml-1">{unit}</span>}
+        {unit && <span className="text-[15px] font-medium text-ink-muted ml-1">{unit}</span>}
       </div>
       {delta !== undefined && <Delta value={delta} unit={deltaUnit} />}
-      {hint && !delta && <div className="text-[13px] text-[#94a3b8] mt-1.5">{hint}</div>}
+      {hint && !delta && <div className="text-[13px] text-ink-muted mt-1.5">{hint}</div>}
     </div>
   )
 }
@@ -116,10 +116,10 @@ export function Delta({ value, unit = '' }: { value: number; unit?: string }) {
 /** Legend swatch. Present whenever ≥2 series share a chart. */
 export function LegendItem({ color, label, value }: { color: string; label: string; value?: string }) {
   return (
-    <span className="flex items-center gap-2 text-[13px] text-[#cbd5e1]">
+    <span className="flex items-center gap-2 text-[13px] text-ink-secondary">
       <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: color }} />
       {label}
-      {value && <span className="text-[#94a3b8] tabular-nums">{value}</span>}
+      {value && <span className="text-ink-muted tabular-nums">{value}</span>}
     </span>
   )
 }
@@ -138,16 +138,16 @@ export function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#0b1425] border border-[#3a4767] rounded-lg px-3 py-2 shadow-xl">
+    <div className="bg-surface-overlay border border-surface-line-strong rounded-lg px-3 py-2 shadow-xl">
       {label !== undefined && label !== '' && (
-        <div className="text-[13px] font-semibold text-[#f1f5f9] mb-1.5">{String(label)}</div>
+        <div className="text-[13px] font-semibold text-ink-primary mb-1.5">{String(label)}</div>
       )}
       <div className="space-y-1">
         {payload.map((p, i) => (
           <div key={i} className="flex items-center gap-2 text-[13px] whitespace-nowrap">
             <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: p.color }} />
-            <span className="text-[#cbd5e1]">{p.name}</span>
-            <span className="text-[#f1f5f9] font-semibold tabular-nums ml-auto">
+            <span className="text-ink-secondary">{p.name}</span>
+            <span className="text-ink-primary font-semibold tabular-nums ml-auto">
               {formatter ? formatter(p.value ?? 0, p.name ?? '', p.payload) : String(p.value)}
             </span>
           </div>

@@ -63,7 +63,7 @@ export default function PlanCalendar({
     <div>
       <div className="grid grid-cols-7 gap-1.5 mb-1.5">
         {DIAS.map(d => (
-          <div key={d} className="text-[12px] font-medium text-[#94a3b8] text-center py-1">{d}</div>
+          <div key={d} className="text-[12px] font-medium text-ink-muted text-center py-1">{d}</div>
         ))}
       </div>
 
@@ -71,8 +71,8 @@ export default function PlanCalendar({
         {filas.map(({ semana, dias }) => (
           <div key={semana.numero}>
             <div className="flex items-baseline gap-2 mb-1.5">
-              <span className="text-[13px] font-semibold text-[#f1f5f9]">Semana {semana.numero}</span>
-              <span className="text-[13px] text-[#94a3b8] truncate">{semana.foco}</span>
+              <span className="text-[13px] font-semibold text-ink-primary">Semana {semana.numero}</span>
+              <span className="text-[13px] text-ink-muted truncate">{semana.foco}</span>
             </div>
             <div className="grid grid-cols-7 gap-1.5">
               {dias.map(({ fecha, sesiones, agendados }) => {
@@ -82,10 +82,10 @@ export default function PlanCalendar({
                   <div
                     key={fecha.toISOString()}
                     className={`rounded-lg border p-1.5 min-h-[74px] ${
-                      esHoy ? 'border-[#fc5200] bg-[#fc5200]/5' : 'border-[#28334a] bg-[#131c2e]'
+                      esHoy ? 'border-accent bg-accent/5' : 'border-surface-line bg-surface-sunk'
                     }`}
                   >
-                    <div className={`text-[12px] tabular-nums mb-1 ${esHoy ? 'text-[#fc5200] font-semibold' : 'text-[#94a3b8]'}`}>
+                    <div className={`text-[12px] tabular-nums mb-1 ${esHoy ? 'text-accent font-semibold' : 'text-ink-muted'}`}>
                       {fecha.getDate()}
                     </div>
 
@@ -93,11 +93,11 @@ export default function PlanCalendar({
                       <button
                         key={i}
                         onClick={() => setAbierta({ sesion: s, fecha, semana: semana.numero })}
-                        className="w-full text-left mb-1 px-1.5 py-1 rounded bg-[#fc5200]/20 border border-[#fc5200]/45
-                                   hover:bg-[#fc5200]/35 transition-colors"
+                        className="w-full text-left mb-1 px-1.5 py-1 rounded bg-accent/20 border border-accent/45
+                                   hover:bg-accent/35 transition-colors"
                       >
-                        <span className="block text-[12px] font-medium text-[#ffb083] leading-tight truncate">{s.nombre}</span>
-                        <span className="block text-[11px] text-[#94a3b8] leading-tight">
+                        <span className="block text-[12px] font-medium text-accent-tint leading-tight truncate">{s.nombre}</span>
+                        <span className="block text-[11px] text-ink-muted leading-tight">
                           {s.bloques.length} ejercicios
                         </span>
                       </button>
@@ -106,14 +106,14 @@ export default function PlanCalendar({
                     {/* Already on the Garmin calendar — shown dimmed so a clash
                         with an existing ride reads immediately. */}
                     {agendados.map((a, i) => (
-                      <div key={i} className="px-1.5 py-1 rounded bg-[#1e2942] border border-[#28334a] mb-1">
-                        <span className="block text-[11px] text-[#94a3b8] leading-tight truncate" title={a.titulo}>
+                      <div key={i} className="px-1.5 py-1 rounded bg-surface-hover border border-surface-line mb-1">
+                        <span className="block text-[11px] text-ink-muted leading-tight truncate" title={a.titulo}>
                           🚴 {a.titulo}
                         </span>
                       </div>
                     ))}
 
-                    {vacio && <span className="text-[11px] text-[#4a5771]">descanso</span>}
+                    {vacio && <span className="text-[11px] text-ink-faintest">descanso</span>}
                   </div>
                 )
               })}
@@ -122,37 +122,37 @@ export default function PlanCalendar({
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t border-[#28334a]">
-        <span className="flex items-center gap-1.5 text-[13px] text-[#cbd5e1]">
-          <span className="w-3 h-3 rounded-[3px] bg-[#fc5200]/40 border border-[#fc5200]/60" /> Sesión del plan
+      <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t border-surface-line">
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-secondary">
+          <span className="w-3 h-3 rounded-[3px] bg-accent/40 border border-accent/60" /> Sesión del plan
         </span>
-        <span className="flex items-center gap-1.5 text-[13px] text-[#cbd5e1]">
-          <span className="w-3 h-3 rounded-[3px] bg-[#1e2942] border border-[#28334a]" /> Ya agendado en Garmin
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-secondary">
+          <span className="w-3 h-3 rounded-[3px] bg-surface-hover border border-surface-line" /> Ya agendado en Garmin
         </span>
       </div>
 
       {abierta && (
-        <div className="fixed inset-0 z-[1002] bg-[#060c17]/85 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
+        <div className="fixed inset-0 z-[1002] bg-surface-scrim/85 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
           onClick={() => setAbierta(null)} role="dialog" aria-modal="true">
-          <div className="w-full max-w-[520px] my-auto rounded-2xl border border-[#28334a] bg-[#172033] shadow-2xl modal-in"
+          <div className="w-full max-w-[520px] my-auto rounded-2xl glass-strong modal-in"
             onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-4 pb-3 border-b border-[#28334a] flex items-start justify-between gap-4">
+            <div className="px-5 pt-4 pb-3 border-b border-surface-line flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-[18px] font-bold text-[#f1f5f9]">{abierta.sesion.nombre}</h3>
-                <p className="text-[13px] text-[#94a3b8] mt-0.5">
+                <h3 className="text-[18px] font-bold text-ink-primary">{abierta.sesion.nombre}</h3>
+                <p className="text-[13px] text-ink-muted mt-0.5">
                   Semana {abierta.semana} · {abierta.fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
               </div>
-              <button onClick={() => setAbierta(null)} className="w-8 h-8 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2942]" aria-label="Cerrar">✕</button>
+              <button onClick={() => setAbierta(null)} className="w-8 h-8 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-surface-hover" aria-label="Cerrar">✕</button>
             </div>
             <div className="p-5 space-y-2.5">
               {abierta.sesion.bloques.map((b, i) => (
-                <div key={i} className="rounded-lg border border-[#28334a] bg-[#131c2e] px-4 py-3">
+                <div key={i} className="rounded-lg glass-sunk px-4 py-3">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-[15px] font-medium text-[#f1f5f9] capitalize">{bonito(b.category)}</span>
-                    <span className="text-[15px] font-semibold text-[#ffb083] tabular-nums shrink-0">{resumen(b)}</span>
+                    <span className="text-[15px] font-medium text-ink-primary capitalize">{bonito(b.category)}</span>
+                    <span className="text-[15px] font-semibold text-accent-tint tabular-nums shrink-0">{resumen(b)}</span>
                   </div>
-                  <p className="text-[13px] text-[#94a3b8] mt-1">
+                  <p className="text-[13px] text-ink-muted mt-1">
                     descanso {b.rest_s}s{b.nota ? ` · ${b.nota}` : ''}
                   </p>
                 </div>

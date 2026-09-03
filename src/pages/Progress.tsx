@@ -31,10 +31,10 @@ export default function Progress() {
   const [periodo, setPeriodo] = useState<Period | null>(null)
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center"><div className="text-[#cbd5e1] animate-pulse text-[15px]">Cargando…</div></div>
+    return <div className="flex-1 flex items-center justify-center"><div className="text-ink-secondary animate-pulse text-[15px]">Cargando…</div></div>
   }
   if (activities.length === 0) {
-    return <div className="flex-1 p-8"><Card className="p-6"><p className="text-[15px] text-[#cbd5e1]">Sin datos todavía. Sincronizá primero.</p></Card></div>
+    return <div className="flex-1 p-8"><Card className="p-6"><p className="text-[15px] text-ink-secondary">Sin datos todavía. Sincronizá primero.</p></Card></div>
   }
 
   const thisYear = new Date().getFullYear()
@@ -48,12 +48,12 @@ export default function Progress() {
   const pctDelta = yoy.ytdPrev.hours > 0 ? (hoursDelta / yoy.ytdPrev.hours) * 100 : 0
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#101826]">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
 
         <header>
-          <h1 className="text-2xl font-bold text-[#f1f5f9]">Progreso</h1>
-          <p className="text-[14px] text-[#94a3b8] mt-1">
+          <h1 className="text-2xl font-bold text-ink-primary">Progreso</h1>
+          <p className="text-[14px] text-ink-muted mt-1">
             Comparativa entre temporadas y tus patrones de entrenamiento · {activities.length.toLocaleString('es-ES')} actividades desde {firstYear}
           </p>
         </header>
@@ -61,8 +61,8 @@ export default function Progress() {
         {/* ── Year to date ───────────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
-            <h2 className="text-[15px] font-semibold text-[#f1f5f9]">{thisYear} vs {thisYear - 1}</h2>
-            <span className="text-[13px] text-[#94a3b8]">mismo período: 1 de enero → hoy</span>
+            <h2 className="text-[15px] font-semibold text-ink-primary">{thisYear} vs {thisYear - 1}</h2>
+            <span className="text-[13px] text-ink-muted">mismo período: 1 de enero → hoy</span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <StatTile label="Horas entrenadas" value={yoy.ytd.hours.toFixed(0)} unit="h" delta={hoursDelta} deltaUnit=" h" />
@@ -107,7 +107,7 @@ export default function Progress() {
               ))}
             </LineChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#28334a]">
+          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
             {yoy.years.map((y, i) => (
               <LegendItem
                 key={y}
@@ -149,7 +149,7 @@ export default function Progress() {
               ))}
             </BarChart>
           </ResponsiveContainer>
-          <p className="text-[13px] text-[#94a3b8] mt-2">Hacé clic en un mes para ver sus actividades.</p>
+          <p className="text-[13px] text-ink-muted mt-2">Hacé clic en un mes para ver sus actividades.</p>
           {periodo?.tipo === 'mes' && (
             <PeriodDetail key={`m-${periodo.month}`} period={periodo} onClose={() => setPeriodo(null)} />
           )}
@@ -160,7 +160,7 @@ export default function Progress() {
           <CardHeader title="Totales por temporada" hint="Hacé clic en un año para ver sus actividades" />
           <table className="w-full text-[14px] tabular-nums min-w-[620px]">
             <thead>
-              <tr className="text-[13px] text-[#94a3b8] text-left border-b border-[#28334a]">
+              <tr className="text-[13px] text-ink-muted text-left border-b border-surface-line">
                 <th className="pb-2 pr-4 font-medium">Año</th>
                 <th className="pb-2 pr-4 font-medium text-right">Sesiones</th>
                 <th className="pb-2 pr-4 font-medium text-right">Horas</th>
@@ -175,21 +175,21 @@ export default function Progress() {
                 <tr
                   key={t.year}
                   onClick={() => setPeriodo({ tipo: 'año', year: t.year })}
-                  className="border-b border-[#28334a] last:border-0 cursor-pointer hover:bg-[#1e2942] transition-colors"
+                  className="border-b border-surface-line last:border-0 cursor-pointer hover:bg-surface-hover transition-colors"
                 >
                   <td className="py-2.5 pr-4">
-                    <span className="inline-flex items-center gap-2 font-semibold text-[#f1f5f9]">
+                    <span className="inline-flex items-center gap-2 font-semibold text-ink-primary">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: yearColor(yoy.years.indexOf(t.year)) }} />
                       {t.year}
-                      {t.year === thisYear && <span className="text-[12px] font-normal text-[#94a3b8]">(en curso)</span>}
+                      {t.year === thisYear && <span className="text-[12px] font-normal text-ink-muted">(en curso)</span>}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-4 text-right text-[#cbd5e1]">{t.sessions}</td>
-                  <td className="py-2.5 pr-4 text-right text-[#f1f5f9] font-semibold">{t.hours.toFixed(0)} h</td>
-                  <td className="py-2.5 pr-4 text-right text-[#cbd5e1]">{t.distance.toFixed(0)} km</td>
-                  <td className="py-2.5 pr-4 text-right text-[#cbd5e1]">{t.elevation.toLocaleString('es-ES')} m</td>
-                  <td className="py-2.5 pr-4 text-right text-[#cbd5e1]">{t.calories.toLocaleString('es-ES')}</td>
-                  <td className="py-2.5 text-right text-[#cbd5e1]">{Math.round(t.tss).toLocaleString('es-ES')}</td>
+                  <td className="py-2.5 pr-4 text-right text-ink-secondary">{t.sessions}</td>
+                  <td className="py-2.5 pr-4 text-right text-ink-primary font-semibold">{t.hours.toFixed(0)} h</td>
+                  <td className="py-2.5 pr-4 text-right text-ink-secondary">{t.distance.toFixed(0)} km</td>
+                  <td className="py-2.5 pr-4 text-right text-ink-secondary">{t.elevation.toLocaleString('es-ES')} m</td>
+                  <td className="py-2.5 pr-4 text-right text-ink-secondary">{t.calories.toLocaleString('es-ES')}</td>
+                  <td className="py-2.5 text-right text-ink-secondary">{Math.round(t.tss).toLocaleString('es-ES')}</td>
                 </tr>
               ))}
             </tbody>
@@ -203,7 +203,7 @@ export default function Progress() {
         <Card className="p-5">
           <CardHeader title="Constancia" hint="Un cuadro por día del último año, coloreado por carga de entrenamiento" />
           <Heatmap days={heat.days} weeks={heat.weeks} monthTicks={heat.monthTicks} />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#28334a]">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-surface-line">
             <MiniStat label="Días activos" value={`${heat.activeDays}`} hint={`de ${heat.totalDays} (${Math.round(heat.activeDays / heat.totalDays * 100)}%)`} />
             <MiniStat label="Racha más larga" value={`${heat.longestStreak}`} hint="días seguidos" />
             <MiniStat label="Racha actual" value={`${heat.currentStreak}`} hint="días seguidos" />
@@ -235,9 +235,9 @@ export default function Progress() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="mt-3 pt-3 border-t border-[#28334a]">
+            <div className="mt-3 pt-3 border-t border-surface-line">
               <Insight tone="neutral">
-                Tu franja habitual son las <strong className="text-[#f1f5f9]">{patterns.peakHour}</strong>, y tu día más activo el <strong className="text-[#f1f5f9]">{patterns.peakDay.toLowerCase()}</strong>.
+                Tu franja habitual son las <strong className="text-ink-primary">{patterns.peakHour}</strong>, y tu día más activo el <strong className="text-ink-primary">{patterns.peakDay.toLowerCase()}</strong>.
               </Insight>
             </div>
           </Card>
@@ -274,8 +274,8 @@ export default function Progress() {
             {[...yoy.totals].reverse().map(t => (
               <div key={t.year}>
                 <div className="flex items-baseline justify-between mb-1.5">
-                  <span className="text-[14px] font-semibold text-[#f1f5f9]">{t.year}</span>
-                  <span className="text-[13px] text-[#94a3b8] tabular-nums">{t.hours.toFixed(0)} h totales</span>
+                  <span className="text-[14px] font-semibold text-ink-primary">{t.year}</span>
+                  <span className="text-[13px] text-ink-muted tabular-nums">{t.hours.toFixed(0)} h totales</span>
                 </div>
                 <div className="flex h-6 rounded-md overflow-hidden gap-[2px]">
                   {t.bySport.filter(s => s.hours / t.hours > 0.005).map(s => (
@@ -304,10 +304,10 @@ export default function Progress() {
 
 function MiniStat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <div className="bg-[#172033] border border-[#28334a] rounded-lg px-4 py-3">
-      <div className="text-[13px] text-[#94a3b8] mb-1">{label}</div>
-      <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums leading-none">{value}</div>
-      <div className="text-[13px] text-[#94a3b8] mt-1">{hint}</div>
+    <div className="bg-surface-card border border-surface-line rounded-lg px-4 py-3">
+      <div className="text-[13px] text-ink-muted mb-1">{label}</div>
+      <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">{value}</div>
+      <div className="text-[13px] text-ink-muted mt-1">{hint}</div>
     </div>
   )
 }

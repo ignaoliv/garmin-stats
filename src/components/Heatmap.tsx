@@ -30,7 +30,7 @@ export default function Heatmap({
         {/* Weekday rail */}
         <div className="flex flex-col shrink-0" style={{ gap, paddingTop: 18 }}>
           {DAY_LABELS.map((d, i) => (
-            <div key={i} className="text-[11px] text-[#94a3b8] leading-none flex items-center" style={{ height: cell }}>
+            <div key={i} className="text-[11px] text-ink-muted leading-none flex items-center" style={{ height: cell }}>
               {d}
             </div>
           ))}
@@ -64,10 +64,10 @@ export default function Heatmap({
       </div>
 
       <div className="flex items-center justify-between gap-4 mt-3 flex-wrap">
-        <div className="text-[13px] text-[#cbd5e1] min-h-[20px]">
+        <div className="text-[13px] text-ink-secondary min-h-[20px]">
           {hover ? (
             <>
-              <strong className="text-[#f1f5f9]">
+              <strong className="text-ink-primary">
                 {new Date(hover.date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </strong>
               {hover.count > 0
@@ -75,10 +75,10 @@ export default function Heatmap({
                 : ' · sin actividad'}
             </>
           ) : (
-            <span className="text-[#94a3b8]">Pasá el mouse por un día para ver el detalle.</span>
+            <span className="text-ink-muted">Pasá el mouse por un día para ver el detalle.</span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[12px] text-[#94a3b8] shrink-0">
+        <div className="flex items-center gap-2 text-[12px] text-ink-muted shrink-0">
           <span>menos</span>
           {LEVEL_FILL.map((c, i) => (
             <span key={c} title={LEVEL_LABEL[i]} className="w-3 h-3 rounded-[2px] inline-block" style={{ background: c }} />

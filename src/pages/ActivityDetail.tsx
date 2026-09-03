@@ -75,13 +75,13 @@ export default function ActivityDetailPage() {
   const xKey = hasDistance && axis === 'km' ? 'km' : 'seconds'
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center text-[#cbd5e1] text-[15px] animate-pulse">Cargando actividad…</div>
+    return <div className="flex-1 flex items-center justify-center text-ink-secondary text-[15px] animate-pulse">Cargando actividad…</div>
   }
   if (!act) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[#cbd5e1] text-[15px]">
+      <div className="flex-1 flex items-center justify-center text-ink-secondary text-[15px]">
         Actividad no encontrada.
-        <Link to="/activities" className="text-[#fc5200] hover:text-[#ff7a3d] ml-1.5">Volver</Link>
+        <Link to="/activities" className="text-accent hover:text-accent-soft ml-1.5">Volver</Link>
       </div>
     )
   }
@@ -109,11 +109,11 @@ export default function ActivityDetailPage() {
   const fmtX = (v: number) => (xKey === 'km' ? `${v} km` : formatDuration(v))
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#101826]">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
 
         <header>
-          <Link to="/activities" className="text-[13px] text-[#fc5200] hover:text-[#ff7a3d] mb-2 inline-block">← Actividades</Link>
+          <Link to="/activities" className="text-[13px] text-accent hover:text-accent-soft mb-2 inline-block">← Actividades</Link>
           <div className="flex items-center gap-3 min-w-0">
             <span
               className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center text-xl"
@@ -122,8 +122,8 @@ export default function ActivityDetailPage() {
               {sportIcon(act.sport)}
             </span>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-[#f1f5f9] leading-tight">{act.title}</h1>
-              <p className="text-[14px] text-[#94a3b8] mt-0.5">{formatDate(act.startTime)} · {sportLabel(act.sport)}</p>
+              <h1 className="text-2xl font-bold text-ink-primary leading-tight">{act.title}</h1>
+              <p className="text-[14px] text-ink-muted mt-0.5">{formatDate(act.startTime)} · {sportLabel(act.sport)}</p>
             </div>
           </div>
         </header>
@@ -135,11 +135,11 @@ export default function ActivityDetailPage() {
 
           <div className="grid grid-cols-2 gap-3 content-start stagger">
             {tiles.map(t => (
-              <div key={t.label} className="bg-[#172033] border border-[#28334a] rounded-xl px-4 py-3.5 flex flex-col justify-center">
-                <div className="text-[13px] text-[#94a3b8] mb-1.5">{t.label}</div>
-                <div className="text-[24px] leading-none font-bold text-[#f1f5f9] tabular-nums">
+              <div key={t.label} className="bg-surface-card border border-surface-line rounded-xl px-4 py-3.5 flex flex-col justify-center">
+                <div className="text-[13px] text-ink-muted mb-1.5">{t.label}</div>
+                <div className="text-[24px] leading-none font-bold text-ink-primary tabular-nums">
                   {t.value}
-                  {t.unit && <span className="text-[14px] font-medium text-[#94a3b8] ml-1">{t.unit}</span>}
+                  {t.unit && <span className="text-[14px] font-medium text-ink-muted ml-1">{t.unit}</span>}
                 </div>
               </div>
             ))}
@@ -148,8 +148,8 @@ export default function ActivityDetailPage() {
           {detail?.gpxCoords && detail.gpxCoords.length > 0 ? (
             <Card className="p-4 flex flex-col min-h-[360px]" id="recorrido">
               <div className="flex items-baseline justify-between gap-3 mb-3">
-                <h2 className="text-[15px] font-semibold text-[#f1f5f9] leading-tight">Recorrido</h2>
-                <span className="text-[13px] text-[#94a3b8]">{detail.gpxCoords.length} puntos GPS</span>
+                <h2 className="text-[15px] font-semibold text-ink-primary leading-tight">Recorrido</h2>
+                <span className="text-[13px] text-ink-muted">{detail.gpxCoords.length} puntos GPS</span>
               </div>
               {/* min-h-0 lets the map shrink inside the flex column instead of
                   overflowing it. */}
@@ -159,7 +159,7 @@ export default function ActivityDetailPage() {
             </Card>
           ) : (
             <Card className="p-4 flex items-center justify-center min-h-[280px]">
-              <p className="text-[14px] text-[#94a3b8]">Esta actividad no tiene recorrido GPS</p>
+              <p className="text-[14px] text-ink-muted">Esta actividad no tiene recorrido GPS</p>
             </Card>
           )}
         </div>
@@ -169,17 +169,17 @@ export default function ActivityDetailPage() {
           <Card className="p-5">
             <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
               <div>
-                <h2 className="text-[15px] font-semibold text-[#f1f5f9] leading-tight">Evolución del entrenamiento</h2>
-                <p className="text-[13px] text-[#94a3b8] mt-0.5">{streams.length} muestras a lo largo de la sesión</p>
+                <h2 className="text-[15px] font-semibold text-ink-primary leading-tight">Evolución del entrenamiento</h2>
+                <p className="text-[13px] text-ink-muted mt-0.5">{streams.length} muestras a lo largo de la sesión</p>
               </div>
               {hasDistance && (
-                <div className="flex rounded-lg border border-[#28334a] overflow-hidden shrink-0">
+                <div className="flex rounded-lg border border-surface-line overflow-hidden shrink-0">
                   {(['km', 'seconds'] as const).map(mode => (
                     <button
                       key={mode}
                       onClick={() => setAxis(mode)}
                       className={`px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                        axis === mode ? 'bg-[#fc5200] text-white' : 'text-[#cbd5e1] hover:bg-[#1e2942]'
+                        axis === mode ? 'bg-accent text-white' : 'text-ink-secondary hover:bg-surface-hover'
                       }`}
                     >
                       {mode === 'km' ? 'Distancia' : 'Tiempo'}
@@ -195,8 +195,8 @@ export default function ActivityDetailPage() {
                 <div key={c.key}>
                   <div className="flex items-baseline gap-2 mb-1">
                     <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: c.color }} />
-                    <span className="text-[14px] font-medium text-[#f1f5f9]">{c.label}</span>
-                    <span className="text-[13px] text-[#94a3b8]">
+                    <span className="text-[14px] font-medium text-ink-primary">{c.label}</span>
+                    <span className="text-[13px] text-ink-muted">
                       media {c.avg.toFixed(c.decimals ?? 0)} {c.unit} · máx {c.max.toFixed(c.decimals ?? 0)} {c.unit}
                     </span>
                   </div>
@@ -258,7 +258,7 @@ export default function ActivityDetailPage() {
                 </div>
               ))}
             </div>
-            <p className="text-[13px] text-[#94a3b8] mt-3 pt-3 border-t border-[#28334a]">
+            <p className="text-[13px] text-ink-muted mt-3 pt-3 border-t border-surface-line">
               Los gráficos están sincronizados: al pasar el mouse por uno, todos marcan el mismo punto.
             </p>
           </Card>
@@ -267,7 +267,7 @@ export default function ActivityDetailPage() {
             <CardHeader title="Evolución del entrenamiento" />
             <Insight tone="neutral">
               Esta actividad todavía no tiene series temporales guardadas. Se descargan corriendo
-              <code className="text-[#cbd5e1] mx-1">python3 fetch/sync.py --refresh-all</code>.
+              <code className="text-ink-secondary mx-1">python3 fetch/sync.py --refresh-all</code>.
             </Insight>
           </Card>
         )}
@@ -282,12 +282,12 @@ export default function ActivityDetailPage() {
                 const def = HR_ZONE_DEFS[i]
                 return (
                   <div key={z.zone} className="flex items-center gap-3">
-                    <span className="w-[104px] shrink-0 text-[14px] text-[#cbd5e1]">{def?.name ?? z.name}</span>
-                    <div className="flex-1 h-6 rounded-md bg-[#131c2e] overflow-hidden">
+                    <span className="w-[104px] shrink-0 text-[14px] text-ink-secondary">{def?.name ?? z.name}</span>
+                    <div className="flex-1 h-6 rounded-md bg-surface-sunk overflow-hidden">
                       <div className="h-full rounded-md" style={{ width: `${pct}%`, background: def?.color ?? accent }} />
                     </div>
-                    <span className="w-16 text-right text-[14px] text-[#f1f5f9] tabular-nums">{formatDuration(z.seconds)}</span>
-                    <span className="w-10 text-right text-[14px] text-[#94a3b8] tabular-nums">{pct}%</span>
+                    <span className="w-16 text-right text-[14px] text-ink-primary tabular-nums">{formatDuration(z.seconds)}</span>
+                    <span className="w-10 text-right text-[14px] text-ink-muted tabular-nums">{pct}%</span>
                   </div>
                 )
               })}
@@ -304,11 +304,11 @@ export default function ActivityDetailPage() {
             />
             <div className="space-y-2">
               {detail.strength.exercises.map(e => (
-                <div key={e.name} className="flex items-center gap-4 px-3 py-2.5 rounded-lg bg-[#131c2e] border border-[#28334a]">
-                  <span className="flex-1 text-[14px] text-[#f1f5f9]">{e.name === 'Unknown' ? 'Ejercicio sin identificar' : e.name}</span>
-                  <span className="text-[14px] text-[#cbd5e1] tabular-nums">{e.sets} series</span>
-                  <span className="text-[14px] text-[#cbd5e1] tabular-nums w-20 text-right">{e.reps} reps</span>
-                  {e.maxWeightKg > 0 && <span className="text-[14px] text-[#f1f5f9] tabular-nums w-20 text-right">{e.maxWeightKg} kg</span>}
+                <div key={e.name} className="flex items-center gap-4 px-3 py-2.5 rounded-lg bg-surface-sunk border border-surface-line">
+                  <span className="flex-1 text-[14px] text-ink-primary">{e.name === 'Unknown' ? 'Ejercicio sin identificar' : e.name}</span>
+                  <span className="text-[14px] text-ink-secondary tabular-nums">{e.sets} series</span>
+                  <span className="text-[14px] text-ink-secondary tabular-nums w-20 text-right">{e.reps} reps</span>
+                  {e.maxWeightKg > 0 && <span className="text-[14px] text-ink-primary tabular-nums w-20 text-right">{e.maxWeightKg} kg</span>}
                 </div>
               ))}
             </div>

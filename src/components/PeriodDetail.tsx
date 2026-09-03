@@ -60,26 +60,26 @@ export default function PeriodDetail({ period, onClose }: { period: Period; onCl
   }, [activities, key, filtro])
 
   return (
-    <div className="mt-4 rounded-xl border border-[#28334a] bg-[#131c2e] overflow-hidden panel-in">
-      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-[#28334a] flex-wrap">
+    <div className="mt-4 rounded-xl border border-surface-line bg-surface-sunk overflow-hidden panel-in">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-surface-line flex-wrap">
         <div>
-          <h3 className="text-[15px] font-semibold text-[#f1f5f9] capitalize">{label}</h3>
-          <p className="text-[13px] text-[#94a3b8] mt-0.5 tabular-nums">
+          <h3 className="text-[15px] font-semibold text-ink-primary capitalize">{label}</h3>
+          <p className="text-[13px] text-ink-muted mt-0.5 tabular-nums">
             {totales.sesiones} {totales.sesiones === 1 ? 'sesión' : 'sesiones'} · {totales.horas.toFixed(1)} h · {totales.km.toFixed(0)} km
             {totales.desnivel > 0 && <> · {Math.round(totales.desnivel).toLocaleString('es-ES')} m de desnivel</>}
           </p>
         </div>
         <button
           onClick={onClose}
-          className="text-[13px] text-[#94a3b8] hover:text-[#f1f5f9] px-2.5 py-1 rounded-lg hover:bg-[#1e2942] transition-colors shrink-0"
+          className="text-[13px] text-ink-muted hover:text-ink-primary px-2.5 py-1 rounded-lg hover:bg-surface-hover transition-colors shrink-0"
         >
           Cerrar ✕
         </button>
       </div>
 
       {period.tipo === 'mes' && period.years.length > 1 && (
-        <div className="flex flex-wrap gap-2 px-4 py-2.5 border-b border-[#28334a]">
-          <span className="text-[13px] text-[#94a3b8] self-center mr-1">Temporada:</span>
+        <div className="flex flex-wrap gap-2 px-4 py-2.5 border-b border-surface-line">
+          <span className="text-[13px] text-ink-muted self-center mr-1">Temporada:</span>
           {period.years.map(y => (
             <FilterChip key={y} active={y === year} onClick={() => setYear(y)} label={String(y)} />
           ))}
@@ -87,10 +87,10 @@ export default function PeriodDetail({ period, onClose }: { period: Period; onCl
       )}
 
       {totales.sesiones === 0 ? (
-        <p className="px-4 py-8 text-center text-[14px] text-[#94a3b8]">Sin actividades en este período.</p>
+        <p className="px-4 py-8 text-center text-[14px] text-ink-muted">Sin actividades en este período.</p>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#28334a]">
+          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-surface-line">
             <FilterChip active={filtro === 'todos'} onClick={() => setFiltro('todos')} label={`Todos (${totales.sesiones})`} />
             {porDeporte.map(s => (
               <FilterChip
@@ -108,23 +108,23 @@ export default function PeriodDetail({ period, onClose }: { period: Period; onCl
               <Link
                 key={a.id}
                 to={`/activity/${a.id}`}
-                className="flex items-center gap-3 px-4 py-2.5 border-b border-[#28334a] last:border-0 hover:bg-[#1e2942] transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 border-b border-surface-line last:border-0 hover:bg-surface-hover transition-colors"
               >
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sportColor(a.sport) }} />
-                <span className="text-[13px] text-[#94a3b8] tabular-nums w-[86px] shrink-0">
+                <span className="text-[13px] text-ink-muted tabular-nums w-[86px] shrink-0">
                   {new Date(a.startTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                 </span>
-                <span className="text-[14px] text-[#f1f5f9] truncate flex-1 min-w-0">{a.title}</span>
-                <span className="text-[13px] text-[#cbd5e1] tabular-nums w-[70px] text-right shrink-0">
+                <span className="text-[14px] text-ink-primary truncate flex-1 min-w-0">{a.title}</span>
+                <span className="text-[13px] text-ink-secondary tabular-nums w-[70px] text-right shrink-0">
                   {a.distance > 0 ? `${a.distance.toFixed(1)} km` : '—'}
                 </span>
-                <span className="text-[13px] text-[#cbd5e1] tabular-nums w-[64px] text-right shrink-0">
+                <span className="text-[13px] text-ink-secondary tabular-nums w-[64px] text-right shrink-0">
                   {formatDuration(a.duration)}
                 </span>
-                <span className="hidden sm:block text-[13px] text-[#94a3b8] tabular-nums w-[76px] text-right shrink-0">
+                <span className="hidden sm:block text-[13px] text-ink-muted tabular-nums w-[76px] text-right shrink-0">
                   {a.avgPace ? formatPace(a.avgPace) : a.avgSpeed ? `${a.avgSpeed.toFixed(1)} km/h` : '—'}
                 </span>
-                <span className="hidden sm:block text-[13px] text-[#94a3b8] tabular-nums w-[60px] text-right shrink-0">
+                <span className="hidden sm:block text-[13px] text-ink-muted tabular-nums w-[60px] text-right shrink-0">
                   {a.avgHR > 0 ? `${a.avgHR} bpm` : '—'}
                 </span>
               </Link>
@@ -144,8 +144,8 @@ function FilterChip({
       onClick={onClick}
       className={`px-2.5 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
         active
-          ? 'text-[#f1f5f9] border-transparent'
-          : 'text-[#cbd5e1] border-[#28334a] hover:border-[#3a4767]'
+          ? 'text-ink-primary border-transparent'
+          : 'text-ink-secondary border-surface-line hover:border-surface-line-strong'
       }`}
       style={active ? { background: color ?? '#fc5200' } : undefined}
     >

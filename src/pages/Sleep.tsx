@@ -31,7 +31,7 @@ function Anillo({ puntaje }: { puntaje: number | null }) {
           <div className="text-[34px] font-bold leading-none tabular-nums" style={{ color: color(puntaje) }}>
             {puntaje ?? '—'}
           </div>
-          <div className="text-[12px] text-[#94a3b8] mt-0.5">de 100</div>
+          <div className="text-[12px] text-ink-muted mt-0.5">de 100</div>
         </div>
       </div>
     </div>
@@ -44,13 +44,13 @@ function Factores({ noche }: { noche: NocheEvaluada }) {
       {noche.factores.map(f => (
         <div key={f.clave}>
           <div className="flex items-baseline justify-between gap-3 mb-1">
-            <span className="text-[14px] text-[#f1f5f9]">{f.etiqueta}</span>
-            <span className="text-[14px] font-semibold text-[#f1f5f9] tabular-nums">{f.valor}</span>
+            <span className="text-[14px] text-ink-primary">{f.etiqueta}</span>
+            <span className="text-[14px] font-semibold text-ink-primary tabular-nums">{f.valor}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-[#131c2e] overflow-hidden">
+          <div className="h-1.5 rounded-full bg-surface-sunk overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${f.puntaje ?? 0}%`, background: color(f.puntaje) }} />
           </div>
-          <p className="text-[12px] text-[#94a3b8] mt-1">{f.detalle} <span className="text-[#64748b]">Ideal: {f.ideal}.</span></p>
+          <p className="text-[12px] text-ink-muted mt-1">{f.detalle} <span className="text-ink-faint">Ideal: {f.ideal}.</span></p>
         </div>
       ))}
     </div>
@@ -61,17 +61,17 @@ export default function Sleep() {
   const s = useSleep()
 
   if (!s.cargado) {
-    return <div className="flex-1 grid place-items-center text-[#cbd5e1] text-[15px] animate-pulse">Cargando…</div>
+    return <div className="flex-1 grid place-items-center text-ink-secondary text-[15px] animate-pulse">Cargando…</div>
   }
 
   if (s.noches.length === 0) {
     return (
       <div className="flex-1 p-6 max-w-2xl page-in">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-[#f1f5f9] mb-2">Sin datos de sueño</h2>
-          <p className="text-[15px] text-[#cbd5e1] leading-relaxed">
+          <h2 className="text-lg font-semibold text-ink-primary mb-2">Sin datos de sueño</h2>
+          <p className="text-[15px] text-ink-secondary leading-relaxed">
             Garmin sólo registra el sueño las noches que dormís con el reloj puesto.
-            Ejecutá <code className="text-[#94a3b8]">python3 fetch/sleep.py</code> después de una noche con el reloj.
+            Ejecutá <code className="text-ink-muted">python3 fetch/sleep.py</code> después de una noche con el reloj.
           </p>
         </Card>
       </div>
@@ -88,12 +88,12 @@ export default function Sleep() {
   }))
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#101826]">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
 
         <header>
-          <h1 className="text-2xl font-bold text-[#f1f5f9]">😴 Sueño</h1>
-          <p className="text-[14px] text-[#94a3b8] mt-1">
+          <h1 className="text-2xl font-bold text-ink-primary">😴 Sueño</h1>
+          <p className="text-[14px] text-ink-muted mt-1">
             {s.cobertura.conRegistro} noches registradas en {s.cobertura.diasBarridos} días ({s.cobertura.pct}% de cobertura)
           </p>
         </header>
@@ -114,14 +114,14 @@ export default function Sleep() {
               <div className="flex flex-col items-center gap-3">
                 <Anillo puntaje={s.ultima.puntaje} />
                 <div className="text-center">
-                  <div className="text-[20px] font-bold text-[#f1f5f9] tabular-nums">{h(s.ultima.total_s)}</div>
-                  <div className="text-[13px] text-[#94a3b8]">dormidas</div>
+                  <div className="text-[20px] font-bold text-ink-primary tabular-nums">{h(s.ultima.total_s)}</div>
+                  <div className="text-[13px] text-ink-muted">dormidas</div>
                 </div>
               </div>
               <Factores noche={s.ultima} />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-[#28334a]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-surface-line">
               {[
                 ['SpO₂ medio', s.ultima.spo2_medio ? `${s.ultima.spo2_medio}%` : '—'],
                 ['SpO₂ mínimo', s.ultima.spo2_minimo ? `${s.ultima.spo2_minimo}%` : '—'],
@@ -129,9 +129,9 @@ export default function Sleep() {
                 ['Body battery', s.ultima.bateria_inicio != null && s.ultima.bateria_fin != null
                   ? `${s.ultima.bateria_inicio} → ${s.ultima.bateria_fin}` : '—'],
               ].map(([k, v]) => (
-                <div key={k} className="bg-[#131c2e] border border-[#28334a] rounded-lg px-3 py-2.5">
-                  <div className="text-[13px] text-[#94a3b8] mb-1">{k}</div>
-                  <div className="text-[17px] font-bold text-[#f1f5f9] tabular-nums">{v}</div>
+                <div key={k} className="glass-sunk rounded-lg px-3 py-2.5">
+                  <div className="text-[13px] text-ink-muted mb-1">{k}</div>
+                  <div className="text-[17px] font-bold text-ink-primary tabular-nums">{v}</div>
                 </div>
               ))}
             </div>
@@ -155,7 +155,7 @@ export default function Sleep() {
               ))}
             </BarChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#28334a]">
+          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
             {FASES.map(f => <LegendItem key={f.clave} color={f.color} label={f.label} />)}
           </div>
         </Card>
@@ -170,9 +170,9 @@ export default function Sleep() {
                 ['Profundo medio', h(s.medias.profundo_s)],
                 ['REM medio', h(s.medias.rem_s)],
               ].map(([k, v]) => (
-                <div key={k} className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
-                  <div className="text-[13px] text-[#94a3b8] mb-1">{k}</div>
-                  <div className="text-[22px] font-bold text-[#f1f5f9] tabular-nums leading-none">{v}</div>
+                <div key={k} className="glass-sunk rounded-lg px-4 py-3">
+                  <div className="text-[13px] text-ink-muted mb-1">{k}</div>
+                  <div className="text-[22px] font-bold text-ink-primary tabular-nums leading-none">{v}</div>
                 </div>
               ))}
             </div>
@@ -184,7 +184,7 @@ export default function Sleep() {
           <div className="overflow-x-auto">
             <table className="w-full text-[14px] min-w-[520px]">
               <thead>
-                <tr className="text-[13px] text-[#94a3b8] text-left border-b border-[#28334a]">
+                <tr className="text-[13px] text-ink-muted text-left border-b border-surface-line">
                   <th className="pb-2 pr-4 font-medium">Métrica de Oura</th>
                   <th className="pb-2 pr-4 font-medium">Acá</th>
                   <th className="pb-2 font-medium">Nota</th>
@@ -204,14 +204,14 @@ export default function Sleep() {
                   ['SpO₂ nocturno', 'extra', 'Oura no lo destaca; tu reloj sí lo da'],
                   ['Frecuencia respiratoria', 'extra', 'Lo mismo'],
                 ].map(([m, e, n]) => (
-                  <tr key={m} className="border-b border-[#28334a] last:border-0">
-                    <td className="py-2 pr-4 text-[#f1f5f9]">{m}</td>
+                  <tr key={m} className="border-b border-surface-line last:border-0">
+                    <td className="py-2 pr-4 text-ink-primary">{m}</td>
                     <td className="py-2 pr-4">
                       <span className="text-[13px] font-medium" style={{
                         color: e === 'sí' ? '#34d399' : e === 'no' ? '#f87171' : e === 'extra' ? '#38bdf8' : '#fbbf24',
                       }}>{e}</span>
                     </td>
-                    <td className="py-2 text-[#94a3b8] text-[13px]">{n}</td>
+                    <td className="py-2 text-ink-muted text-[13px]">{n}</td>
                   </tr>
                 ))}
               </tbody>

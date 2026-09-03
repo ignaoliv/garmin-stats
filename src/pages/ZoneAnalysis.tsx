@@ -59,16 +59,16 @@ export default function ZoneAnalysis() {
     <div className="flex-1 p-6 overflow-y-auto page-in">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#f1f5f9]">Análisis de Zonas</h1>
-          <p className="text-[14px] text-[#94a3b8] mt-0.5">Distribución del tiempo por zonas de FC</p>
+          <h1 className="text-xl font-bold text-ink-primary">Análisis de Zonas</h1>
+          <p className="text-[14px] text-ink-muted mt-0.5">Distribución del tiempo por zonas de FC</p>
         </div>
-        <div className="flex bg-[#172033] rounded-lg p-0.5 gap-0.5">
+        <div className="flex bg-surface-card rounded-lg p-0.5 gap-0.5">
           {(['all', 'running', 'cycling', 'swimming'] as const).map(s => (
             <button
               key={s}
               onClick={() => setSport(s)}
               className={`px-3 py-1.5 rounded-md text-[14px] transition-colors ${
-                sport === s ? 'bg-blue-600 text-white' : 'text-[#cbd5e1] hover:text-[#f1f5f9]'
+                sport === s ? 'bg-blue-600 text-white' : 'text-ink-secondary hover:text-ink-primary'
               }`}
             >
               {s === 'all' ? 'Todos' : s === 'running' ? '🏃' : s === 'cycling' ? '🚴' : '🏊'}
@@ -83,23 +83,23 @@ export default function ZoneAnalysis() {
           return (
             <div key={def.zone} className="flex items-center gap-4">
               <div className="w-6 text-[13px] font-medium" style={{ color: def.color }}>Z{def.zone}</div>
-              <div className="w-24 text-[13px] text-[#cbd5e1]">{def.name}</div>
-              <div className="flex-1 bg-[#172033] rounded-full h-3">
+              <div className="w-24 text-[13px] text-ink-secondary">{def.name}</div>
+              <div className="flex-1 bg-surface-card rounded-full h-3">
                 <div
                   className="h-3 rounded-full transition-all"
                   style={{ width: `${pct}%`, background: def.color }}
                 />
               </div>
-              <div className="w-16 text-[13px] text-[#cbd5e1] text-right font-mono">{formatDuration(zoneSeconds[i])}</div>
-              <div className="w-10 text-[13px] text-[#94a3b8] text-right">{pct.toFixed(0)}%</div>
+              <div className="w-16 text-[13px] text-ink-secondary text-right font-mono">{formatDuration(zoneSeconds[i])}</div>
+              <div className="w-10 text-[13px] text-ink-muted text-right">{pct.toFixed(0)}%</div>
             </div>
           )
         })}
       </div>
 
       {weeklyZoneData.length > 0 && (
-        <div className="bg-[#172033] border border-[#28334a] rounded-xl p-4">
-          <div className="text-[13px] text-[#94a3b8] uppercase tracking-wider mb-4">Distribución semanal (últimas 24 semanas)</div>
+        <div className="bg-surface-card border border-surface-line rounded-xl p-4">
+          <div className="text-[13px] text-ink-muted uppercase tracking-wider mb-4">Distribución semanal (últimas 24 semanas)</div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={weeklyZoneData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
@@ -118,7 +118,7 @@ export default function ZoneAnalysis() {
         </div>
       )}
 
-      <p className="mt-4 text-[13px] text-[#94a3b8]">
+      <p className="mt-4 text-[13px] text-ink-muted">
         Zonas estimadas en base a FC media y FCmax configurada ({settings.maxHR} bpm).
       </p>
     </div>

@@ -23,33 +23,33 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
-          <div className="text-[13px] text-[#94a3b8] mb-1">Hoy</div>
-          <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums leading-none">
+        <div className="glass-sunk rounded-lg px-4 py-3">
+          <div className="text-[13px] text-ink-muted mb-1">Hoy</div>
+          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
             {(s.hoy?.pasos ?? 0).toLocaleString('es-ES')}
           </div>
-          <div className="text-[13px] text-[#94a3b8] mt-1">
+          <div className="text-[13px] text-ink-muted mt-1">
             {Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)}% del objetivo
           </div>
         </div>
-        <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
-          <div className="text-[13px] text-[#94a3b8] mb-1">Media diaria</div>
-          <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums leading-none">
+        <div className="glass-sunk rounded-lg px-4 py-3">
+          <div className="text-[13px] text-ink-muted mb-1">Media diaria</div>
+          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
             {s.media.toLocaleString('es-ES')}
           </div>
           <Delta value={s.media - s.mediaPrevia} />
         </div>
-        <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
-          <div className="text-[13px] text-[#94a3b8] mb-1">Objetivo cumplido</div>
-          <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums leading-none">{s.diasCumplidos}</div>
-          <div className="text-[13px] text-[#94a3b8] mt-1">de {s.ventana.length} días ({pct}%)</div>
+        <div className="glass-sunk rounded-lg px-4 py-3">
+          <div className="text-[13px] text-ink-muted mb-1">Objetivo cumplido</div>
+          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">{s.diasCumplidos}</div>
+          <div className="text-[13px] text-ink-muted mt-1">de {s.ventana.length} días ({pct}%)</div>
         </div>
-        <div className="bg-[#131c2e] border border-[#28334a] rounded-lg px-4 py-3">
-          <div className="text-[13px] text-[#94a3b8] mb-1">Tu mejor día</div>
-          <div className="text-2xl font-bold text-[#f1f5f9] tabular-nums leading-none">
+        <div className="glass-sunk rounded-lg px-4 py-3">
+          <div className="text-[13px] text-ink-muted mb-1">Tu mejor día</div>
+          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
             {(s.mejor?.pasos ?? 0).toLocaleString('es-ES')}
           </div>
-          <div className="text-[13px] text-[#94a3b8] mt-1">
+          <div className="text-[13px] text-ink-muted mt-1">
             {s.mejor ? new Date(s.mejor.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#28334a]">
+      <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
         <LegendItem color={MET} label="Objetivo alcanzado" value={`${s.diasCumplidos} días`} />
         <LegendItem color={SHORT} label="Por debajo del objetivo" />
       </div>

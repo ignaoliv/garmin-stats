@@ -99,24 +99,24 @@ export default function PlanGenerator() {
 
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_110px] gap-3 mb-3">
         <label className="block">
-          <span className="text-[13px] text-[#94a3b8] block mb-1.5">Objetivo</span>
+          <span className="text-[13px] text-ink-muted block mb-1.5">Objetivo</span>
           <input value={objetivo} onChange={e => setObjetivo(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[15px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]" />
+            className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary focus:outline-none focus:border-accent" />
         </label>
         <label className="block">
-          <span className="text-[13px] text-[#94a3b8] block mb-1.5">Semanas</span>
+          <span className="text-[13px] text-ink-muted block mb-1.5">Semanas</span>
           <input type="number" min={1} max={12} value={semanas} onChange={e => setSemanas(Number(e.target.value))}
-            className="w-full px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[15px] text-[#f1f5f9] tabular-nums focus:outline-none focus:border-[#fc5200]" />
+            className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary tabular-nums focus:outline-none focus:border-accent" />
         </label>
         <label className="block">
-          <span className="text-[13px] text-[#94a3b8] block mb-1.5">Días/sem</span>
+          <span className="text-[13px] text-ink-muted block mb-1.5">Días/sem</span>
           <input type="number" min={1} max={6} value={dias} onChange={e => setDias(Number(e.target.value))}
-            className="w-full px-3 py-2 rounded-lg bg-[#131c2e] border border-[#28334a] text-[15px] text-[#f1f5f9] tabular-nums focus:outline-none focus:border-[#fc5200]" />
+            className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary tabular-nums focus:outline-none focus:border-accent" />
         </label>
       </div>
 
       <button onClick={generar} disabled={estado === 'generando'}
-        className="w-full py-2.5 rounded-xl border border-[#fc5200] text-[#fc5200] hover:bg-[#fc5200] hover:text-white
+        className="w-full py-2.5 rounded-xl border border-accent text-accent hover:bg-accent hover:text-white
                    text-[15px] font-semibold transition-colors disabled:opacity-60">
         {estado === 'generando' ? 'Diseñando el plan…' : plan ? 'Generar otro' : 'Generar plan'}
       </button>
@@ -124,10 +124,10 @@ export default function PlanGenerator() {
       {estado === 'error' && <div className="mt-3"><Insight tone="warning">{mensaje}</Insight></div>}
 
       {plan && (
-        <div className="mt-5 pt-5 border-t border-[#28334a] space-y-4">
+        <div className="mt-5 pt-5 border-t border-surface-line space-y-4">
           <div>
-            <h3 className="text-[18px] font-bold text-[#f1f5f9]">{plan.titulo}</h3>
-            <p className="text-[14px] text-[#cbd5e1] leading-relaxed mt-1.5">{plan.resumen}</p>
+            <h3 className="text-[18px] font-bold text-ink-primary">{plan.titulo}</h3>
+            <p className="text-[14px] text-ink-secondary leading-relaxed mt-1.5">{plan.resumen}</p>
           </div>
 
           {plan.ajustes_de_carga && ajuste && (
@@ -135,9 +135,9 @@ export default function PlanGenerator() {
               <p className="text-[14px] font-semibold mb-1.5" style={{ color: ajuste.color }}>
                 Ajuste de carga · {ajuste.label}
               </p>
-              <p className="text-[14px] text-[#cbd5e1] leading-relaxed">{plan.ajustes_de_carga.detalle}</p>
-              <p className="text-[13px] text-[#94a3b8] mt-2 pt-2 border-t border-[#28334a]">
-                <strong className="text-[#cbd5e1]">Regla:</strong> {plan.ajustes_de_carga.regla}
+              <p className="text-[14px] text-ink-secondary leading-relaxed">{plan.ajustes_de_carga.detalle}</p>
+              <p className="text-[13px] text-ink-muted mt-2 pt-2 border-t border-surface-line">
+                <strong className="text-ink-secondary">Regla:</strong> {plan.ajustes_de_carga.regla}
               </p>
             </div>
           )}
@@ -145,8 +145,8 @@ export default function PlanGenerator() {
           {plan.advertencias?.length > 0 && (
             <ul className="space-y-1.5">
               {plan.advertencias.map((a, i) => (
-                <li key={i} className="flex gap-2.5 text-[14px] text-[#cbd5e1] leading-relaxed">
-                  <span className="text-[#fbbf24] shrink-0">!</span><span>{a}</span>
+                <li key={i} className="flex gap-2.5 text-[14px] text-ink-secondary leading-relaxed">
+                  <span className="text-state-warning shrink-0">!</span><span>{a}</span>
                 </li>
               ))}
             </ul>
@@ -154,31 +154,31 @@ export default function PlanGenerator() {
 
           <div>
             <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
-              <h4 className="text-[15px] font-semibold text-[#f1f5f9]">El plan en el calendario</h4>
+              <h4 className="text-[15px] font-semibold text-ink-primary">El plan en el calendario</h4>
               <label className="flex items-center gap-2">
-                <span className="text-[13px] text-[#94a3b8]">Empieza el</span>
+                <span className="text-[13px] text-ink-muted">Empieza el</span>
                 <input type="date" value={inicio} onChange={e => setInicio(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg bg-[#131c2e] border border-[#28334a] text-[14px] text-[#f1f5f9] focus:outline-none focus:border-[#fc5200]" />
+                  className="px-3 py-1.5 rounded-lg bg-surface-sunk border border-surface-line text-[14px] text-ink-primary focus:outline-none focus:border-accent" />
               </label>
             </div>
             <PlanCalendar semanas={plan.semanas} inicio={inicio} />
           </div>
 
-          <details className="rounded-lg border border-[#28334a] bg-[#131c2e]">
-            <summary className="px-4 py-3 text-[14px] font-medium text-[#cbd5e1] cursor-pointer select-none hover:text-[#f1f5f9]">
+          <details className="rounded-lg glass-sunk">
+            <summary className="px-4 py-3 text-[14px] font-medium text-ink-secondary cursor-pointer select-none hover:text-ink-primary">
               Ver el plan como lista
             </summary>
             <div className="px-4 pb-4 space-y-3">
               {plan.semanas.map(s => (
                 <div key={s.numero}>
-                  <p className="text-[14px] font-semibold text-[#f1f5f9]">Semana {s.numero} · {s.foco}</p>
-                  <p className="text-[13px] text-[#94a3b8] mb-2">{s.progresion}</p>
+                  <p className="text-[14px] font-semibold text-ink-primary">Semana {s.numero} · {s.foco}</p>
+                  <p className="text-[13px] text-ink-muted mb-2">{s.progresion}</p>
                   <div className="space-y-1.5">
                     {s.sesiones.map((ses, i) => (
                       <div key={i} className="flex flex-wrap items-baseline gap-x-3 text-[14px]">
-                        <span className="text-[#94a3b8] tabular-nums w-[52px] shrink-0">día {ses.dia_offset + 1}</span>
-                        <span className="text-[#f1f5f9] font-medium">{ses.nombre}</span>
-                        <span className="text-[#cbd5e1]">
+                        <span className="text-ink-muted tabular-nums w-[52px] shrink-0">día {ses.dia_offset + 1}</span>
+                        <span className="text-ink-primary font-medium">{ses.nombre}</span>
+                        <span className="text-ink-secondary">
                           {ses.bloques.map(b => `${bonito(b.category)} ${fmt(b)}`).join(' · ')}
                         </span>
                       </div>
@@ -189,22 +189,22 @@ export default function PlanGenerator() {
             </div>
           </details>
 
-          <div className="rounded-lg border border-[#28334a] p-4">
+          <div className="rounded-lg border border-surface-line p-4">
             <button onClick={enviarTodo} disabled={estado === 'enviando'}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#fc5200] hover:bg-[#e04a00] text-white
+              className="w-full py-2.5 px-4 rounded-xl bg-accent hover:bg-accent-press text-white
                          text-[15px] font-semibold transition-colors disabled:opacity-60">
               {estado === 'enviando' ? 'Enviando…' : `Mandar las ${totalSesiones} sesiones a Garmin`}
             </button>
             {mensaje && estado !== 'error' && (
               <div className="mt-3"><Insight tone={mensaje.startsWith('Listo') ? 'good' : 'neutral'}>{mensaje}</Insight></div>
             )}
-            <p className="text-[12px] text-[#94a3b8] mt-3 leading-relaxed">
+            <p className="text-[12px] text-ink-muted mt-3 leading-relaxed">
               Se crea una sesión por día del plan y se agenda en tu calendario. Son {totalSesiones} llamadas
               a Garmin, una por vez para no gatillar el límite de la cuenta.
             </p>
           </div>
 
-          <p className="text-[12px] text-[#94a3b8] pt-2 border-t border-[#28334a]">
+          <p className="text-[12px] text-ink-muted pt-2 border-t border-surface-line">
             Plan generado con {plan.modelo} sobre tus datos. No es consejo médico.
           </p>
         </div>
