@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Geist y Geist Mono se cargan desde index.html con <link>: un @import remoto
+   acá no sobrevive al procesamiento de Vite y document.fonts quedaba vacío. */
+
 @theme {
   /* ── Sport palette ────────────────────────────────────────────────────────
      Validated as a set against the app surface (#0f172a): all six slots pass
@@ -215,44 +218,43 @@
    between the two is what makes a metric readable at a glance — a 28px number
    over a 13px label reads as a paragraph; a 40px number over an 11px label
    reads as a measurement. */
-.metric-xl {
-  font-size: 46px; line-height: 1; font-weight: 700;
-  letter-spacing: -0.025em; font-variant-numeric: tabular-nums;
+.metric-xl, .metric-lg, .metric {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   color: var(--color-ink-primary);
 }
-.metric-lg {
-  font-size: 34px; line-height: 1; font-weight: 700;
-  letter-spacing: -0.022em; font-variant-numeric: tabular-nums;
-  color: var(--color-ink-primary);
-}
-.metric {
-  font-size: 26px; line-height: 1; font-weight: 700;
-  letter-spacing: -0.018em; font-variant-numeric: tabular-nums;
-  color: var(--color-ink-primary);
-}
+.metric-xl { font-size: 44px; font-weight: 600; letter-spacing: -0.035em; }
+.metric-lg { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
+.metric    { font-size: 24px; font-weight: 600; letter-spacing: -0.025em; }
 /* The unit rides with the number but never competes with it. */
 .metric-unit {
-  font-size: 0.44em; font-weight: 500; letter-spacing: 0;
-  color: var(--color-ink-muted); margin-left: 0.25em;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 0.42em; font-weight: 450; letter-spacing: 0;
+  color: var(--color-ink-muted); margin-left: 0.3em;
 }
 
+/* Sentence case, no tracking. Uppercase with letter-spacing reads as the
+   sports-dashboard convention of a decade ago; weight and colour carry the
+   hierarchy now. */
 .label {
-  font-size: 11px; font-weight: 600; line-height: 1.3;
-  letter-spacing: 0.07em; text-transform: uppercase;
+  font-size: 13px; font-weight: 450; line-height: 1.3;
+  letter-spacing: -0.005em;
   color: var(--color-ink-muted);
 }
 .label-plain {
-  font-size: 13px; font-weight: 500; line-height: 1.4;
+  font-size: 13.5px; font-weight: 400; line-height: 1.45;
+  letter-spacing: -0.005em;
   color: var(--color-ink-muted);
 }
 
 .title-page {
-  font-size: 30px; line-height: 1.1; font-weight: 700;
-  letter-spacing: -0.025em; color: var(--color-ink-primary);
+  font-size: 28px; line-height: 1.15; font-weight: 600;
+  letter-spacing: -0.03em; color: var(--color-ink-primary);
 }
 .title-card {
-  font-size: 16px; line-height: 1.25; font-weight: 650;
-  letter-spacing: -0.01em; color: var(--color-ink-primary);
+  font-size: 15px; line-height: 1.3; font-weight: 550;
+  letter-spacing: -0.015em; color: var(--color-ink-primary);
 }
 
 * { box-sizing: border-box; }
@@ -271,8 +273,9 @@ body {
     var(--color-surface-base);
   background-attachment: fixed;
   color: #f1f5f9;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Recharts marks its wrapper focusable, so a plain click left the browser's

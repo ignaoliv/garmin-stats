@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import Icon from './Icon'
 
 export interface BloquePlan {
   category: string
@@ -107,8 +108,9 @@ export default function PlanCalendar({
                         with an existing ride reads immediately. */}
                     {agendados.map((a, i) => (
                       <div key={i} className="px-1.5 py-1 rounded bg-surface-hover border border-surface-line mb-1">
-                        <span className="block text-[11px] text-ink-muted leading-tight truncate" title={a.titulo}>
-                          🚴 {a.titulo}
+                        <span className="flex items-center gap-1 text-[11px] text-ink-muted leading-tight truncate" title={a.titulo}>
+                          <Icon name="actividades" size={11} />
+                          <span className="truncate">{a.titulo}</span>
                         </span>
                       </div>
                     ))}

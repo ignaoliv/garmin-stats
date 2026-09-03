@@ -77,7 +77,7 @@ export default function FitnessChartPage() {
               {current.tsb > 0 ? '+' : ''}{Math.round(current.tsb)}
             </div>
             <div className="text-[13px] text-ink-muted mt-1">
-              {current.tsb > 5 ? '😴 Descansado' : current.tsb > -5 ? '✅ Óptimo' : current.tsb > -20 ? '😓 Fatigado' : '🔴 Muy fatigado'}
+              {current.tsb > 5 ? 'Descansado' : current.tsb > -5 ? 'Óptimo' : current.tsb > -20 ? 'Fatigado' : 'Muy fatigado'}
             </div>
           </div>
         </div>

@@ -1,18 +1,37 @@
 import { NavLink } from 'react-router-dom'
 import { useActivityStore } from '../stores/activityStore'
+import Icon, { type IconName } from './Icon'
 
-const NAV = [
-  { to: '/', label: 'Dashboard', icon: '◉' },
-  { to: '/activities', label: 'Actividades', icon: '▤' },
-  { to: '/fuerza', label: 'Fuerza', icon: '🏋️' },
-  { to: '/planificar', label: 'Planificar', icon: '📋' },
-  { to: '/sueno', label: 'Sueño', icon: '😴' },
-  { to: '/progreso', label: 'Progreso', icon: '📊' },
-  { to: '/fitness', label: 'Fitness & Forma', icon: '📈' },
-  { to: '/zones', label: 'Zonas', icon: '🔥' },
-  { to: '/performance', label: 'Rendimiento', icon: '⚡' },
-  { to: '/records', label: 'Récords', icon: '🏅' },
-  { to: '/settings', label: 'Ajustes', icon: '⚙' },
+/**
+ * Grouped rail. Eleven flat entries gave no sense of what belonged with what;
+ * three short groups let the eye skip straight to the right area.
+ */
+const GRUPOS: { titulo: string | null; items: { to: string; label: string; icon: IconName }[] }[] = [
+  {
+    titulo: null,
+    items: [
+      { to: '/', label: 'Resumen', icon: 'dashboard' },
+      { to: '/activities', label: 'Actividades', icon: 'actividades' },
+    ],
+  },
+  {
+    titulo: 'Entrenar',
+    items: [
+      { to: '/fuerza', label: 'Fuerza', icon: 'fuerza' },
+      { to: '/planificar', label: 'Planificar', icon: 'planificar' },
+      { to: '/zones', label: 'Zonas', icon: 'zonas' },
+    ],
+  },
+  {
+    titulo: 'Analizar',
+    items: [
+      { to: '/progreso', label: 'Progreso', icon: 'progreso' },
+      { to: '/fitness', label: 'Forma', icon: 'fitness' },
+      { to: '/performance', label: 'Rendimiento', icon: 'rendimiento' },
+      { to: '/sueno', label: 'Sueño', icon: 'sueno' },
+      { to: '/records', label: 'Récords', icon: 'records' },
+    ],
+  },
 ]
 
 export default function Sidebar() {
@@ -20,54 +39,70 @@ export default function Sidebar() {
   const activities = useActivityStore(s => s.activities)
 
   return (
-    <aside className="w-16 lg:w-56 shrink-0 glass border-y-0 border-l-0 rounded-none flex flex-col min-h-screen transition-[width]">
-      {/* Logo */}
-      <div className="px-3 lg:px-5 py-5 border-b border-surface-line">
-        <div className="text-ink-primary font-bold text-lg tracking-tight">
+    <aside className="w-16 lg:w-[218px] shrink-0 glass border-y-0 border-l-0 rounded-none flex flex-col min-h-screen transition-[width]">
+      <div className="px-3 lg:px-5 pt-5 pb-4">
+        <div className="text-ink-primary font-semibold text-[15px] tracking-[-0.02em]">
           <span className="lg:hidden">GS</span>
           <span className="hidden lg:inline">Garmin Stats</span>
         </div>
-        <div className="text-ink-muted text-[13px] mt-0.5 hidden lg:block">
-          {activities.length > 0 ? `${activities.length} actividades` : 'Sin datos aún'}
+        <div className="label-plain mt-0.5 hidden lg:block">
+          {activities.length > 0 ? `${activities.length.toLocaleString('es-ES')} actividades` : 'Sin datos aún'}
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-4 px-2 space-y-0.5">
-        {NAV.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors justify-center lg:justify-start ${
-                isActive
-                  ? 'bg-accent/15 text-accent-soft font-semibold'
-                  : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-hover'
-              }`
-            }
-          >
-            <span className="text-base" title={label}>{icon}</span>
-            <span className="hidden lg:inline">{label}</span>
-          </NavLink>
+      <nav className="flex-1 px-2 pb-4 space-y-5">
+        {GRUPOS.map((g, i) => (
+          <div key={i}>
+            {g.titulo && (
+              <div className="hidden lg:block px-3 pb-1.5 text-[11px] font-medium text-ink-faint tracking-[0.01em]">
+                {g.titulo}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {g.items.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  title={label}
+                  className={({ isActive }) =>
+                    `relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] transition-colors
+                     justify-center lg:justify-start ${
+                       isActive
+                         ? 'bg-white/[0.07] text-ink-primary font-medium'
+                         : 'text-ink-muted hover:text-ink-secondary hover:bg-white/[0.035]'
+                     }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {/* A thin bar rather than a filled pill: reads as "you are
+                          here" without turning the rail into a row of buttons. */}
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2.5px] rounded-r bg-accent" />
+                      )}
+                      <Icon name={icon} />
+                      <span className="hidden lg:inline">{label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
-      {/* Sync info */}
-      {stats && (
-        <div className="px-5 py-4 border-t border-surface-line hidden lg:block">
-          <div className="text-[13px] text-ink-muted">
-            Última sync
+      <div className="px-5 py-4 border-t border-white/[0.06] hidden lg:block">
+        <NavLink to="/settings" className="flex items-center gap-3 text-[13.5px] text-ink-muted hover:text-ink-secondary transition-colors">
+          <Icon name="ajustes" />
+          Ajustes
+        </NavLink>
+        {stats && (
+          <div className="label-plain mt-3 text-[12px]">
+            Última sync {new Date(stats.syncedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
           </div>
-          <div className="text-[13px] text-ink-secondary mt-0.5">
-            {new Date(stats.syncedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </div>
-          <div className="mt-3 text-[12px] text-ink-muted leading-relaxed">
-            Para actualizar:<br />
-            <code className="text-ink-secondary">cd fetch && python sync.py</code>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </aside>
   )
 }

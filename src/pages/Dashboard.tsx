@@ -359,7 +359,7 @@ export default function Dashboard() {
         {strength.totalSessions > 0 && (
           <Card className="p-5">
             <CardHeader
-              title="🏋️ Fuerza"
+              title="Fuerza"
               hint={`${strength.totalSessions} sesiones registradas · ${strength.totalHours.toFixed(0)} h acumuladas`}
               action={{ to: '/fuerza', label: 'Ver análisis completo →' }}
             />

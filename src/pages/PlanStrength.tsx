@@ -90,7 +90,7 @@ export default function PlanStrength() {
       <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
-          <h1 className="title-page">🏋️ Planificar fuerza</h1>
+          <h1 className="title-page">Planificar fuerza</h1>
           <p className="label-plain mt-2">
             Armá la sesión, mirá qué músculos trabaja y mandala al reloj.
           </p>

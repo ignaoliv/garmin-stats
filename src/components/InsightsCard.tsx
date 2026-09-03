@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card } from './ui'
+import Icon from './Icon'
 
 interface Bloque {
   estado: 'bien' | 'atencion' | 'alerta'
@@ -24,17 +25,6 @@ const TONE = {
   atencion: { color: '#fbbf24', label: 'Prestá atención' },
   alerta:   { color: '#f87171', label: 'Alerta' },
 } as const
-
-function BrainIcon({ size = 21 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 5a3 3 0 0 0-5.9-.7A2.8 2.8 0 0 0 3.5 7a2.8 2.8 0 0 0 .4 1.5A3 3 0 0 0 3 11a3 3 0 0 0 1.2 2.4A3 3 0 0 0 4 15a3 3 0 0 0 3 3 3 3 0 0 0 5 1.9Z" />
-      <path d="M12 5a3 3 0 0 1 5.9-.7A2.8 2.8 0 0 1 20.5 7a2.8 2.8 0 0 1-.4 1.5A3 3 0 0 1 21 11a3 3 0 0 1-1.2 2.4A3 3 0 0 1 20 15a3 3 0 0 1-3 3 3 3 0 0 1-5 1.9Z" />
-      <path d="M12 5v14.9" />
-    </svg>
-  )
-}
 
 /** The full analysis, out of the way until asked for. */
 function DetailModal({ data, onClose }: { data: Insights; onClose: () => void }) {
@@ -108,8 +98,8 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Bloque icono="💓" bloque={data.recuperacion} />
-            <Bloque icono="👟" bloque={data.pasos} />
+            <Bloque icono="corazon" bloque={data.recuperacion} />
+            <Bloque icono="pasos" bloque={data.pasos} />
           </div>
 
           <p className="text-[12px] text-ink-muted pt-3 border-t border-surface-line">
@@ -121,13 +111,13 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
   )
 }
 
-function Bloque({ icono, bloque }: { icono: string; bloque?: Bloque }) {
+function Bloque({ icono, bloque }: { icono: "corazon" | "pasos"; bloque?: Bloque }) {
   if (!bloque) return null
   const t = TONE[bloque.estado] ?? TONE.bien
   return (
     <div className="rounded-lg border p-4" style={{ borderColor: `${t.color}40`, background: `${t.color}0f` }}>
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-base">{icono}</span>
+        <span style={{ color: t.color }}><Icon name={icono} size={17} /></span>
         <span className="text-[14px] font-semibold" style={{ color: t.color }}>{bloque.titular}</span>
       </div>
       <p className="text-[14px] text-ink-secondary leading-relaxed">{bloque.detalle}</p>
@@ -162,7 +152,7 @@ export default function InsightsCard() {
             aria-label="Ver el análisis completo"
             title="Ver el análisis completo"
           >
-            <span className="relative z-10"><BrainIcon /></span>
+            <span className="relative z-10"><Icon name="cerebro" size={21} /></span>
           </button>
 
           {/* min-w-0 lets the truncation actually engage inside a flex row. */}

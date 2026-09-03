@@ -3,7 +3,7 @@ interface Props {
 }
 
 export default function FormBadge({ tsb }: Props) {
-  if (tsb > 10)  return <Badge color="emerald" label="😴 Descansado" />
+  if (tsb > 10)  return <Badge color="emerald" label="Descansado" />
   if (tsb > -5)  return <Badge color="blue"    label="✅ Forma óptima" />
   if (tsb > -15) return <Badge color="amber"   label="💪 Entrenando fuerte" />
   if (tsb > -25) return <Badge color="orange"  label="😓 Acumulando fatiga" />

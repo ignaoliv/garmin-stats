@@ -93,7 +93,7 @@ export default function PlanGenerator() {
   return (
     <Card className="p-5">
       <CardHeader
-        title="🧠 Generar un plan completo"
+        title="Generar un plan completo"
         hint="La IA lo arma mirando tu carga real, tu recuperación y tu historial de fuerza"
       />
 

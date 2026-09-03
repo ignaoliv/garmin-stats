@@ -71,7 +71,7 @@ export default function Strength() {
       <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
-          <h1 className="title-page">🏋️ Fuerza</h1>
+          <h1 className="title-page">Fuerza</h1>
           <p className="label-plain mt-2">
             {s.totalSessions} sesiones · {s.totalHours.toFixed(0)} horas acumuladas
             {s.lastSession && <> · última {daysAgo(s.lastSession.startTime) === 0 ? 'hoy' : `hace ${daysAgo(s.lastSession.startTime)} días`}</>}

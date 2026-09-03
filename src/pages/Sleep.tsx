@@ -71,7 +71,7 @@ export default function Sleep() {
       <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
-          <h1 className="title-page">😴 Sueño</h1>
+          <h1 className="title-page">Sueño</h1>
           <p className="label-plain mt-2">
             {s.cobertura.conRegistro} noches registradas en {s.cobertura.diasBarridos} días ({s.cobertura.pct}% de cobertura)
           </p>

@@ -54,8 +54,8 @@ export default function Records() {
         </div>
       ) : (
         <div className="space-y-4">
-          <PRTable title="Running" icon="🏃" prs={personalRecords.running ?? []} />
-          <PRTable title="Ciclismo" icon="🚴" prs={personalRecords.cycling ?? []} />
+          <PRTable title="Running" icon="" prs={personalRecords.running ?? []} />
+          <PRTable title="Ciclismo" icon="" prs={personalRecords.cycling ?? []} />
         </div>
       )}
     </div>
