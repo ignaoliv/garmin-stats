@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useSleep, type NocheEvaluada } from '../hooks/useSleep'
 import { Card, CardHeader, Insight, LegendItem, ChartTooltip } from '../components/ui'
+import Ring from '../components/Ring'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -15,28 +16,6 @@ const h = (s: number) => `${Math.floor(s / 3600)}h ${String(Math.round((s % 3600
 const color = (p: number | null) => (p === null ? '#94a3b8' : p >= 80 ? '#34d399' : p >= 60 ? '#fbbf24' : '#f87171')
 const fechaLarga = (f: string) =>
   new Date(f + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-
-function Anillo({ puntaje }: { puntaje: number | null }) {
-  const r = 52, c = 2 * Math.PI * r
-  const p = puntaje ?? 0
-  return (
-    <div className="relative w-[128px] h-[128px] shrink-0">
-      <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
-        <circle cx="64" cy="64" r={r} fill="none" stroke="#28334a" strokeWidth="10" />
-        <circle cx="64" cy="64" r={r} fill="none" stroke={color(puntaje)} strokeWidth="10"
-          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p / 100)} />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center">
-        <div className="text-center">
-          <div className="text-[34px] font-bold leading-none tabular-nums" style={{ color: color(puntaje) }}>
-            {puntaje ?? '—'}
-          </div>
-          <div className="text-[12px] text-ink-muted mt-0.5">de 100</div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function Factores({ noche }: { noche: NocheEvaluada }) {
   return (
@@ -112,7 +91,10 @@ export default function Sleep() {
             <CardHeader title="Última noche" hint={fechaLarga(s.ultima.fecha)} />
             <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 items-start">
               <div className="flex flex-col items-center gap-3">
-                <Anillo puntaje={s.ultima.puntaje} />
+                <Ring pct={s.ultima.puntaje ?? 0} color={color(s.ultima.puntaje)} size={128} etiqueta={`Puntaje de sueño ${s.ultima.puntaje ?? 0} de 100`}>
+                  <div className="metric-lg" style={{ color: color(s.ultima.puntaje) }}>{s.ultima.puntaje ?? '—'}</div>
+                  <div className="label-plain mt-1">de 100</div>
+                </Ring>
                 <div className="text-center">
                   <div className="text-[20px] font-bold text-ink-primary tabular-nums">{h(s.ultima.total_s)}</div>
                   <div className="text-[13px] text-ink-muted">dormidas</div>

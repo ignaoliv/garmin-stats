@@ -1,6 +1,7 @@
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useSteps } from '../hooks/useSteps'
 import { Card, CardHeader, ChartTooltip, LegendItem, Delta } from './ui'
+import Ring from './Ring'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -14,6 +15,7 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
   if (!s.loaded || s.dias.length === 0) return null
 
   const pct = Math.round((s.diasCumplidos / s.ventana.length) * 100)
+  const pctHoy = Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)
 
   return (
     <Card className="p-5">
@@ -22,14 +24,21 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
         hint={`Últimos ${windowDays} días · objetivo de ${s.objetivo.toLocaleString('es-ES')} pasos`}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="label mb-2">Hoy</div>
-          <div className="metric-lg">
-            {(s.hoy?.pasos ?? 0).toLocaleString('es-ES')}
-          </div>
-          <div className="text-[13px] text-ink-muted mt-1">
-            {Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)}% del objetivo
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5 items-stretch">
+        {/* Progress toward a goal: the one shape that says it without a sentence. */}
+        <div className="glass-sunk rounded-lg px-4 py-3 flex items-center gap-3.5">
+          <Ring
+            pct={pctHoy}
+            color={pctHoy >= 100 ? MET : 'var(--color-accent)'}
+            size={78} grosor={8}
+            etiqueta={`${pctHoy}% del objetivo de pasos de hoy`}
+          >
+            <div className="text-[16px] font-bold tabular-nums text-ink-primary">{pctHoy}%</div>
+          </Ring>
+          <div className="min-w-0">
+            <div className="label mb-1.5">Hoy</div>
+            <div className="metric">{(s.hoy?.pasos ?? 0).toLocaleString('es-ES')}</div>
+            <div className="label-plain mt-1">de {s.objetivo.toLocaleString('es-ES')}</div>
           </div>
         </div>
         <div className="glass-sunk rounded-lg px-4 py-3">
@@ -39,10 +48,16 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
           </div>
           <Delta value={s.media - s.mediaPrevia} />
         </div>
-        <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="label mb-2">Objetivo cumplido</div>
-          <div className="metric-lg">{s.diasCumplidos}</div>
-          <div className="text-[13px] text-ink-muted mt-1">de {s.ventana.length} días ({pct}%)</div>
+        <div className="glass-sunk rounded-lg px-4 py-3 flex items-center gap-3.5">
+          <Ring pct={pct} color={MET} size={78} grosor={8}
+            etiqueta={`Objetivo cumplido el ${pct} por ciento de los días`}>
+            <div className="text-[16px] font-bold tabular-nums text-ink-primary">{pct}%</div>
+          </Ring>
+          <div className="min-w-0">
+            <div className="label mb-1.5">Objetivo</div>
+            <div className="metric">{s.diasCumplidos}</div>
+            <div className="label-plain mt-1">de {s.ventana.length} días</div>
+          </div>
         </div>
         <div className="glass-sunk rounded-lg px-4 py-3">
           <div className="label mb-2">Tu mejor día</div>
