@@ -1,5 +1,10 @@
+import { useState } from 'react'
 import { Card } from '../components/ui'
 import Icon from '../components/Icon'
+import PlanGenerator from '../components/PlanGenerator'
+import { useActivityStore } from '../stores/activityStore'
+import { useFitnessHistory } from '../hooks/useFitnessHistory'
+import { proyectarForma, tssDiarioReciente, cargaNecesaria } from '../utils/proyeccion'
 import {
   useEventos, cuentaRegresiva, diasHasta, ETIQUETA_DISCIPLINA, type Evento,
 } from '../hooks/useEventos'
@@ -9,13 +14,13 @@ const MESES = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ]
 
-function tituloMes(fecha: string): string {
-  const [a, m] = fecha.split('-').map(Number)
+const tituloMes = (f: string) => {
+  const [a, m] = f.split('-').map(Number)
   return `${MESES[m - 1]} ${a}`
 }
 
-function diaCorto(fecha: string): { dia: string; mes: string } {
-  const [, m, d] = fecha.split('-').map(Number)
+const diaCorto = (f: string) => {
+  const [, m, d] = f.split('-').map(Number)
   return { dia: String(d), mes: MESES[m - 1].slice(0, 3) }
 }
 
@@ -42,7 +47,7 @@ function BotonVoy({ marcado, onClick }: { marcado: boolean; onClick: () => void 
     <button
       onClick={onClick}
       aria-pressed={marcado}
-      title={marcado ? 'Sacarlo de tus carreras' : 'Marcar que vas'}
+      title={marcado ? 'Sacarla de tus carreras' : 'Marcar que vas'}
       className={`shrink-0 px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-colors ${
         marcado
           ? 'bg-state-good/15 border-state-good/50 text-state-good'
@@ -51,6 +56,38 @@ function BotonVoy({ marcado, onClick }: { marcado: boolean; onClick: () => void 
     >
       {marcado ? '✓ Vas' : 'Voy'}
     </button>
+  )
+}
+
+/** Con qué forma llegás si seguís entrenando como venís. */
+function Proyeccion({ dias }: { dias: number }) {
+  const actividades = useActivityStore(s => s.activities)
+  const { current } = useFitnessHistory()
+  if (!current || dias <= 0) return null
+
+  const tssDiario = tssDiarioReciente(actividades, 28)
+  const p = proyectarForma(current.ctl, current.atl, tssDiario, dias)
+  const cambio = p.ctl - Math.round(current.ctl)
+  const paraDiez = cargaNecesaria(current.ctl, current.ctl + 10, dias)
+
+  return (
+    <div className="mt-4 pt-4 border-t border-surface-line">
+      <p className="label mb-2">Si seguís así</p>
+      <div className="flex items-baseline gap-4 flex-wrap">
+        <span className="text-[14px] text-ink-secondary">
+          Llegás con fitness <strong className="text-ink-primary metric">{p.ctl}</strong>
+          <span className="text-ink-muted">
+            {' '}({cambio >= 0 ? '+' : ''}{cambio} desde {Math.round(current.ctl)})
+          </span>
+        </span>
+      </div>
+      <p className="text-[13px] text-ink-muted mt-1.5 leading-relaxed">
+        Asume que sostenés los {p.tssDiario} TSS por día de las últimas 4 semanas.
+        {paraDiez !== null && paraDiez > p.tssDiario && (
+          <> Para llegar 10 puntos más arriba harían falta {paraDiez} TSS diarios.</>
+        )}
+      </p>
+    </div>
   )
 }
 
@@ -68,11 +105,8 @@ function FilaEvento({ ev, marcado, onToggle }: {
 
       <div className="min-w-0 flex-1">
         <a
-          href={ev.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[15px] font-semibold text-ink-primary hover:text-accent transition-colors
-                     block truncate"
+          href={ev.url} target="_blank" rel="noopener noreferrer"
+          className="text-[15px] font-semibold text-ink-primary hover:text-accent transition-colors block truncate"
         >
           {ev.nombre}
         </a>
@@ -96,23 +130,39 @@ export default function Eventos() {
     cargando, actualizado, filtrados, mios, voy, prefs, actualizarPrefs, alternarVoy,
     disciplinasDisponibles, provinciasDisponibles, total,
   } = useEventos()
+  const [preparando, setPreparando] = useState<Evento | null>(null)
+
+  const marco = (hijo: React.ReactNode) => (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
+        <header>
+          <h1 className="title-page">Carreras</h1>
+          <p className="label-plain mt-2">
+            Las carreras de tu zona y cómo llegás a las que elegís
+          </p>
+        </header>
+        {hijo}
+      </div>
+    </div>
+  )
 
   if (cargando) {
-    return <p className="text-[15px] text-ink-secondary animate-pulse">Cargando el calendario…</p>
+    return marco(<p className="text-[15px] text-ink-secondary animate-pulse">Cargando el calendario…</p>)
   }
 
   if (total === 0) {
-    return (
+    return marco(
       <Card className="p-6">
         <h2 className="text-[17px] font-semibold text-ink-primary mb-2">Todavía no bajaste el calendario</h2>
         <p className="text-[14px] text-ink-secondary mb-4">
-          Las carreras se bajan de calendariodecarreras.ar, que las publica como datos estructurados.
+          Las carreras salen de calendariodecarreras.ar, que las publica como datos estructurados.
+          El botón de sincronizar también las actualiza.
         </p>
         <code className="block bg-surface-overlay border border-surface-line rounded-lg p-3
                          font-mono text-[13px] text-ink-secondary">
           python3 fetch/eventos.py
         </code>
-      </Card>
+      </Card>,
     )
   }
 
@@ -131,22 +181,24 @@ export default function Eventos() {
     porMes.get(k)!.push(e)
   }
 
-  return (
-    <div className="space-y-6">
+  return marco(
+    <>
       {mios.length > 0 && (
         <section>
           <h2 className="text-[15px] font-semibold text-ink-primary mb-3">Tus carreras</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
             {mios.map(ev => {
               const dias = diasHasta(ev.fecha)
               return (
-                <Card key={ev.id} className="p-4">
-                  <div className="flex items-start justify-between gap-3 mb-3">
+                <Card key={ev.id} className="p-5">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="label">{ETIQUETA_DISCIPLINA[ev.disciplina] ?? ev.disciplina}</p>
+                      <p className="label">
+                        {ETIQUETA_DISCIPLINA[ev.disciplina] ?? ev.disciplina} · {ev.localidad}
+                      </p>
                       <a
                         href={ev.url} target="_blank" rel="noopener noreferrer"
-                        className="text-[15px] font-semibold text-ink-primary hover:text-accent
+                        className="text-[16px] font-semibold text-ink-primary hover:text-accent
                                    transition-colors block leading-snug"
                       >
                         {ev.nombre}
@@ -154,20 +206,48 @@ export default function Eventos() {
                     </div>
                     <BotonVoy marcado onClick={() => alternarVoy(ev.id)} />
                   </div>
-                  <div className="flex items-end gap-2">
-                    <span className="metric-lg text-accent">{dias}</span>
-                    <span className="text-[13px] text-ink-muted mb-1.5">
-                      {dias === 1 ? 'día' : 'días'} · {ev.localidad}
+
+                  <div className="flex items-end gap-2 mt-3">
+                    <span className="metric-lg text-accent leading-none">{dias}</span>
+                    <span className="text-[13px] text-ink-muted mb-1">
+                      {dias === 1 ? 'día' : 'días'}
+                      {dias >= 14 && <> · {Math.floor(dias / 7)} semanas</>}
                     </span>
                   </div>
+
+                  <Proyeccion dias={dias} />
+
+                  <button
+                    onClick={() => setPreparando(preparando?.id === ev.id ? null : ev)}
+                    className="mt-4 w-full py-2 rounded-lg border border-surface-line text-[13.5px]
+                               font-medium text-ink-secondary hover:text-ink-primary
+                               hover:border-surface-line-strong hover:bg-surface-hover transition-colors"
+                  >
+                    {preparando?.id === ev.id ? 'Cerrar el plan' : 'Preparar un plan hasta esta carrera'}
+                  </button>
                 </Card>
               )
             })}
           </div>
+
+          {preparando && (
+            <div className="mt-4">
+              <PlanGenerator
+                key={preparando.id}
+                evento={{
+                  nombre: preparando.nombre,
+                  fecha: preparando.fecha,
+                  disciplina: preparando.disciplina,
+                  localidad: preparando.localidad,
+                }}
+              />
+            </div>
+          )}
         </section>
       )}
 
       <section className="space-y-3">
+        <h2 className="text-[15px] font-semibold text-ink-primary">Qué se viene en tu zona</h2>
         <div className="flex flex-wrap items-center gap-2">
           {disciplinasDisponibles.map(([d, n]) => (
             <Chip key={d} activo={prefs.disciplinas.includes(d)} onClick={() => alternarDisciplina(d)}>
@@ -175,7 +255,6 @@ export default function Eventos() {
             </Chip>
           ))}
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
           <Chip activo={!prefs.provincia} onClick={() => actualizarPrefs({ provincia: null })}>
             Todo el país
@@ -198,21 +277,17 @@ export default function Eventos() {
         [...porMes.entries()].map(([mes, eventos]) => (
           <section key={mes}>
             <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-[15px] font-semibold text-ink-primary capitalize">
+              <h3 className="text-[15px] font-semibold text-ink-primary capitalize">
                 {tituloMes(eventos[0].fecha)}
-              </h2>
+              </h3>
               <span className="text-[13px] text-ink-muted">
                 {eventos.length} {eventos.length === 1 ? 'carrera' : 'carreras'}
               </span>
             </div>
             <div className="space-y-2">
               {eventos.map(ev => (
-                <FilaEvento
-                  key={ev.id}
-                  ev={ev}
-                  marcado={voy.includes(ev.id)}
-                  onToggle={() => alternarVoy(ev.id)}
-                />
+                <FilaEvento key={ev.id} ev={ev} marcado={voy.includes(ev.id)}
+                  onToggle={() => alternarVoy(ev.id)} />
               ))}
             </div>
           </section>
@@ -224,6 +299,6 @@ export default function Eventos() {
         {filtrados.length} de {total} carreras · fuente calendariodecarreras.ar
         {actualizado && <> · actualizado el {actualizado}</>}
       </p>
-    </div>
+    </>,
   )
 }

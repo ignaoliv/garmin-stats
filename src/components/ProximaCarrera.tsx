@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from './ui'
-import { useEventos, diasHasta, ETIQUETA_DISCIPLINA } from '../hooks/useEventos'
+import Icon from './Icon'
+import { useEventos, diasHasta, cuentaRegresiva, ETIQUETA_DISCIPLINA } from '../hooks/useEventos'
 
 const MESES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -12,13 +13,43 @@ function fechaLarga(fecha: string): string {
   return `${d} de ${MESES[m - 1]}`
 }
 
-/** La cuenta regresiva de la próxima carrera anotada.
- *
- *  Sólo aparece si marcó alguna: sin carrera a la vista es una tarjeta vacía
- *  ocupando el lugar más caro de la pantalla. */
+/** La cuenta regresiva de la próxima carrera anotada, o la puerta de entrada a
+ *  la sección si todavía no anotó ninguna. Sólo desaparece del todo cuando no
+ *  hay ni una carrera que ofrecer. */
 export default function ProximaCarrera() {
-  const { mios } = useEventos()
-  if (mios.length === 0) return null
+  const { mios, filtrados } = useEventos()
+
+  // Sin ninguna marcada no hay cuenta regresiva, pero sí hay algo que decir:
+  // que la sección existe y cuántas carreras hay esperando. Callarse acá era
+  // dejar la función escondida detrás de un menú.
+  if (mios.length === 0) {
+    if (filtrados.length === 0) return null
+    const primera = filtrados[0]
+    return (
+      <Link
+        to="/carreras"
+        className="glass rounded-2xl p-4 flex items-center gap-3 rise-in transition-colors
+                   hover:bg-surface-hover group"
+      >
+        <span className="shrink-0 w-9 h-9 rounded-full grid place-items-center
+                         text-accent-soft group-hover:text-accent transition-colors">
+          <Icon name="records" size={19} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold text-ink-primary leading-snug">
+            {filtrados.length} {filtrados.length === 1 ? 'carrera' : 'carreras'} en tu zona
+          </span>
+          <span className="block text-[13px] text-ink-muted truncate">
+            La próxima: {primera.nombre}, {cuentaRegresiva(primera.fecha)} · marcá a cuál vas y te
+            armo el plan
+          </span>
+        </span>
+        <span className="shrink-0 text-ink-muted group-hover:text-ink-primary transition-colors">
+          <Icon name="chevron-derecha" size={17} />
+        </span>
+      </Link>
+    )
+  }
 
   const [proxima, ...resto] = mios
   const dias = diasHasta(proxima.fecha)
@@ -57,7 +88,7 @@ export default function ProximaCarrera() {
         </div>
 
         <Link
-          to="/entrenar"
+          to="/carreras"
           className="shrink-0 px-3.5 py-2 rounded-lg text-[13px] font-medium text-ink-secondary
                      border border-surface-line hover:border-surface-line-strong hover:text-ink-primary
                      hover:bg-surface-hover transition-colors"

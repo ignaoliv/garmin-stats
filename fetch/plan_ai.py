@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -112,6 +112,23 @@ AJUSTE DE CARGA — usá el estado real para decidir la dirección:
 - Tené en cuenta el ciclismo: no le pongas piernas pesadas el día antes de una
   salida larga si el historial muestra que sale los fines de semana.
 
+SI VIENE UN "evento_objetivo", el plan se ordena hacia esa fecha:
+- La última semana del plan es la de la carrera y va en descarga: mitad del
+  volumen, nada de fallo muscular, nada de ejercicio nuevo. Se llega descansado,
+  no fundido. Ganar fuerza en los últimos siete días es imposible; perderla por
+  llegar cansado, muy fácil.
+- La anteúltima semana también baja, aunque menos.
+- Nada de piernas pesadas en los últimos diez días: sentadilla y peso muerto
+  bajan a la mitad de las series y se quedan lejos del fallo.
+- El resto del plan va de más general a más específico a medida que se acerca
+  la fecha. Si la carrera es de ciclismo, la fuerza pasa de construir a sostener:
+  es sostén del pedaleo, no el objetivo en sí.
+- El día de la carrera NO lleva sesión: ese día se corre. La última sesión del
+  plan cae como mínimo dos días antes.
+- En "resumen" nombrá la carrera y cuántas semanas hay hasta ella.
+- Si faltan menos de tres semanas no hay bloque de fuerza que construir: el plan
+  es de mantenimiento y descarga, y decilo con todas las letras en "resumen".
+
 Devolvés JSON válido y NADA más:
 {{
   "titulo": "nombre corto del plan",
@@ -150,15 +167,20 @@ def main() -> None:
     ap.add_argument("--days", type=int, default=3)
     ap.add_argument("--objetivo", type=str, default="ganar fuerza general manteniendo el ciclismo")
     ap.add_argument("--model", default=DEFAULT_MODEL)
+    ap.add_argument("--evento", type=str, default="", help='JSON: {"nombre","fecha","disciplina","localidad"}')
     ap.add_argument("--from-stdin", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
+    evento = None
     if args.from_stdin:
         req = json.load(sys.stdin)
         args.weeks = int(req.get("weeks", args.weeks))
         args.days = int(req.get("days", args.days))
         args.objetivo = req.get("objetivo") or args.objetivo
+        evento = req.get("evento") or None
+    elif args.evento:
+        evento = json.loads(args.evento)
 
     estado = estado_del_atleta()
     pedido = {
@@ -167,6 +189,24 @@ def main() -> None:
         "dias_por_semana": args.days,
         "estado_actual": estado,
     }
+
+    if evento and evento.get("fecha"):
+        faltan = (date.fromisoformat(evento["fecha"]) - date.today()).days
+        # El plan termina el día de la carrera, no una semana después: las
+        # semanas se calculan desde la fecha, no se piden aparte.
+        # Semanas enteras que entran antes de la fecha. Redondear para arriba
+        # daba un plan más largo que el tiempo disponible.
+        semanas = max(1, min(12, faltan // 7))
+        args.weeks = semanas
+        pedido["semanas"] = semanas
+        pedido["evento_objetivo"] = {
+            "nombre": evento.get("nombre"),
+            "fecha": evento["fecha"],
+            "disciplina": evento.get("disciplina"),
+            "lugar": evento.get("localidad"),
+            "dias_hasta_la_carrera": faltan,
+            "semanas_hasta_la_carrera": semanas,
+        }
     if args.dry_run:
         print(json.dumps(pedido, ensure_ascii=False, indent=2))
         return

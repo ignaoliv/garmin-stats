@@ -22,14 +22,52 @@ const bonito = (k: string) => k.replace(/_/g, ' ').toLowerCase()
 const fmt = (b: BloquePlan) =>
   b.duracion_s ? `${b.sets} × ${b.duracion_s}s` : `${b.sets} × ${b.reps} reps`
 
-export default function PlanGenerator() {
-  const [semanas, setSemanas] = useState(4)
+/** Fecha en la zona del navegador. toISOString() la corre a UTC y una tarde
+ *  termina agendada un día después. */
+function fechaLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export interface EventoObjetivo {
+  nombre: string
+  fecha: string
+  disciplina: string
+  localidad: string
+}
+
+/** @param evento Cuando hay carrera, el plan se ordena hacia esa fecha: las
+ *  semanas las manda la cuenta regresiva y no se piden por pantalla. */
+export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = {}) {
+  // Semanas ENTERAS que entran antes de la carrera. Redondear para arriba daba
+  // un plan más largo que el tiempo disponible, y el final se pasaba de fecha.
+  const diasHastaCarrera = evento
+    ? Math.round((new Date(evento.fecha + 'T12:00:00').getTime() - new Date().setHours(12, 0, 0, 0)) / 86_400_000)
+    : null
+  const semanasHastaCarrera = diasHastaCarrera !== null
+    ? Math.max(1, Math.min(12, Math.floor(diasHastaCarrera / 7)))
+    : null
+  const [semanas, setSemanas] = useState(semanasHastaCarrera ?? 4)
   const [dias, setDias] = useState(3)
-  const [objetivo, setObjetivo] = useState('ganar fuerza general manteniendo el ciclismo')
+  const [objetivo, setObjetivo] = useState(
+    evento
+      ? `llegar en forma a ${evento.nombre}`
+      : 'ganar fuerza general manteniendo el ciclismo',
+  )
   const [plan, setPlan] = useState<Plan | null>(null)
   const [estado, setEstado] = useState<'idle' | 'generando' | 'enviando' | 'error'>('idle')
   const [mensaje, setMensaje] = useState('')
-  const [inicio, setInicio] = useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10))
+  // Con carrera a la vista el plan no arranca mañana porque sí: arranca donde
+  // tenga que arrancar para que la última semana caiga sobre la fecha.
+  const [inicio, setInicio] = useState(() => {
+    const d = new Date()
+    if (evento && semanasHastaCarrera) {
+      // El plan termina la víspera: el día de la carrera se corre, no se entrena.
+      const arranque = new Date(evento.fecha + 'T12:00:00')
+      arranque.setDate(arranque.getDate() - semanasHastaCarrera * 7)
+      if (arranque > d) return fechaLocal(arranque)
+    }
+    return fechaLocal(new Date(d.getTime() + 86_400_000))
+  })
 
   const generar = async () => {
     setEstado('generando'); setMensaje(''); setPlan(null)
@@ -37,7 +75,7 @@ export default function PlanGenerator() {
       const res = await fetch('/api/plan-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weeks: semanas, days: dias, objetivo }),
+        body: JSON.stringify({ weeks: semanas, days: dias, objetivo, evento }),
       })
       const body = await res.json()
       if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`)
@@ -94,21 +132,27 @@ export default function PlanGenerator() {
   return (
     <Card className="p-5">
       <CardHeader
-        title="Generar un plan completo"
-        hint="La IA lo arma mirando tu carga real, tu recuperación y tu historial de fuerza"
+        title={evento ? `Plan hasta ${evento.nombre}` : 'Generar un plan completo'}
+        hint={evento
+          ? `${semanasHastaCarrera} semanas, con la última en descarga para llegar descansado`
+          : 'La IA lo arma mirando tu carga real, tu recuperación y tu historial de fuerza'}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_110px] gap-3 mb-3">
+      <div className={`grid grid-cols-1 gap-3 mb-3 ${
+        evento ? 'sm:grid-cols-[1fr_110px]' : 'sm:grid-cols-[1fr_110px_110px]'
+      }`}>
         <label className="block">
           <span className="text-[13px] text-ink-muted block mb-1.5">Objetivo</span>
           <input value={objetivo} onChange={e => setObjetivo(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary focus:outline-none focus:border-accent" />
         </label>
-        <label className="block">
-          <span className="text-[13px] text-ink-muted block mb-1.5">Semanas</span>
-          <input type="number" min={1} max={12} value={semanas} onChange={e => setSemanas(Number(e.target.value))}
-            className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary tabular-nums focus:outline-none focus:border-accent" />
-        </label>
+        {!evento && (
+          <label className="block">
+            <span className="text-[13px] text-ink-muted block mb-1.5">Semanas</span>
+            <input type="number" min={1} max={12} value={semanas} onChange={e => setSemanas(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary tabular-nums focus:outline-none focus:border-accent" />
+          </label>
+        )}
         <label className="block">
           <span className="text-[13px] text-ink-muted block mb-1.5">Días/sem</span>
           <input type="number" min={1} max={6} value={dias} onChange={e => setDias(Number(e.target.value))}
