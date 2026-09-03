@@ -16,6 +16,7 @@ import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '.
 import InsightsCard from '../components/InsightsCard'
 import DescansoCard from '../components/DescansoCard'
 import StepsCard from '../components/StepsCard'
+import ProximaCarrera from '../components/ProximaCarrera'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -106,6 +107,8 @@ export default function Dashboard() {
             <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
           </div>
         </section>
+
+        <ProximaCarrera />
 
         {/* ── Training balance ───────────────────────────────────────────── */}
         <Card className="p-5">

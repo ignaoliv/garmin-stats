@@ -249,6 +249,16 @@ def main():
     except Exception as e:
         print(f"  aviso: no se pudo bajar la recuperación ({str(e)[:90]})")
 
+    # El calendario de carreras no viene de Garmin, pero se refresca acá para
+    # que el botón de sincronizar deje todo al día de una sola pasada.
+    try:
+        import subprocess
+        subprocess.run(["python3", str(Path(__file__).parent / "eventos.py")],
+                       check=False, capture_output=True, timeout=180)
+        print("  ✔ calendario de carreras actualizado")
+    except Exception as e:
+        print(f"  aviso: no se pudo actualizar el calendario de carreras ({str(e)[:80]})")
+
     # Real HR zones and stream-derived TSS, folded back into the summaries.
     try:
         import subprocess
