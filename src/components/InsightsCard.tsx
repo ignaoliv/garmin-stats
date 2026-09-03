@@ -125,18 +125,56 @@ function Bloque({ icono, bloque }: { icono: "corazon" | "pasos"; bloque?: Bloque
   )
 }
 
+const hoyLocal = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function InsightsCard() {
   const [data, setData] = useState<Insights | null>(null)
   const [abierto, setAbierto] = useState(false)
+  const [regenerando, setRegenerando] = useState(false)
 
   useEffect(() => {
-    fetch('/data/insights.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-      .then(setData)
-      .catch(() => setData(null))
+    let cancelado = false
+
+    const cargar = async () => {
+      const r = await fetch('/data/insights.json').catch(() => null)
+      const guardado: Insights | null =
+        r?.ok && r.headers.get('content-type')?.includes('json') ? await r.json() : null
+      if (cancelado) return
+      if (guardado) setData(guardado)
+
+      // The analysis reads today's training, steps, sleep and resting heart
+      // rate, so one generated yesterday is describing a different day.
+      if (guardado?.generado === hoyLocal()) return
+
+      setRegenerando(true)
+      try {
+        const res = await fetch('/api/insights')
+        const nuevo = await res.json()
+        if (!cancelado && res.ok && !nuevo.error) setData(nuevo)
+      } catch {
+        // Keep yesterday's analysis rather than blanking the card.
+      } finally {
+        if (!cancelado) setRegenerando(false)
+      }
+    }
+
+    cargar()
+    return () => { cancelado = true }
   }, [])
 
-  if (!data) return null
+  if (!data) {
+    return regenerando ? (
+      <Card className="p-4">
+        <div className="flex items-center gap-3">
+          <span className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <p className="text-[14px] text-ink-secondary">Analizando tu día…</p>
+        </div>
+      </Card>
+    ) : null
+  }
   const tone = TONE[data.estado] ?? TONE.bien
 
   return (
@@ -161,7 +199,13 @@ export default function InsightsCard() {
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tone.color }} />
               <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: tone.color }}>{tone.label}</span>
             </div>
-            <p className="text-[16px] font-semibold text-ink-primary leading-snug truncate">{data.titular}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-[16px] font-semibold text-ink-primary leading-snug truncate">{data.titular}</p>
+              {regenerando && (
+                <span className="w-3 h-3 shrink-0 rounded-full border-2 border-accent border-t-transparent animate-spin"
+                  title="Actualizando con los datos de hoy" />
+              )}
+            </div>
           </div>
 
           <button

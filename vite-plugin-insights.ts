@@ -29,6 +29,16 @@ export function insightsPlugin(): Plugin {
       proc.on('error', fail)
     })
 
+  const runArgs = (script: string, args: string[]): Promise<string> =>
+    new Promise((ok, fail) => {
+      const proc = spawn('python3', [resolve(root, script), ...args], { cwd: root, timeout: 180_000 })
+      let out = '', err = ''
+      proc.stdout.on('data', d => (out += d))
+      proc.stderr.on('data', d => (err += d))
+      proc.on('close', code => (code === 0 ? ok(out) : fail(new Error(err || `exit ${code}`))))
+      proc.on('error', fail)
+    })
+
   const runWithInput = (script: string, input: string): Promise<string> =>
     new Promise((ok, fail) => {
       const proc = spawn('python3', [resolve(root, script), '--from-stdin'], {
@@ -47,6 +57,23 @@ export function insightsPlugin(): Plugin {
   return {
     name: 'garmin-activity-insights',
     configureServer(server) {
+      // Daily refresh of the dashboard analysis. Reads local data and calls the
+      // model; writes nothing to Garmin.
+      server.middlewares.use('/api/insights', async (_req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        try {
+          if (!inFlight.has('__insights__')) {
+            inFlight.set('__insights__', runArgs('fetch/insights.py', ['--json'])
+              .finally(() => inFlight.delete('__insights__')))
+          }
+          const body = await inFlight.get('__insights__')!
+          res.end(body.trim() || JSON.stringify({ error: 'sin respuesta' }))
+        } catch (e) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+        }
+      })
+
       // Plan generation only reads local data and calls the model; no writes.
       server.middlewares.use('/api/plan-ai', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')

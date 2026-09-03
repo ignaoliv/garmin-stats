@@ -127,6 +127,7 @@ def build_digest(acts: list[dict]) -> dict:
 
     pasos = build_steps_digest(now)
     recuperacion = build_recovery_digest(now)
+    sueño = build_sleep_digest(now)
 
     strength = [a for a in acts if _sport(a) == "strength"]
     recent = sorted(acts, key=lambda a: a["startTime"], reverse=True)[:12]
@@ -186,6 +187,7 @@ def build_digest(acts: list[dict]) -> dict:
         },
         "pasos_diarios": pasos,
         "recuperacion": recuperacion,
+        "sueño": sueño,
         "ultimas_actividades": [
             {
                 "fecha": a["startTime"][:10],
@@ -244,6 +246,55 @@ def build_steps_digest(now: datetime) -> dict | None:
         "mejor_dia": {"fecha": mejor["fecha"], "pasos": mejor["pasos"]},
         "media_por_año": {y: round(sum(v) / len(v)) for y, v in sorted(por_año.items())},
         "dias_con_registro": len(con_datos),
+    }
+
+
+def build_sleep_digest(now: datetime) -> dict | None:
+    """
+    Sleep, with its coverage stated up front.
+
+    Detailed nights are rare here, so the digest says how many exist rather than
+    handing over averages that look like a series. Without that the model would
+    happily describe a "sleep pattern" built on a handful of nights.
+    """
+    f = DATA / "sleep.json"
+    if not f.exists():
+        return None
+    noches = json.loads(f.read_text()).get("noches", [])
+    if not noches:
+        return None
+
+    def media(k: str) -> float | None:
+        v = [n[k] for n in noches if n.get(k)]
+        return round(sum(v) / len(v), 1) if v else None
+
+    ultima = noches[-1]
+    dias_desde = (now.date() - datetime.fromisoformat(ultima["fecha"]).date()).days
+    total = ultima["total_s"] or 1
+    barridos = (now.date() - datetime.fromisoformat(noches[0]["fecha"]).date()).days or 1
+
+    return {
+        "noches_registradas": len(noches),
+        "dias_del_periodo": barridos,
+        "cobertura": f"{round(len(noches) / barridos * 100)}%",
+        "aviso_cobertura": (
+            "Muy pocas noches medidas: no hay serie para hablar de patrones ni de tendencias de sueño."
+            if len(noches) / barridos < 0.3 else None
+        ),
+        "ultima_noche": {
+            "hace_dias": dias_desde,
+            "horas": round(ultima["total_s"] / 3600, 1),
+            "profundo_pct": round(ultima["profundo_s"] / total * 100),
+            "rem_pct": round(ultima["rem_s"] / total * 100),
+            "despierto_min": round(ultima["despierto_s"] / 60),
+            "spo2_medio": ultima.get("spo2_medio"),
+            "respiracion": ultima.get("respiracion_media"),
+        },
+        "media_de_las_noches_medidas": {
+            "horas": round((media("total_s") or 0) / 3600, 1),
+            "spo2": media("spo2_medio"),
+            "respiracion": media("respiracion_media"),
+        },
     }
 
 
@@ -336,8 +387,14 @@ entrenamiento sólo es sostenible si el cuerpo la asimila.
   Como referencia, por debajo de 50 ppm es una FC en reposo de persona bien
   entrenada.
 - Body battery: cuánto carga (máxima) y cuánto se drena (mínima) en el día.
-- Si "datos_de_sueño" dice que hay pocas noches medidas, NO analices el sueño
-  ni sugieras nada sobre dormir: no tenés con qué. Decilo si viene al caso.
+SUEÑO ("sueño"): mirá primero "aviso_cobertura".
+- Si trae un aviso, NO hables de patrones ni de tendencias de sueño. Podés
+  comentar la última noche si es reciente, y decir que faltan noches medidas.
+- La última noche sólo es relevante si "hace_dias" es 0 o 1. Más vieja que eso,
+  mencionala como dato aislado, no como estado actual.
+- Referencias: 13-23% de sueño profundo y 20-25% de REM sobre el total.
+  SpO2 medio por debajo de 90% de forma repetida merece consulta médica, pero
+  NO diagnostiques: sugerí consultarlo y nada más.
 
 Reglas:
 - Basate SOLO en los números que te doy. No inventes nada.
@@ -357,7 +414,7 @@ Devolvés JSON válido y NADA más, con esta forma exacta:
   "recuperacion": {
     "estado": "bien" | "atencion" | "alerta",
     "titular": "una frase corta sobre cómo viene tu recuperación",
-    "detalle": "2-3 oraciones citando la FC en reposo y cómo cambió, relacionándola con la carga de entrenamiento. Si faltan datos de sueño, aclaralo en una frase."
+    "detalle": "2-3 oraciones citando la FC EN REPOSO y su dirección, y el sueño de anoche si es de hoy o ayer, relacionándolo con la carga de entrenamiento. Si la cobertura de sueño es baja, decilo en vez de inventar un patrón."
   },
   "pasos": {
     "estado": "bien" | "atencion" | "alerta",
@@ -406,6 +463,7 @@ def main() -> None:
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--list-models", action="store_true", help="Listar los modelos de texto disponibles y salir")
     ap.add_argument("--dry-run", action="store_true", help="Mostrar el digest sin llamar al modelo")
+    ap.add_argument("--json", action="store_true", help="Emitir sólo el JSON resultante (para el endpoint)")
     args = ap.parse_args()
 
     acts_path = DATA / "activities.json"
@@ -450,6 +508,9 @@ def main() -> None:
 
     out = parsed | {"generado": digest["generado"], "modelo": args.model}
     (DATA / "insights.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False))
+        return
     print(f"\n✔ Guardado en public/data/insights.json\n")
     print(f"  {out.get('titular')}")
     print(f"  estado: {out.get('estado')}")
