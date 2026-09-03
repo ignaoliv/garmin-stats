@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Card } from './ui'
 import Icon from './Icon'
 import AIProgress from './AIProgress'
+import { useActivityStore } from '../stores/activityStore'
 
 interface Bloque {
   estado: 'bien' | 'atencion' | 'alerta'
@@ -19,6 +20,8 @@ interface Insights {
   recuperacion?: Bloque
   pasos?: Bloque
   generado: string
+  /** Marca de la sincronización que leyó este análisis. */
+  datos_hasta?: string
   modelo: string
 }
 
@@ -140,6 +143,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
   const [data, setData] = useState<Insights | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [regenerando, setRegenerando] = useState(false)
+  const syncedAt = useActivityStore(s => s.stats?.syncedAt)
 
   useEffect(() => {
     let cancelado = false
@@ -151,9 +155,14 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
       if (cancelado) return
       if (guardado) setData(guardado)
 
-      // The analysis reads today's training, steps, sleep and resting heart
-      // rate, so one generated yesterday is describing a different day.
-      if (guardado?.generado === hoyLocal()) return
+      // El análisis lee el entrenamiento, los pasos, el sueño y la frecuencia
+      // en reposo del día, así que uno de ayer describe otro día. Y aunque sea
+      // de hoy, si después llegó una sincronización con datos nuevos ya está
+      // describiendo un pasado: hay que rehacerlo.
+      const alDia =
+        guardado?.generado === hoyLocal() &&
+        (!syncedAt || guardado.datos_hasta === syncedAt)
+      if (alDia) return
 
       setRegenerando(true)
       try {
@@ -169,7 +178,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
 
     cargar()
     return () => { cancelado = true }
-  }, [])
+  }, [syncedAt])
 
   if (!data) {
     if (!regenerando) return null

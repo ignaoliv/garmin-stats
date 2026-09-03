@@ -79,6 +79,14 @@ def _sport(a: dict) -> str:
     return a.get("sport") or "other"
 
 
+def sincronizado_en() -> str | None:
+    """Cuándo se bajaron los datos que estamos leyendo."""
+    try:
+        return json.loads((DATA / "stats.json").read_text()).get("syncedAt")
+    except (OSError, ValueError):
+        return None
+
+
 def build_digest(acts: list[dict]) -> dict:
     """
     Condense ~1000 activities into the handful of numbers an analysis needs.
@@ -151,6 +159,22 @@ def build_digest(acts: list[dict]) -> dict:
     pct = lambda a, b: round((a - b) / b * 100) if b else None
     semanas_vacias = sum(1 for w in weekly if w["sesiones"] == 0)
 
+    # Cuándo TERMINÓ el hueco más largo, no sólo cuándo empezó. Un parate de 45
+    # días que se cortó hace una semana es una vuelta al entrenamiento, y el
+    # modelo lo leía como un parate en curso porque sólo veía la fecha de inicio.
+    hueco_termino = None
+    if hueco_desde is not None:
+        posteriores = [d for d in dates if d > hueco_desde]
+        hueco_termino = posteriores[0] if posteriores else None
+    volvio_hace = (now.date() - hueco_termino).days if hueco_termino else None
+
+    # Semanas seguidas entrenando, contadas desde la más reciente hacia atrás.
+    racha_semanas = 0
+    for w in reversed(weekly):
+        if w["sesiones"] == 0:
+            break
+        racha_semanas += 1
+
     señales = {
         "vs_año_pasado_horas_pct": pct(ytd["horas"], ytd_prev["horas"]),
         "vs_año_pasado_km_pct": pct(ytd["km"], ytd_prev["km"]),
@@ -158,6 +182,10 @@ def build_digest(acts: list[dict]) -> dict:
         "dias_desde_ultima_actividad": dias_sin_entrenar,
         "hueco_mas_largo_dias_ultimo_año": hueco_max,
         "hueco_mas_largo_empezo": str(hueco_desde) if hueco_desde else None,
+        "hueco_mas_largo_termino": str(hueco_termino) if hueco_termino else None,
+        "dias_desde_que_volvio_a_entrenar": volvio_hace,
+        "semanas_seguidas_entrenando_hasta_hoy": racha_semanas,
+        "sesiones_ultimos_7_dias": window(7) and len(window(7)),
         "semanas_sin_actividad_dentro_de_las_ultimas_12_semanas": semanas_vacias,
         "año_con_mas_volumen": max(
             ((y, round(sum(a["duration"] for a in acts if a["startTime"][:4] == y) / 3600))
@@ -169,6 +197,10 @@ def build_digest(acts: list[dict]) -> dict:
     return {
         "señales_clave": señales,
         "generado": now.strftime("%Y-%m-%d"),
+        # Marca de qué sincronización leyó este análisis. Sin esto, uno hecho a
+        # las 14:39 sobrevivía a una sincronización de las 15:23 y seguía
+        # diciendo "llevás 2 días sin entrenar" con la sesión de ayer ya bajada.
+        "datos_hasta": sincronizado_en(),
         "historial": {
             "total_actividades": len(acts),
             "desde": min(a["startTime"][:10] for a in acts),
@@ -219,7 +251,12 @@ def build_steps_digest(now: datetime) -> dict | None:
         return None
 
     by_date = {d["fecha"]: d for d in dias}
-    objetivo = next((d["objetivo"] for d in con_datos if d.get("objetivo")), 10000)
+    # El más RECIENTE, no el primero: la lista viene de más vieja a más nueva y
+    # Garmin sube el objetivo con el tiempo. Tomando el primero, el análisis
+    # seguía midiendo contra los 8.000 de julio del año pasado.
+    objetivo = next(
+        (d["objetivo"] for d in reversed(con_datos) if d.get("objetivo")), 10000
+    )
 
     def window(days_from: int, days_to: int = 0) -> list[dict]:
         out = []
@@ -349,7 +386,10 @@ SYSTEM = """Sos un entrenador deportivo analizando los datos de un atleta amateu
 
 IDIOMA: español rioplatense, hablándole DIRECTAMENTE al atleta de vos.
 Escribís "llevás", "venís", "tenés", "entrenaste". NUNCA digas "el atleta"
-ni hables en tercera persona. Pasado simple ("fue", "bajó"), nunca pretérito
+ni hables en tercera persona. Los imperativos también van en voseo, con el
+acento en la última sílaba: "mantené", "sumá", "subí", "bajá", "aumentá",
+"descansá", "asegurate", "dormí". NUNCA "mantén", "suma", "sube", "asegúrate",
+"duerme", que son de España. Pasado simple ("fue", "bajó"), nunca pretérito
 compuesto ("ha sido", "ha bajado"). Directo, sin relleno.
 
 FORMATO: escribís para una persona, no para un programador. Los números van
@@ -359,11 +399,29 @@ Las fechas en castellano ("26 de junio"), no en formato ISO.
 
 QUÉ PRIORIZAR — el campo "señales_clave" ya trae lo importante calculado.
 Empezá por ahí y ordená por magnitud:
-1. Caídas o subidas grandes de volumen contra el año pasado o el mes anterior.
-2. Huecos largos sin entrenar y semanas vacías.
-3. Cambios en la mezcla de deportes.
+1. Qué está pasando AHORA: los últimos 7 días y las semanas seguidas entrenando.
+2. Caídas o subidas grandes de volumen contra el año pasado o el mes anterior.
+3. Huecos largos sin entrenar y semanas vacías.
+4. Cambios en la mezcla de deportes.
 Un dato chico (desnivel de una salida, calorías) NO va en las observaciones
-salvo que sea lo único relevante que haya.
+salvo que sea lo único relevante que haya. Y ninguna observación repite el
+titular con otras palabras: el titular ya se lee arriba, las observaciones
+agregan algo distinto.
+
+EL PRESENTE PESA MÁS QUE EL PROMEDIO ANUAL. La comparación contra el año
+pasado describe doce meses; la última semana describe hoy, y es sobre hoy que
+se decide qué hacer mañana.
+- Si "dias_desde_que_volvio_a_entrenar" es chico, el hueco YA TERMINÓ: es una
+  VUELTA al entrenamiento y se cuenta como tal ("volviste a entrenar hace X
+  días"), nunca como un parate en curso.
+- Si "semanas_seguidas_entrenando_hasta_hoy" es 2 o más, hay una racha en
+  marcha. Nombrala antes que la caída anual: es lo que el atleta está
+  sosteniendo ahora.
+- Un arranque después de un parate se sostiene subiendo de a poco. NUNCA
+  recomiendes saltar a sesiones largas ni duplicar el volumen en la primera
+  semana de vuelta: la lesión aparece justamente ahí.
+- El promedio anual se puede seguir mencionando, pero como contexto de dónde
+  viene, no como el titular de lo que está pasando.
 
 PASOS DIARIOS ("pasos_diarios"): miden todo lo que se mueve FUERA del
 entrenamiento. Son una dimensión distinta del volumen de entrenamiento y hay que
@@ -371,7 +429,8 @@ leerlos junto con él:
 - Poco entrenamiento + pocos pasos = vida sedentaria, es la señal más preocupante.
 - Poco entrenamiento + muchos pasos = se mantiene activo aunque no entrene formal.
 - Referencias habituales: menos de 5.000 pasos por día se considera sedentario,
-  7.000-8.000 ya trae beneficios de salud, 10.000 es el objetivo que tiene puesto.
+  7.000-8.000 ya trae beneficios de salud. El objetivo que tiene puesto en el
+  reloj viene en "objetivo_diario": usá ese número, no uno de memoria.
 Si el campo "pasos_diarios" no está o es null, no hables de pasos: decí en el
 bloque correspondiente que todavía no hay datos.
 
@@ -506,7 +565,11 @@ def main() -> None:
         print("ERROR: el modelo no devolvió JSON válido. Respuesta cruda:\n", raw[:600], file=sys.stderr)
         sys.exit(1)
 
-    out = parsed | {"generado": digest["generado"], "modelo": args.model}
+    out = parsed | {
+        "generado": digest["generado"],
+        "datos_hasta": digest["datos_hasta"],
+        "modelo": args.model,
+    }
     (DATA / "insights.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
     if args.json:
         print(json.dumps(out, ensure_ascii=False))
