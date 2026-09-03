@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface Ejercicio {
   id: string
@@ -96,7 +97,10 @@ export default function ExercisePicker({
     }
   }, [todos, q, musculo, equipo])
 
-  return (
+// Los diálogos se montan en <body>: cualquier ancestro con transform o
+// backdrop-filter (la barra lateral, sin ir más lejos) pasa a ser el bloque
+// contenedor de sus descendientes `position: fixed` y los encierra.
+  return createPortal(
     <div className="fixed inset-0 z-[1000] bg-surface-scrim/85 backdrop-blur-sm fade-in flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
       onClick={onClose} role="dialog" aria-modal="true" aria-label="Elegir ejercicio">
       <div className="w-full max-w-[1000px] my-auto rounded-2xl glass-strong modal-in"
@@ -156,7 +160,7 @@ export default function ExercisePicker({
         </div>
       </div>
 
-      {detalle && (
+      {detalle && createPortal(
         <div className="fixed inset-0 z-[1001] bg-surface-scrim/90 flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
           onClick={() => setDetalle(null)}>
           <div className="w-full max-w-[720px] my-auto rounded-2xl glass-strong modal-in"
@@ -210,8 +214,10 @@ export default function ExercisePicker({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }

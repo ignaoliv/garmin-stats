@@ -10,7 +10,6 @@ import { daysAgo } from '../utils/date'
 import { useFitnessHistory } from '../hooks/useFitnessHistory'
 import { useWeekComparison } from '../hooks/useWeekComparison'
 import { useSportVolume } from '../hooks/useSportVolume'
-import { useTrainingStreak } from '../hooks/useTrainingStreak'
 import { useZoneDistribution } from '../hooks/useZoneDistribution'
 import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
@@ -63,7 +62,6 @@ export default function Dashboard() {
   const { current: fitness, sparkPoints } = useFitnessHistory()
   const { current: week, previous: lastWeek } = useWeekComparison()
   const { ranked: sportVolume, totalHours, totalCount } = useSportVolume(30)
-  const streak = useTrainingStreak()
   const { slices: zoneSlices, isAerobicFocused, estimadas: zonasEstimadas } = useZoneDistribution(30)
   const acwr = useACWR(120)
 
@@ -82,7 +80,7 @@ export default function Dashboard() {
       <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         {/* ── Page header ────────────────────────────────────────────────── */}
-        <header className="flex flex-wrap items-baseline justify-between gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="title-page">Resumen</h1>
             <p className="label-plain mt-2">
@@ -92,15 +90,7 @@ export default function Dashboard() {
               )}
             </p>
           </div>
-          {streak > 1 && (
-            <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-surface-card border border-surface-line">
-              <span className="text-xl">🔥</span>
-              <div>
-                <div className="text-[15px] font-bold text-state-warning leading-tight">{streak} días seguidos</div>
-                <div className="text-[13px] text-ink-muted">entrenando</div>
-              </div>
-            </div>
-          )}
+          <InsightsCard compacto />
         </header>
 
         {/* ── This week ──────────────────────────────────────────────────── */}
@@ -116,8 +106,6 @@ export default function Dashboard() {
             <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
           </div>
         </section>
-
-        <InsightsCard />
 
         {/* ── Training balance ───────────────────────────────────────────── */}
         <Card className="p-5">

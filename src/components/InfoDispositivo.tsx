@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
+import { createPortal } from 'react-dom'
 import MetricasDisponibles from './MetricasDisponibles'
 
 /**
@@ -37,7 +38,7 @@ export default function InfoDispositivo() {
         <span className="hidden lg:inline">Qué mide tu reloj</span>
       </button>
 
-      {abierto && (
+      {abierto && createPortal(
         <div
           className="fixed inset-0 z-[1000] bg-surface-scrim/85 backdrop-blur-sm fade-in
                      flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
@@ -58,7 +59,8 @@ export default function InfoDispositivo() {
             </div>
             <MetricasDisponibles />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

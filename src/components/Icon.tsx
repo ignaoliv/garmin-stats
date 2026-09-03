@@ -23,6 +23,7 @@ const PATHS: Record<string, string> = {
   corazon: 'M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9Z',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13h.01M11 12h1v5h1',
   sincronizar: 'M20 11a8 8 0 0 0-14.1-4.6M4 13a8 8 0 0 0 14.1 4.6M20 5v6h-6M4 19v-6h6',
+  'chevron-derecha': 'M9 5l7 7-7 7',
 }
 
 export type IconName = keyof typeof PATHS

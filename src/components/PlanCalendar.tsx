@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
+import { createPortal } from 'react-dom'
 
 export interface BloquePlan {
   category: string
@@ -133,7 +134,7 @@ export default function PlanCalendar({
         </span>
       </div>
 
-      {abierta && (
+      {abierta && createPortal(
         <div className="fixed inset-0 z-[1002] bg-surface-scrim/85 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 overflow-y-auto fade-in"
           onClick={() => setAbierta(null)} role="dialog" aria-modal="true">
           <div className="w-full max-w-[520px] my-auto rounded-2xl glass-strong modal-in"
@@ -161,7 +162,8 @@ export default function PlanCalendar({
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

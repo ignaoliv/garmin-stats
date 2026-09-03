@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Card } from './ui'
 import Icon from './Icon'
 import AIProgress from './AIProgress'
@@ -43,7 +44,10 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
 
   const tone = TONE[data.estado] ?? TONE.bien
 
-  return (
+// Los diálogos se montan en <body>: cualquier ancestro con transform o
+// backdrop-filter (la barra lateral, sin ir más lejos) pasa a ser el bloque
+// contenedor de sus descendientes `position: fixed` y los encierra.
+  return createPortal(
     <div
       className="fixed inset-0 z-[1000] flex items-start justify-center p-4 sm:p-8 overflow-y-auto bg-surface-scrim/80 backdrop-blur-sm fade-in"
       onClick={onClose}
@@ -108,7 +112,8 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -131,7 +136,7 @@ const hoyLocal = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function InsightsCard() {
+export default function InsightsCard({ compacto = false }: { compacto?: boolean } = {}) {
   const [data, setData] = useState<Insights | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [regenerando, setRegenerando] = useState(false)
@@ -167,7 +172,18 @@ export default function InsightsCard() {
   }, [])
 
   if (!data) {
-    return regenerando ? (
+    if (!regenerando) return null
+    if (compacto) {
+      return (
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl glass shimmer">
+          <span className="w-9 h-9 rounded-full grid place-items-center text-accent-soft">
+            <Icon name="cerebro" size={19} />
+          </span>
+          <span className="text-[13px] text-ink-secondary">Analizando tu día…</span>
+        </div>
+      )
+    }
+    return (
       <Card className="p-4">
         <AIProgress
           titulo="Analizando tu día"
@@ -176,9 +192,50 @@ export default function InsightsCard() {
           lineas={2}
         />
       </Card>
-    ) : null
+    )
   }
   const tone = TONE[data.estado] ?? TONE.bien
+
+  // En el encabezado el análisis compite con el título, así que va condensado:
+  // el titular y el estado alcanzan para decidir si vale abrirlo.
+  if (compacto) {
+    return (
+      <>
+        <button
+          onClick={() => setAbierto(true)}
+          className="group flex items-center gap-3 w-full sm:w-auto sm:max-w-[420px] text-left
+                     px-3.5 py-2.5 rounded-xl glass rise-in transition-colors
+                     hover:bg-surface-hover focus:outline-none focus-visible:ring-2
+                     focus-visible:ring-accent focus-visible:ring-offset-2
+                     focus-visible:ring-offset-[#0b1220]"
+          aria-label={`${tone.label}: ${data.titular}. Ver el análisis completo`}
+        >
+          <span className="halo-ring relative shrink-0 w-9 h-9 rounded-full grid place-items-center
+                           text-accent-soft group-hover:text-accent transition-colors">
+            <span className="relative z-10"><Icon name="cerebro" size={19} /></span>
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tone.color }} />
+              <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: tone.color }}>{tone.label}</span>
+              {regenerando && (
+                <span className="w-2.5 h-2.5 ml-0.5 shrink-0 rounded-full border-2 border-accent border-t-transparent animate-spin"
+                  title="Actualizando con los datos de hoy" />
+              )}
+            </span>
+            <span className="block text-[15px] font-semibold text-ink-primary leading-snug truncate">{data.titular}</span>
+          </span>
+
+          <span className="shrink-0 text-ink-muted group-hover:text-ink-primary transition-colors" aria-hidden="true">
+            <Icon name="chevron-derecha" size={17} />
+          </span>
+        </button>
+
+        {abierto && <DetailModal data={data} onClose={() => setAbierto(false)} />}
+      </>
+    )
+  }
 
   return (
     <>

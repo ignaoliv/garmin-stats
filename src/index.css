@@ -88,7 +88,14 @@
 
 /* ── Motion ───────────────────────────────────────────────────────────────
    Short, eased, and always with a reduced-motion escape hatch. Durations stay
-   under 260ms so the interface feels responsive rather than animated. */
+   under 260ms so the interface feels responsive rather than animated.
+
+   El modo de relleno es `backwards`, no `both`: cada fotograma final vuelve a
+   `transform: none`, así que con `both` el elemento se quedaba transformado
+   para siempre y un ancestro transformado pasa a ser el bloque contenedor de
+   sus descendientes `position: fixed`. Eso encerraba cualquier diálogo abierto
+   desde adentro de una sección animada. Con `backwards` la entrada se ve igual
+   y al terminar no queda transformación. */
 @keyframes panel-in {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: none; }
@@ -106,13 +113,13 @@
   to   { opacity: 1; transform: none; }
 }
 
-.panel-in  { animation: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.fade-in   { animation: fade-in 180ms ease-out both; }
-.modal-in  { animation: modal-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.rise-in   { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.panel-in  { animation: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.fade-in   { animation: fade-in 180ms ease-out backwards; }
+.modal-in  { animation: modal-in 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.rise-in   { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* Stagger for lists and grids: each child comes in a beat after the previous. */
-.stagger > * { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > * { animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
 .stagger > *:nth-child(2) { animation-delay: 45ms; }
 .stagger > *:nth-child(3) { animation-delay: 90ms; }
@@ -130,7 +137,7 @@
 /* Page-level entrance: top-level sections rise in one after another. Slightly
    longer and softer than the in-card stagger so a whole screen settles rather
    than snapping. */
-.page-in > * { animation: rise-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.page-in > * { animation: rise-in 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .page-in > *:nth-child(1)  { animation-delay: 0ms; }
 .page-in > *:nth-child(2)  { animation-delay: 50ms; }
 .page-in > *:nth-child(3)  { animation-delay: 100ms; }
