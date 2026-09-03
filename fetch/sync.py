@@ -238,6 +238,12 @@ def main():
         print(f"  aviso: no se pudieron bajar los pasos ({str(e)[:90]})")
 
     try:
+        from sleep import archive_sleep
+        archive_sleep(api, days=21)
+    except Exception as e:
+        print(f"  aviso: no se pudo bajar el sueño ({str(e)[:90]})")
+
+    try:
         from wellness import archive_wellness
         archive_wellness(api, days=30)
     except Exception as e:

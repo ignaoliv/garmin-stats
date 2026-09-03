@@ -6,6 +6,7 @@ const NAV = [
   { to: '/activities', label: 'Actividades', icon: '▤' },
   { to: '/fuerza', label: 'Fuerza', icon: '🏋️' },
   { to: '/planificar', label: 'Planificar', icon: '📋' },
+  { to: '/sueno', label: 'Sueño', icon: '😴' },
   { to: '/progreso', label: 'Progreso', icon: '📊' },
   { to: '/fitness', label: 'Fitness & Forma', icon: '📈' },
   { to: '/zones', label: 'Zonas', icon: '🔥' },

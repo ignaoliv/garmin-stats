@@ -13,6 +13,7 @@ import PerformanceAnalysis from './pages/PerformanceAnalysis'
 import Strength from './pages/Strength'
 import Progress from './pages/Progress'
 import PlanStrength from './pages/PlanStrength'
+import Sleep from './pages/Sleep'
 
 export default function App() {
   const loadActivities = useActivityStore(s => s.loadActivities)
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/fuerza" element={<Strength />} />
             <Route path="/progreso" element={<Progress />} />
             <Route path="/planificar" element={<PlanStrength />} />
+            <Route path="/sueno" element={<Sleep />} />
             <Route path="/zones" element={<ZoneAnalysis />} />
             <Route path="/records" element={<Records />} />
             <Route path="/performance" element={<PerformanceAnalysis />} />
