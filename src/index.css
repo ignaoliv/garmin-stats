@@ -156,36 +156,103 @@
    isolation but drags text contrast below the WCAG floor this app already had
    to fix once — the background must never become legible through the card. */
 .glass {
-  background: color-mix(in oklab, var(--color-surface-card) 78%, transparent);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid color-mix(in oklab, white 9%, transparent);
+  position: relative;
+  background: color-mix(in oklab, var(--color-surface-card) 66%, transparent);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid color-mix(in oklab, white 11%, transparent);
+  /* Three shadows do the depth: a lit top rim, a soft close shadow that lifts
+     the pane off the background, and a wide diffuse one that gives the stack a
+     sense of distance. */
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 11%, transparent),
-    0 10px 34px -12px rgb(0 0 0 / 0.45);
+    inset 0 1px 0 color-mix(in oklab, white 16%, transparent),
+    0 2px 8px -2px rgb(0 0 0 / 0.35),
+    0 22px 56px -22px rgb(0 0 0 / 0.70);
+}
+
+/* A faint sheen across the top third, like light grazing the pane. Sits under
+   the content and never intercepts clicks. */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, white 6%, transparent) 0%,
+    transparent 38%
+  );
 }
 
 /* Sunk panels inside a glass card: darker, no second blur layer. Stacking
    backdrop-filters is the fastest way to make scrolling stutter. */
 .glass-sunk {
-  background: color-mix(in oklab, var(--color-surface-sunk) 72%, transparent);
-  border: 1px solid color-mix(in oklab, white 6%, transparent);
+  background: color-mix(in oklab, var(--color-surface-sunk) 58%, transparent);
+  border: 1px solid color-mix(in oklab, white 7%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 7%, transparent);
 }
 
 /* Overlays sit above content, so they blur harder and tint darker. */
 .glass-strong {
-  background: color-mix(in oklab, var(--color-surface-card) 88%, transparent);
-  backdrop-filter: blur(36px) saturate(170%);
-  -webkit-backdrop-filter: blur(36px) saturate(170%);
-  border: 1px solid color-mix(in oklab, white 12%, transparent);
+  background: color-mix(in oklab, var(--color-surface-card) 82%, transparent);
+  backdrop-filter: blur(44px) saturate(190%);
+  -webkit-backdrop-filter: blur(44px) saturate(190%);
+  border: 1px solid color-mix(in oklab, white 15%, transparent);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 14%, transparent),
-    0 24px 70px -20px rgb(0 0 0 / 0.65);
+    inset 0 1px 0 color-mix(in oklab, white 20%, transparent),
+    0 32px 90px -24px rgb(0 0 0 / 0.75);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
   .glass, .glass-strong { background: var(--color-surface-card); }
   .glass-sunk { background: var(--color-surface-sunk); }
+}
+
+/* ── Type scale ───────────────────────────────────────────────────────────
+   Oura's hierarchy in two moves: the number is much larger and tighter than
+   anything around it, and its label is much smaller and quieter. The contrast
+   between the two is what makes a metric readable at a glance — a 28px number
+   over a 13px label reads as a paragraph; a 40px number over an 11px label
+   reads as a measurement. */
+.metric-xl {
+  font-size: 46px; line-height: 1; font-weight: 700;
+  letter-spacing: -0.025em; font-variant-numeric: tabular-nums;
+  color: var(--color-ink-primary);
+}
+.metric-lg {
+  font-size: 34px; line-height: 1; font-weight: 700;
+  letter-spacing: -0.022em; font-variant-numeric: tabular-nums;
+  color: var(--color-ink-primary);
+}
+.metric {
+  font-size: 26px; line-height: 1; font-weight: 700;
+  letter-spacing: -0.018em; font-variant-numeric: tabular-nums;
+  color: var(--color-ink-primary);
+}
+/* The unit rides with the number but never competes with it. */
+.metric-unit {
+  font-size: 0.44em; font-weight: 500; letter-spacing: 0;
+  color: var(--color-ink-muted); margin-left: 0.25em;
+}
+
+.label {
+  font-size: 11px; font-weight: 600; line-height: 1.3;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.label-plain {
+  font-size: 13px; font-weight: 500; line-height: 1.4;
+  color: var(--color-ink-muted);
+}
+
+.title-page {
+  font-size: 30px; line-height: 1.1; font-weight: 700;
+  letter-spacing: -0.025em; color: var(--color-ink-primary);
+}
+.title-card {
+  font-size: 16px; line-height: 1.25; font-weight: 650;
+  letter-spacing: -0.01em; color: var(--color-ink-primary);
 }
 
 * { box-sizing: border-box; }
@@ -197,9 +264,10 @@
 body {
   margin: 0;
   background:
-    radial-gradient(1100px 760px at 10% -6%,  color-mix(in oklab, var(--color-sport-swimming) 34%, transparent), transparent 62%),
-    radial-gradient(900px 640px at 94% 2%,    color-mix(in oklab, var(--color-accent) 22%, transparent), transparent 58%),
-    radial-gradient(900px 900px at 60% 108%,  color-mix(in oklab, var(--color-sport-cardio) 16%, transparent), transparent 60%),
+    radial-gradient(1000px 700px at  8% -10%, color-mix(in oklab, var(--color-sport-swimming) 62%, transparent), transparent 58%),
+    radial-gradient(820px  600px at 96%  -2%, color-mix(in oklab, var(--color-accent) 40%, transparent), transparent 55%),
+    radial-gradient(900px  820px at 52% 112%, color-mix(in oklab, var(--color-sport-cardio) 34%, transparent), transparent 58%),
+    radial-gradient(700px  520px at 78%  52%, color-mix(in oklab, var(--color-sport-running) 22%, transparent), transparent 55%),
     var(--color-surface-base);
   background-attachment: fixed;
   color: #f1f5f9;

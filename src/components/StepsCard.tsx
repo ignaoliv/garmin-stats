@@ -24,8 +24,8 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="text-[13px] text-ink-muted mb-1">Hoy</div>
-          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
+          <div className="label mb-2">Hoy</div>
+          <div className="metric-lg">
             {(s.hoy?.pasos ?? 0).toLocaleString('es-ES')}
           </div>
           <div className="text-[13px] text-ink-muted mt-1">
@@ -33,20 +33,20 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
           </div>
         </div>
         <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="text-[13px] text-ink-muted mb-1">Media diaria</div>
-          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
+          <div className="label mb-2">Media diaria</div>
+          <div className="metric-lg">
             {s.media.toLocaleString('es-ES')}
           </div>
           <Delta value={s.media - s.mediaPrevia} />
         </div>
         <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="text-[13px] text-ink-muted mb-1">Objetivo cumplido</div>
-          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">{s.diasCumplidos}</div>
+          <div className="label mb-2">Objetivo cumplido</div>
+          <div className="metric-lg">{s.diasCumplidos}</div>
           <div className="text-[13px] text-ink-muted mt-1">de {s.ventana.length} días ({pct}%)</div>
         </div>
         <div className="glass-sunk rounded-lg px-4 py-3">
-          <div className="text-[13px] text-ink-muted mb-1">Tu mejor día</div>
-          <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">
+          <div className="label mb-2">Tu mejor día</div>
+          <div className="metric-lg">
             {(s.mejor?.pasos ?? 0).toLocaleString('es-ES')}
           </div>
           <div className="text-[13px] text-ink-muted mt-1">

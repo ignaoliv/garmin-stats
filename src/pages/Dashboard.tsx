@@ -88,13 +88,13 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
+      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         {/* ── Page header ────────────────────────────────────────────────── */}
         <header className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-ink-primary">Resumen</h1>
-            <p className="text-[14px] text-ink-muted mt-1">
+            <h1 className="title-page">Resumen</h1>
+            <p className="label-plain mt-2">
               {activities.length.toLocaleString('es-ES')} actividades registradas
               {stats?.syncedAt && (
                 <> · última sincronización {new Date(stats.syncedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</>
@@ -310,12 +310,12 @@ export default function Dashboard() {
 
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="glass-sunk rounded-lg px-3 py-2.5">
-                  <div className="text-[13px] text-ink-muted mb-1">Carga aguda</div>
+                  <div className="label mb-2">Carga aguda</div>
                   <div className="text-lg font-bold text-ink-primary tabular-nums">{acwr.acute}</div>
                   <div className="text-[12px] text-ink-muted">TSS · 7 días</div>
                 </div>
                 <div className="glass-sunk rounded-lg px-3 py-2.5">
-                  <div className="text-[13px] text-ink-muted mb-1">Carga crónica</div>
+                  <div className="label mb-2">Carga crónica</div>
                   <div className="text-lg font-bold text-ink-primary tabular-nums">{acwr.chronic}</div>
                   <div className="text-[12px] text-ink-muted">TSS · media semanal 28d</div>
                 </div>
@@ -365,18 +365,18 @@ export default function Dashboard() {
             />
             <div className="grid grid-cols-1 lg:grid-cols-[repeat(3,150px)_1fr] gap-4 items-start">
               <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="text-[13px] text-ink-muted mb-1">Últimos 30 días</div>
-                <div className="text-2xl font-bold text-ink-primary tabular-nums">{strength.last30}</div>
+                <div className="label mb-2">Últimos 30 días</div>
+                <div className="metric-lg">{strength.last30}</div>
                 <div className="text-[13px] text-ink-muted">sesiones</div>
               </div>
               <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="text-[13px] text-ink-muted mb-1">Duración media</div>
-                <div className="text-2xl font-bold text-ink-primary tabular-nums">{strength.avgMinutes}</div>
+                <div className="label mb-2">Duración media</div>
+                <div className="metric-lg">{strength.avgMinutes}</div>
                 <div className="text-[13px] text-ink-muted">minutos</div>
               </div>
               <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="text-[13px] text-ink-muted mb-1">Racha</div>
-                <div className="text-2xl font-bold text-ink-primary tabular-nums">{strength.weekStreak}</div>
+                <div className="label mb-2">Racha</div>
+                <div className="metric-lg">{strength.weekStreak}</div>
                 <div className="text-[13px] text-ink-muted">semanas seguidas</div>
               </div>
 

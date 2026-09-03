@@ -44,8 +44,8 @@ export function CardHeader({
   return (
     <div className="flex items-baseline justify-between gap-4 mb-4">
       <div>
-        <h2 className="text-[15px] font-semibold text-ink-primary leading-tight">{title}</h2>
-        {hint && <p className="text-[13px] text-ink-muted mt-0.5">{hint}</p>}
+        <h2 className="title-card">{title}</h2>
+        {hint && <p className="label-plain mt-1">{hint}</p>}
       </div>
       {action && (
         <Link
@@ -82,14 +82,14 @@ export function StatTile({
   accent?: string
 }) {
   return (
-    <div className="bg-surface-card border border-surface-line rounded-xl px-4 py-3.5">
-      <div className="flex items-center gap-2 mb-1.5">
-        {accent && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: accent }} />}
-        <span className="text-[13px] font-medium text-ink-muted">{label}</span>
+    <div className="glass rounded-2xl px-4 py-4">
+      <div className="flex items-center gap-2 mb-2.5">
+        {accent && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: accent }} />}
+        <span className="label">{label}</span>
       </div>
-      <div className="text-[28px] leading-none font-bold text-ink-primary tabular-nums">
+      <div className="metric-lg">
         {value}
-        {unit && <span className="text-[15px] font-medium text-ink-muted ml-1">{unit}</span>}
+        {unit && <span className="metric-unit">{unit}</span>}
       </div>
       {delta !== undefined && <Delta value={delta} unit={deltaUnit} />}
       {hint && !delta && <div className="text-[13px] text-ink-muted mt-1.5">{hint}</div>}

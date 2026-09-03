@@ -49,11 +49,11 @@ export default function Progress() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
+      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
-          <h1 className="text-2xl font-bold text-ink-primary">Progreso</h1>
-          <p className="text-[14px] text-ink-muted mt-1">
+          <h1 className="title-page">Progreso</h1>
+          <p className="label-plain mt-2">
             Comparativa entre temporadas y tus patrones de entrenamiento · {activities.length.toLocaleString('es-ES')} actividades desde {firstYear}
           </p>
         </header>
@@ -305,8 +305,8 @@ export default function Progress() {
 function MiniStat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="bg-surface-card border border-surface-line rounded-lg px-4 py-3">
-      <div className="text-[13px] text-ink-muted mb-1">{label}</div>
-      <div className="text-2xl font-bold text-ink-primary tabular-nums leading-none">{value}</div>
+      <div className="label mb-2">{label}</div>
+      <div className="metric-lg">{value}</div>
       <div className="text-[13px] text-ink-muted mt-1">{hint}</div>
     </div>
   )

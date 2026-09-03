@@ -110,7 +110,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
+      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
           <Link to="/activities" className="text-[13px] text-accent hover:text-accent-soft mb-2 inline-block">← Actividades</Link>
@@ -136,7 +136,7 @@ export default function ActivityDetailPage() {
           <div className="grid grid-cols-2 gap-3 content-start stagger">
             {tiles.map(t => (
               <div key={t.label} className="bg-surface-card border border-surface-line rounded-xl px-4 py-3.5 flex flex-col justify-center">
-                <div className="text-[13px] text-ink-muted mb-1.5">{t.label}</div>
+                <div className="label mb-2">{t.label}</div>
                 <div className="text-[24px] leading-none font-bold text-ink-primary tabular-nums">
                   {t.value}
                   {t.unit && <span className="text-[14px] font-medium text-ink-muted ml-1">{t.unit}</span>}

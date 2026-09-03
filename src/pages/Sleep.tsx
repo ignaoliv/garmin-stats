@@ -89,11 +89,11 @@ export default function Sleep() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-5 page-in">
+      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
 
         <header>
-          <h1 className="text-2xl font-bold text-ink-primary">😴 Sueño</h1>
-          <p className="text-[14px] text-ink-muted mt-1">
+          <h1 className="title-page">😴 Sueño</h1>
+          <p className="label-plain mt-2">
             {s.cobertura.conRegistro} noches registradas en {s.cobertura.diasBarridos} días ({s.cobertura.pct}% de cobertura)
           </p>
         </header>
@@ -130,8 +130,8 @@ export default function Sleep() {
                   ? `${s.ultima.bateria_inicio} → ${s.ultima.bateria_fin}` : '—'],
               ].map(([k, v]) => (
                 <div key={k} className="glass-sunk rounded-lg px-3 py-2.5">
-                  <div className="text-[13px] text-ink-muted mb-1">{k}</div>
-                  <div className="text-[17px] font-bold text-ink-primary tabular-nums">{v}</div>
+                  <div className="label mb-2">{k}</div>
+                  <div className="metric">{v}</div>
                 </div>
               ))}
             </div>
@@ -171,8 +171,8 @@ export default function Sleep() {
                 ['REM medio', h(s.medias.rem_s)],
               ].map(([k, v]) => (
                 <div key={k} className="glass-sunk rounded-lg px-4 py-3">
-                  <div className="text-[13px] text-ink-muted mb-1">{k}</div>
-                  <div className="text-[22px] font-bold text-ink-primary tabular-nums leading-none">{v}</div>
+                  <div className="label mb-2">{k}</div>
+                  <div className="metric-lg">{v}</div>
                 </div>
               ))}
             </div>
