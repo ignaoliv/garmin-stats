@@ -10,8 +10,11 @@ export interface StepDay {
 export interface StepsData {
   loaded: boolean
   dias: StepDay[]
-  /** Trailing window, oldest first, with gaps filled as zero days. */
-  ventana: (StepDay & { label: string; cumplido: boolean })[]
+  /** Trailing window, oldest first, with gaps filled as zero days.
+   *  `media7` is the centred-trailing 7-day mean: daily counts swing between
+   *  2.000 and 20.000 depending on whether you happened to walk somewhere, so
+   *  the bars alone show noise and the rolling line shows the actual habit. */
+  ventana: (StepDay & { label: string; cumplido: boolean; media7: number | null })[]
   hoy: StepDay | null
   objetivo: number
   media: number
@@ -63,11 +66,21 @@ export function useSteps(windowDays = 30): StepsData {
     const previa = build(windowDays * 2, windowDays)
     const mean = (rows: StepDay[]) => (rows.length ? rows.reduce((s, r) => s + r.pasos, 0) / rows.length : 0)
 
-    const ventana = actual.map(d => ({
-      ...d,
-      label: new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-      cumplido: d.pasos >= objetivo,
-    }))
+    // Seed the rolling mean with the six days before the window so the line
+    // starts at full strength instead of ramping up from a partial average.
+    const previos = build(windowDays + 6, windowDays)
+    const serie = [...previos, ...actual]
+
+    const ventana = actual.map((d, i) => {
+      const hasta = previos.length + i
+      const tramo = serie.slice(Math.max(0, hasta - 6), hasta + 1)
+      return {
+        ...d,
+        label: new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+        cumplido: d.pasos >= objetivo,
+        media7: tramo.length === 7 ? Math.round(tramo.reduce((s, r) => s + r.pasos, 0) / 7) : null,
+      }
+    })
 
     const conDatos = dias.filter(d => d.pasos > 0)
     // Local date parts, not toISOString(): after 21:00 in Argentina the UTC date

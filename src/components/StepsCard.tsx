@@ -1,4 +1,4 @@
-import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useSteps } from '../hooks/useSteps'
 import { Card, CardHeader, ChartTooltip, LegendItem, Delta } from './ui'
 import Ring from './Ring'
@@ -71,7 +71,7 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
       </div>
 
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={s.ventana} margin={{ top: 4, right: 74, bottom: 0, left: -6 }} barCategoryGap="16%">
+        <ComposedChart data={s.ventana} margin={{ top: 4, right: 74, bottom: 0, left: -6 }} barCategoryGap="16%">
           <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={26} />
           <YAxis
@@ -85,8 +85,10 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
             cursor={{ fill: '#ffffff08' }}
             content={
               <ChartTooltip
-                formatter={(v, _n, row) =>
-                  `${Number(v).toLocaleString('es-ES')} pasos · ${((Number(row?.distancia_m ?? 0)) / 1000).toFixed(1)} km`
+                formatter={(v, n, row) =>
+                  n === 'Media de 7 días'
+                    ? `${Number(v).toLocaleString('es-ES')} pasos de media`
+                    : `${Number(v).toLocaleString('es-ES')} pasos · ${((Number(row?.distancia_m ?? 0)) / 1000).toFixed(1)} km`
                 }
               />
             }
@@ -103,12 +105,27 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
               <Cell key={d.fecha} fill={d.cumplido ? MET : SHORT} />
             ))}
           </Bar>
-        </BarChart>
+          {/* The bars are the noise; this is the habit. */}
+          <Line
+            type="monotone"
+            dataKey="media7"
+            name="Media de 7 días"
+            stroke="var(--color-accent)"
+            strokeWidth={2.5}
+            dot={false}
+            connectNulls
+            isAnimationActive={false}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
 
       <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
         <LegendItem color={MET} label="Objetivo alcanzado" value={`${s.diasCumplidos} días`} />
         <LegendItem color={SHORT} label="Por debajo del objetivo" />
+        <span className="flex items-center gap-2 text-[13px] text-ink-secondary">
+          <span className="w-4 h-[2.5px] rounded inline-block bg-accent" />
+          Media móvil de 7 días
+        </span>
       </div>
     </Card>
   )
