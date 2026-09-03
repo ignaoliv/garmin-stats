@@ -19,6 +19,7 @@ import Heatmap from '../components/Heatmap'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
 import StepsCard from '../components/StepsCard'
+import DescansoCard from '../components/DescansoCard'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -192,6 +193,8 @@ export default function Dashboard() {
             </div>
           </div>
         </Card>
+
+        <DescansoCard />
 
         {/* ── This week ──────────────────────────────────────────────────── */}
         <section>
