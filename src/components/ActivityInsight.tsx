@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card } from './ui'
+import AIProgress from './AIProgress'
 
 interface Insight {
   titular: string
@@ -73,13 +74,12 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
   if (state === 'generando') {
     return (
       <Card className="p-5">
-        <div className="flex items-center gap-3">
-          <span className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <div>
-            <p className="text-[15px] font-medium text-ink-primary">Analizando esta sesión…</p>
-            <p className="text-[13px] text-ink-muted mt-0.5">Puede tardar unos segundos. Se guarda para la próxima vez.</p>
-          </div>
-        </div>
+        <AIProgress
+          titulo="Analizando esta sesión"
+          detalle="se guarda para la próxima vez"
+          esperaTipica={25}
+          lineas={3}
+        />
       </Card>
     )
   }

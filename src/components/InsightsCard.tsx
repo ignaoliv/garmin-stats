@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from './ui'
 import Icon from './Icon'
+import AIProgress from './AIProgress'
 
 interface Bloque {
   estado: 'bien' | 'atencion' | 'alerta'
@@ -168,10 +169,12 @@ export default function InsightsCard() {
   if (!data) {
     return regenerando ? (
       <Card className="p-4">
-        <div className="flex items-center gap-3">
-          <span className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <p className="text-[14px] text-ink-secondary">Analizando tu día…</p>
-        </div>
+        <AIProgress
+          titulo="Analizando tu día"
+          detalle="entrenamiento, pasos, sueño y recuperación"
+          esperaTipica={25}
+          lineas={2}
+        />
       </Card>
     ) : null
   }

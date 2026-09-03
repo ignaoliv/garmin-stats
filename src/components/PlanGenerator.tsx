@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Card, CardHeader, Insight, explicarError } from './ui'
 import PlanCalendar, { type SemanaPlan, type BloquePlan } from './PlanCalendar'
+import AIProgress from './AIProgress'
 
 interface Plan {
   titulo: string
@@ -120,6 +121,17 @@ export default function PlanGenerator() {
                    text-[15px] font-semibold transition-colors disabled:opacity-60">
         {estado === 'generando' ? 'Diseñando el plan…' : plan ? 'Generar otro' : 'Generar plan'}
       </button>
+
+      {estado === 'generando' && (
+        <div className="mt-4">
+          <AIProgress
+            titulo="Diseñando tu plan"
+            detalle="leyendo tu carga, tu recuperación y tu historial de fuerza"
+            esperaTipica={40}
+            lineas={4}
+          />
+        </div>
+      )}
 
       {estado === 'error' && <div className="mt-3"><Insight tone="warning">{mensaje}</Insight></div>}
 

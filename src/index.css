@@ -257,6 +257,36 @@
   letter-spacing: -0.015em; color: var(--color-ink-primary);
 }
 
+/* ── Espera de la IA ──────────────────────────────────────────────────────
+   Un barrido de luz sobre bloques con la forma del contenido que viene. Dice
+   "esto está trabajando y va a aparecer acá" mejor que un spinner suelto. */
+@keyframes shimmer {
+  0%   { background-position: -160% 0; }
+  100% { background-position: 260% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, white 4%, transparent) 0%,
+    color-mix(in oklab, white 11%, transparent) 45%,
+    color-mix(in oklab, white 4%, transparent) 90%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Pulso del punto de estado: lento, para que acompañe sin llamar la atención. */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.82); }
+}
+.pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
+  .pulse-dot { animation: none; opacity: 0.8; }
+}
+
 * { box-sizing: border-box; }
 
 /* ── Depth ────────────────────────────────────────────────────────────────
