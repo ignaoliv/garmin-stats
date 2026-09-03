@@ -4,7 +4,7 @@ import { useActivityStore } from './stores/activityStore'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Entrenar from './pages/Entrenar'
-import Carreras from './pages/Eventos'
+import Eventos from './pages/Eventos'
 import Analizar from './pages/Analizar'
 import Salud from './pages/Salud'
 import Activities from './pages/Activities'
@@ -30,7 +30,7 @@ export default function App() {
             <Route path="/activities" element={<Activities />} />
             <Route path="/activity/:id" element={<ActivityDetailPage />} />
             <Route path="/entrenar" element={<Entrenar />} />
-            <Route path="/carreras" element={<Carreras />} />
+            <Route path="/eventos" element={<Eventos />} />
             <Route path="/analizar" element={<Analizar />} />
             <Route path="/salud" element={<Salud />} />
             <Route path="/settings" element={<Settings />} />

@@ -47,7 +47,7 @@ function BotonVoy({ marcado, onClick }: { marcado: boolean; onClick: () => void 
     <button
       onClick={onClick}
       aria-pressed={marcado}
-      title={marcado ? 'Sacarla de tus carreras' : 'Marcar que vas'}
+      title={marcado ? 'Sacarlo de tus eventos' : 'Marcar que vas'}
       className={`shrink-0 px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-colors ${
         marcado
           ? 'bg-state-good/15 border-state-good/50 text-state-good'
@@ -136,9 +136,9 @@ export default function Eventos() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
         <header>
-          <h1 className="title-page">Carreras</h1>
+          <h1 className="title-page">Eventos</h1>
           <p className="label-plain mt-2">
-            Las carreras de tu zona y cómo llegás a las que elegís
+            Los eventos de tu zona y cómo llegás a los que elegís
           </p>
         </header>
         {hijo}
@@ -155,8 +155,8 @@ export default function Eventos() {
       <Card className="p-6">
         <h2 className="text-[17px] font-semibold text-ink-primary mb-2">Todavía no bajaste el calendario</h2>
         <p className="text-[14px] text-ink-secondary mb-4">
-          Las carreras salen de calendariodecarreras.ar, que las publica como datos estructurados.
-          El botón de sincronizar también las actualiza.
+          Los eventos salen de calendariodecarreras.ar, que los publica como datos estructurados.
+          El botón de sincronizar también los actualiza.
         </p>
         <code className="block bg-surface-overlay border border-surface-line rounded-lg p-3
                          font-mono text-[13px] text-ink-secondary">
@@ -173,7 +173,7 @@ export default function Eventos() {
     actualizarPrefs({ disciplinas: puestas })
   }
 
-  // Agrupado por mes: una lista corrida de cien carreras no se lee.
+  // Agrupado por mes: una lista corrida de cien eventos no se lee.
   const porMes = new Map<string, Evento[]>()
   for (const e of filtrados) {
     const k = e.fecha.slice(0, 7)
@@ -185,7 +185,7 @@ export default function Eventos() {
     <>
       {mios.length > 0 && (
         <section>
-          <h2 className="text-[15px] font-semibold text-ink-primary mb-3">Tus carreras</h2>
+          <h2 className="text-[15px] font-semibold text-ink-primary mb-3">Tus eventos</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
             {mios.map(ev => {
               const dias = diasHasta(ev.fecha)
@@ -223,7 +223,7 @@ export default function Eventos() {
                                font-medium text-ink-secondary hover:text-ink-primary
                                hover:border-surface-line-strong hover:bg-surface-hover transition-colors"
                   >
-                    {preparando?.id === ev.id ? 'Cerrar el plan' : 'Preparar un plan hasta esta carrera'}
+                    {preparando?.id === ev.id ? 'Cerrar el plan' : 'Preparar un plan hasta este evento'}
                   </button>
                 </Card>
               )
@@ -270,7 +270,7 @@ export default function Eventos() {
       {filtrados.length === 0 ? (
         <Card className="p-6">
           <p className="text-[15px] text-ink-secondary">
-            No hay carreras con esos filtros. Probá sumando disciplinas o mirando todo el país.
+            No hay eventos con esos filtros. Probá sumando disciplinas o mirando todo el país.
           </p>
         </Card>
       ) : (
@@ -281,7 +281,7 @@ export default function Eventos() {
                 {tituloMes(eventos[0].fecha)}
               </h3>
               <span className="text-[13px] text-ink-muted">
-                {eventos.length} {eventos.length === 1 ? 'carrera' : 'carreras'}
+                {eventos.length} {eventos.length === 1 ? 'evento' : 'eventos'}
               </span>
             </div>
             <div className="space-y-2">
@@ -296,7 +296,7 @@ export default function Eventos() {
 
       <p className="flex items-center gap-2 text-[12px] text-ink-muted pt-2">
         <Icon name="info" size={14} />
-        {filtrados.length} de {total} carreras · fuente calendariodecarreras.ar
+        {filtrados.length} de {total} eventos · fuente calendariodecarreras.ar
         {actualizado && <> · actualizado el {actualizado}</>}
       </p>
     </>,

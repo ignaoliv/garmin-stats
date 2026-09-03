@@ -13,21 +13,21 @@ function fechaLarga(fecha: string): string {
   return `${d} de ${MESES[m - 1]}`
 }
 
-/** La cuenta regresiva de la próxima carrera anotada, o la puerta de entrada a
- *  la sección si todavía no anotó ninguna. Sólo desaparece del todo cuando no
- *  hay ni una carrera que ofrecer. */
-export default function ProximaCarrera() {
+/** La cuenta regresiva del próximo evento anotado, o la puerta de entrada a la
+ *  sección si todavía no anotó ninguno. Sólo desaparece del todo cuando no hay
+ *  ni un evento que ofrecer. */
+export default function ProximoEvento() {
   const { mios, filtrados } = useEventos()
 
   // Sin ninguna marcada no hay cuenta regresiva, pero sí hay algo que decir:
-  // que la sección existe y cuántas carreras hay esperando. Callarse acá era
+  // que la sección existe y cuántos eventos hay esperando. Callarse acá era
   // dejar la función escondida detrás de un menú.
   if (mios.length === 0) {
     if (filtrados.length === 0) return null
     const primera = filtrados[0]
     return (
       <Link
-        to="/carreras"
+        to="/eventos"
         className="glass rounded-2xl p-4 flex items-center gap-3 rise-in transition-colors
                    hover:bg-surface-hover group"
       >
@@ -37,10 +37,10 @@ export default function ProximaCarrera() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] font-semibold text-ink-primary leading-snug">
-            {filtrados.length} {filtrados.length === 1 ? 'carrera' : 'carreras'} en tu zona
+            {filtrados.length} {filtrados.length === 1 ? 'evento' : 'eventos'} en tu zona
           </span>
           <span className="block text-[13px] text-ink-muted truncate">
-            La próxima: {primera.nombre}, {cuentaRegresiva(primera.fecha)} · marcá a cuál vas y te
+            El próximo: {primera.nombre}, {cuentaRegresiva(primera.fecha)} · marcá a cuál vas y te
             armo el plan
           </span>
         </span>
@@ -82,18 +82,18 @@ export default function ProximaCarrera() {
           <p className="text-[13px] text-ink-muted truncate mt-0.5">
             {proxima.localidad}
             {resto.length > 0 && (
-              <> · y {resto.length} {resto.length === 1 ? 'carrera más' : 'carreras más'} anotadas</>
+              <> · y {resto.length} {resto.length === 1 ? 'evento más' : 'eventos más'} anotados</>
             )}
           </p>
         </div>
 
         <Link
-          to="/carreras"
+          to="/eventos"
           className="shrink-0 px-3.5 py-2 rounded-lg text-[13px] font-medium text-ink-secondary
                      border border-surface-line hover:border-surface-line-strong hover:text-ink-primary
                      hover:bg-surface-hover transition-colors"
         >
-          Ver carreras →
+          Ver eventos →
         </Link>
       </div>
     </Card>
