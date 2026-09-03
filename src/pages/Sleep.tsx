@@ -151,7 +151,7 @@ export default function Sleep() {
                 label={{ value: 'objetivo 7h', position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }} />
               {FASES.map(f => (
                 <Bar key={f.clave} dataKey={f.clave} name={f.label} stackId="s" fill={`url(#gF-${f.clave})`}
-                  radius={f.clave === 'despierto_s' ? [3, 3, 0, 0] : undefined} isAnimationActive={false} />
+                  radius={f.clave === 'despierto_s' ? [3, 3, 0, 0] : undefined} isAnimationActive animationDuration={650} animationEasing="ease-out" />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -176,9 +176,9 @@ export default function Sleep() {
                     cursor={{ stroke: 'var(--color-ink-faint)', strokeWidth: 1, strokeDasharray: '4 3' }} />
                   <ReferenceLine y={90} stroke="var(--color-state-warning)" strokeDasharray="5 4" strokeWidth={1.5}
                     label={{ value: '90%', position: 'right', fill: 'var(--color-state-warning)', fontSize: 11, dx: -4 }} />
-                  <Area type="monotone" dataKey="minimo" name="Mínimo" stroke="none" fill="var(--color-sport-swimming)" fillOpacity={0.18} isAnimationActive={false} />
-                  <Line type="monotone" dataKey="medio" name="Media" stroke="var(--color-sport-swimming)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} />
-                  <Line type="monotone" dataKey="minimo" name="Mínimo" stroke="var(--color-sport-swimming)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+                  <Area type="monotone" dataKey="minimo" name="Mínimo" stroke="none" fill="var(--color-sport-swimming)" fillOpacity={0.18} isAnimationActive animationDuration={650} animationEasing="ease-out" />
+                  <Line type="monotone" dataKey="medio" name="Media" stroke="var(--color-sport-swimming)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive animationDuration={650} animationEasing="ease-out" />
+                  <Line type="monotone" dataKey="minimo" name="Mínimo" stroke="var(--color-sport-swimming)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} isAnimationActive animationDuration={650} animationEasing="ease-out" />
                 </ComposedChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.06]">
@@ -206,7 +206,7 @@ export default function Sleep() {
                     <ReferenceLine y={mediaResp} stroke="var(--color-ink-secondary)" strokeDasharray="5 4" strokeWidth={1.5}
                       label={{ value: `tu media ${mediaResp.toFixed(1)}`, position: 'right', fill: 'var(--color-ink-secondary)', fontSize: 11, dx: -4 }} />
                   )}
-                  <Line type="monotone" dataKey="respiracion" name="Respiración" stroke="var(--color-sport-cardio)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="respiracion" name="Respiración" stroke="var(--color-sport-cardio)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive animationDuration={650} animationEasing="ease-out" />
                 </LineChart>
               </ResponsiveContainer>
             </Card>

@@ -12,8 +12,6 @@ import { useWeekComparison } from '../hooks/useWeekComparison'
 import { useSportVolume } from '../hooks/useSportVolume'
 import { useTrainingStreak } from '../hooks/useTrainingStreak'
 import { useZoneDistribution } from '../hooks/useZoneDistribution'
-import { useWeeklyLoad } from '../hooks/useWeeklyLoad'
-import { useStrength } from '../hooks/useStrength'
 import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
@@ -67,8 +65,6 @@ export default function Dashboard() {
   const { ranked: sportVolume, totalHours, totalCount } = useSportVolume(30)
   const streak = useTrainingStreak()
   const { slices: zoneSlices, isAerobicFocused, estimadas: zonasEstimadas } = useZoneDistribution(30)
-  const weeklyLoad = useWeeklyLoad(16)
-  const strength = useStrength(12)
   const acwr = useACWR(120)
 
   if (loading) return <LoadingScreen />
@@ -80,10 +76,6 @@ export default function Dashboard() {
   const form = formStatus(tsb)
   const vo2 = stats?.vo2maxHistory?.length ? stats.vo2maxHistory.at(-1)!.value : null
   const aerobicPct = zoneSlices.slice(0, 2).reduce((s, z) => s + z.pct, 0)
-  const avgWeeklyTSS = weeklyLoad.length ? weeklyLoad.reduce((s, w) => s + w.tss, 0) / weeklyLoad.length : 0
-  const avgStrengthPerWeek = strength.weekly.length
-    ? strength.weekly.reduce((s, w) => s + w.sessions, 0) / strength.weekly.length
-    : 0
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -110,6 +102,20 @@ export default function Dashboard() {
             </div>
           )}
         </header>
+
+        {/* ── This week ──────────────────────────────────────────────────── */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-[15px] font-semibold text-ink-primary">Esta semana</h2>
+            <span className="text-[13px] text-ink-muted">comparado con la semana anterior</span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+            <StatTile label="Sesiones"  value={String(week.count)}                 delta={week.count - lastWeek.count} />
+            <StatTile label="Distancia" value={week.distance.toFixed(1)} unit="km" delta={week.distance - lastWeek.distance} deltaUnit=" km" />
+            <StatTile label="Tiempo"    value={(week.duration / 3600).toFixed(1)} unit="h" delta={(week.duration - lastWeek.duration) / 3600} deltaUnit=" h" />
+            <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
+          </div>
+        </section>
 
         <InsightsCard />
 
@@ -192,23 +198,11 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <DescansoCard />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+          <DescansoCard />
+          <StepsCard windowDays={30} compacto />
+        </div>
 
-        <StepsCard windowDays={30} compacto />
-
-        {/* ── This week ──────────────────────────────────────────────────── */}
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-[15px] font-semibold text-ink-primary">Esta semana</h2>
-            <span className="text-[13px] text-ink-muted">comparado con la semana anterior</span>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
-            <StatTile label="Sesiones"  value={String(week.count)}                 delta={week.count - lastWeek.count} />
-            <StatTile label="Distancia" value={week.distance.toFixed(1)} unit="km" delta={week.distance - lastWeek.distance} deltaUnit=" km" />
-            <StatTile label="Tiempo"    value={(week.duration / 3600).toFixed(1)} unit="h" delta={(week.duration - lastWeek.duration) / 3600} deltaUnit=" h" />
-            <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
-          </div>
-        </section>
 
         {/* ── Sport mix + HR zones ───────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -236,7 +230,7 @@ export default function Dashboard() {
                       />
                     }
                   />
-                  <Bar dataKey="hours" name="Volumen" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                  <Bar dataKey="hours" name="Volumen" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                     {sportVolume.map(s => <Cell key={s.sport} fill={s.color} />)}
                   </Bar>
                 </BarChart>
@@ -259,7 +253,7 @@ export default function Dashboard() {
                 <XAxis type="number" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} unit="%" domain={[0, 'dataMax']} />
                 <YAxis type="category" dataKey="zone" tick={{ ...AXIS, fill: '#cbd5e1' }} tickLine={false} axisLine={false} width={104} />
                 <Tooltip cursor={{ fill: '#ffffff08' }} content={<ChartTooltip formatter={(v) => `${v}% del tiempo`} />} />
-                <Bar dataKey="pct" name="Tiempo" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                <Bar dataKey="pct" name="Tiempo" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {zoneSlices.map(z => <Cell key={z.zone} fill={z.color} />)}
                 </Bar>
               </BarChart>
@@ -344,7 +338,7 @@ export default function Dashboard() {
                     content={<ChartTooltip formatter={(v, _n, row) => `${v} · agudo ${row?.acute ?? 0} / crónico ${row?.chronic ?? 0} TSS`} />}
                     cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 3' }}
                   />
-                  <Area type="monotone" dataKey="ratio" name="Ratio agudo:crónico" stroke="#34d399" strokeWidth={2} fill="url(#gRatio)" dot={false} isAnimationActive={false} />
+                  <Area type="monotone" dataKey="ratio" name="Ratio agudo:crónico" stroke="#34d399" strokeWidth={2} fill="url(#gRatio)" dot={false} isAnimationActive animationDuration={650} animationEasing="ease-out" />
                 </AreaChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-4 mt-2 pl-6">
@@ -358,102 +352,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* ── Strength ───────────────────────────────────────────────────── */}
-        {strength.totalSessions > 0 && (
-          <Card className="p-5">
-            <CardHeader
-              title="Fuerza"
-              hint={`${strength.totalSessions} sesiones registradas · ${strength.totalHours.toFixed(0)} h acumuladas`}
-              action={{ to: '/entrenar', label: 'Ver análisis completo →' }}
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-[repeat(3,150px)_1fr] gap-4 items-start">
-              <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="label mb-2">Últimos 30 días</div>
-                <div className="metric-lg">{strength.last30}</div>
-                <div className="text-[13px] text-ink-muted">sesiones</div>
-              </div>
-              <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="label mb-2">Duración media</div>
-                <div className="metric-lg">{strength.avgMinutes}</div>
-                <div className="text-[13px] text-ink-muted">minutos</div>
-              </div>
-              <div className="glass-sunk rounded-lg px-4 py-3">
-                <div className="label mb-2">Racha</div>
-                <div className="metric-lg">{strength.weekStreak}</div>
-                <div className="text-[13px] text-ink-muted">semanas seguidas</div>
-              </div>
 
-              <div>
-                <div className="text-[13px] text-ink-muted mb-2">Sesiones por semana · últimas 12</div>
-                <ResponsiveContainer width="100%" height={104}>
-                  <BarChart data={strength.weekly} margin={{ top: 4, right: 62, bottom: 0, left: -26 }} barCategoryGap="26%">
-                    <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={22} />
-                    <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} allowDecimals={false} />
-                    <Tooltip
-                      cursor={{ fill: '#ffffff08' }}
-                      content={<ChartTooltip formatter={(v, _n, row) => `${v} sesiones · ${row?.minutes ?? 0} min`} />}
-                    />
-                    <ReferenceLine
-                      y={avgStrengthPerWeek}
-                      stroke="#cbd5e1"
-                      strokeDasharray="5 4"
-                      strokeWidth={1.5}
-                      label={{ value: `media ${avgStrengthPerWeek.toFixed(1)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
-                    />
-                    <Bar dataKey="sessions" name="Sesiones" fill="#d95926" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* ── Weekly load ────────────────────────────────────────────────── */}
-        <Card className="p-5">
-          <CardHeader
-            title="Carga semanal"
-            hint="TSS por semana · últimas 16 semanas"
-            action={{ to: '/analizar', label: 'Ver detalle →' }}
-          />
-          <ResponsiveContainer width="100%" height={190}>
-            <BarChart data={weeklyLoad} margin={{ top: 4, right: 66, bottom: 0, left: -16 }} barCategoryGap="20%">
-              <defs>
-                <linearGradient id="gCargaActual" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3987e5" stopOpacity={0.95} />
-                  <stop offset="100%" stopColor="#3987e5" stopOpacity={0.3} />
-                </linearGradient>
-                <linearGradient id="gCargaPrevia" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#33456b" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#33456b" stopOpacity={0.25} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="week" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={18} />
-              <YAxis tick={AXIS} tickLine={false} axisLine={false} width={46} />
-              <Tooltip
-                cursor={{ fill: '#ffffff08' }}
-                content={<ChartTooltip formatter={(v, _n, row) => `${v} TSS${row?.rampPct ? ` · ${Number(row.rampPct) > 0 ? '+' : ''}${row.rampPct}% vs semana previa` : ''}`} />}
-              />
-              <ReferenceLine
-                y={avgWeeklyTSS}
-                stroke="#cbd5e1"
-                strokeDasharray="5 4"
-                strokeWidth={1.5}
-                label={{ value: `media ${Math.round(avgWeeklyTSS)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
-              />
-              <Bar dataKey="tss" name="Carga" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                {weeklyLoad.map((w, i) => (
-                  <Cell key={w.week} fill={i === weeklyLoad.length - 1 ? 'url(#gCargaActual)' : 'url(#gCargaPrevia)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-surface-line">
-            <LegendItem color="#3987e5" label="Semana en curso" value={`${Math.round(week.tss)} TSS`} />
-            <LegendItem color="#33456b" label="Semanas anteriores" />
-          </div>
-        </Card>
 
 
         {/* ── Recent activities ──────────────────────────────────────────── */}

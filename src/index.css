@@ -283,6 +283,9 @@
 .pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Recharts anima con transiciones internas que no miran esta preferencia,
+     así que se neutralizan desde acá. */
+  .recharts-wrapper * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   .shimmer { animation: none; }
   .pulse-dot { animation: none; opacity: 0.8; }
 }

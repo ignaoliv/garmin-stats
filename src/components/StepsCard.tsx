@@ -158,7 +158,7 @@ export default function StepsCard({
             strokeWidth={1.5}
             label={{ value: `objetivo ${(s.objetivo / 1000).toFixed(0)}k`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
           />
-          <Bar dataKey="pasos" name="Pasos" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+          <Bar dataKey="pasos" name="Pasos" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
             {s.ventana.map(d => (
               <Cell key={d.fecha} fill={d.cumplido ? 'url(#gPasosMet)' : 'url(#gPasosShort)'} />
             ))}
@@ -172,7 +172,7 @@ export default function StepsCard({
             strokeWidth={2.5}
             dot={false}
             connectNulls
-            isAnimationActive={false}
+            isAnimationActive animationDuration={650} animationEasing="ease-out"
           />
         </ComposedChart>
       </ResponsiveContainer>

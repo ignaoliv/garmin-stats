@@ -97,7 +97,7 @@ export default function Strength() {
                 strokeWidth={1.5}
                 label={{ value: `media ${avgPerWeekWindow.toFixed(1)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
               />
-              <Bar dataKey="sessions" name="Sesiones" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+              <Bar dataKey="sessions" name="Sesiones" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                 {s.weekly.map((w, i) => (
                   <Cell key={w.weekStart} fill={i === s.weekly.length - 1 ? '#3987e5' : STRENGTH} />
                 ))}
@@ -135,7 +135,7 @@ export default function Strength() {
                   strokeWidth={1.5}
                   label={{ value: `media ${avgPerWeekday.toFixed(0)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
                 />
-                <Bar dataKey="sessions" name="Sesiones" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                <Bar dataKey="sessions" name="Sesiones" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {s.byWeekday.map(d => (
                     <Cell key={d.day} fill={d.sessions === maxWeekday ? STRENGTH : '#7a4530'} />
                   ))}
@@ -186,7 +186,7 @@ export default function Strength() {
                     name={String(y)}
                     fill={['#d95926', '#3987e5', '#199e70'][i] ?? '#d95926'}
                     radius={[3, 3, 0, 0]}
-                    isAnimationActive={false}
+                    isAnimationActive animationDuration={650} animationEasing="ease-out"
                   />
                 ))}
               </BarChart>
@@ -204,7 +204,7 @@ export default function Strength() {
                 <XAxis dataKey="hour" tick={{ ...AXIS, fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} interval={2} />
                 <YAxis tick={AXIS} tickLine={false} axisLine={false} width={44} allowDecimals={false} />
                 <Tooltip cursor={{ fill: '#ffffff08' }} content={<ChartTooltip formatter={(v) => `${v} sesiones`} />} />
-                <Bar dataKey="sessions" name="Sesiones" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                <Bar dataKey="sessions" name="Sesiones" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {patterns.byHour.map(h => (
                     <Cell key={h.hour} fill={h.hour === patterns.peakHour ? STRENGTH : '#7a4530'} />
                   ))}
@@ -226,7 +226,7 @@ export default function Strength() {
                 <XAxis type="number" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} allowDecimals={false} />
                 <YAxis type="category" dataKey="bucket" tick={{ ...AXIS, fill: '#cbd5e1' }} tickLine={false} axisLine={false} width={64} />
                 <Tooltip cursor={{ fill: '#ffffff08' }} content={<ChartTooltip formatter={(v) => `${v} sesiones`} />} />
-                <Bar dataKey="sessions" name="Sesiones" fill={STRENGTH} radius={[0, 3, 3, 0]} isAnimationActive={false} />
+                <Bar dataKey="sessions" name="Sesiones" fill={STRENGTH} radius={[0, 3, 3, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </Card>

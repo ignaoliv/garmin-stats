@@ -94,7 +94,7 @@ export default function Progress() {
                   strokeWidth={y === thisYear ? 3 : 2}
                   dot={false}
                   connectNulls={false}
-                  isAnimationActive={false}
+                  isAnimationActive animationDuration={650} animationEasing="ease-out"
                 />
               ))}
             </LineChart>
@@ -137,7 +137,7 @@ export default function Progress() {
               <Tooltip cursor={{ fill: '#ffffff08' }} content={<ChartTooltip formatter={(v) => `${Number(v).toFixed(1)} h`} />} />
               <Legend wrapperStyle={{ fontSize: 13, color: '#cbd5e1', paddingTop: 8 }} iconType="square" iconSize={11} />
               {yoy.years.map((y, i) => (
-                <Bar key={y} dataKey={String(y)} name={String(y)} fill={yearColor(i)} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                <Bar key={y} dataKey={String(y)} name={String(y)} fill={yearColor(i)} radius={[3, 3, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out" />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -220,7 +220,7 @@ export default function Progress() {
                   strokeWidth={1.5}
                   label={{ value: `media ${avgHour.toFixed(0)}`, position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }}
                 />
-                <Bar dataKey="sessions" name="Sesiones" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                <Bar dataKey="sessions" name="Sesiones" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {patterns.byHour.map(h => (
                     <Cell key={h.hour} fill={h.sessions === maxHour ? '#3987e5' : '#33456b'} />
                   ))}
@@ -249,7 +249,7 @@ export default function Progress() {
                   strokeWidth={1.5}
                   label={{ value: `media ${avgBucket.toFixed(0)}`, position: 'top', fill: '#cbd5e1', fontSize: 11 }}
                 />
-                <Bar dataKey="sessions" name="Sesiones" radius={[0, 3, 3, 0]} isAnimationActive={false}>
+                <Bar dataKey="sessions" name="Sesiones" radius={[0, 3, 3, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {patterns.durationBuckets.map(b => (
                     <Cell key={b.bucket} fill={b.sessions === maxDuration ? '#3987e5' : '#33456b'} />
                   ))}

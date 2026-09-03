@@ -21,7 +21,7 @@ export default function Sidebar() {
   const activities = useActivityStore(s => s.activities)
 
   return (
-    <aside className="w-16 lg:w-[218px] shrink-0 glass border-y-0 border-l-0 rounded-none flex flex-col min-h-screen transition-[width]">
+    <aside className="w-16 lg:w-[218px] shrink-0 glass border-y-0 border-l-0 rounded-none flex flex-col h-screen sticky top-0 transition-[width]">
       <div className="px-3 lg:px-5 pt-5 pb-4">
         <div className="text-ink-primary font-semibold text-[15px] tracking-[-0.02em]">
           <span className="lg:hidden">GS</span>
@@ -32,7 +32,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 pb-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 pb-4">
         <div className="space-y-0.5">
               {NAV.map(({ to, label, icon }) => (
                 <NavLink

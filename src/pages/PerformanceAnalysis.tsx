@@ -235,7 +235,7 @@ export default function PerformanceAnalysis() {
                   dataKey="vo2max"
                   stroke="url(#vo2Bands)"
                   strokeWidth={2.5}
-                  isAnimationActive={false}
+                  isAnimationActive animationDuration={650} animationEasing="ease-out"
                   dot={(props: { cx?: number; cy?: number; payload?: { vo2max?: number }; index?: number }) => (
                     <circle
                       key={props.index}

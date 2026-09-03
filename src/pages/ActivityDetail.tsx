@@ -235,7 +235,7 @@ export default function ActivityDetailPage() {
                         fill={`url(#g-${c.key})`}
                         dot={false}
                         connectNulls
-                        isAnimationActive={false}
+                        isAnimationActive animationDuration={650} animationEasing="ease-out"
                       />
                       {/* Mean of the session — drawn over the area so it stays
                           readable, in ink rather than the series colour. */}
@@ -335,7 +335,7 @@ export default function ActivityDetailPage() {
                   }
                   labelFormatter={(v) => `Tramo ${v}`}
                 />
-                <Bar dataKey="avgSpeed" name="Velocidad" radius={[0, 3, 3, 0]} isAnimationActive={false}>
+                <Bar dataKey="avgSpeed" name="Velocidad" radius={[0, 3, 3, 0]} isAnimationActive animationDuration={650} animationEasing="ease-out">
                   {detail.laps.map(l => <Cell key={l.index} fill={accent} />)}
                 </Bar>
               </BarChart>
