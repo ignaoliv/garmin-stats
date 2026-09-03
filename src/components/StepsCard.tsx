@@ -8,7 +8,9 @@ const GRID = '#28334a'
 const MET = '#34d399'      // reached the goal
 const SHORT = '#33456b'    // fell short
 
-export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) {
+export default function StepsCard({
+  windowDays = 30, compacto = false,
+}: { windowDays?: number; compacto?: boolean }) {
   const s = useSteps(windowDays)
 
   // Nothing to show until fetch/steps.py has run at least once.
@@ -16,6 +18,49 @@ export default function StepsCard({ windowDays = 30 }: { windowDays?: number }) 
 
   const pct = Math.round((s.diasCumplidos / s.ventana.length) * 100)
   const pctHoy = Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)
+  const media7 = s.ventana[s.ventana.length - 1]?.media7 ?? null
+
+  // Compact form for the daily screen: today against the goal and the seven-day
+  // habit, with the full thirty-day breakdown one click away. The alternative —
+  // the whole card in both places — is the duplication this app just removed.
+  if (compacto) {
+    return (
+      <Card className="p-5">
+        <CardHeader
+          title="Pasos"
+          hint={`Objetivo diario de ${s.objetivo.toLocaleString('es-ES')}`}
+          action={{ to: '/salud', label: 'Ver detalle →' }}
+        />
+        <div className="flex items-center gap-6 flex-wrap">
+          <Ring
+            pct={pctHoy}
+            color={pctHoy >= 100 ? MET : 'var(--color-accent)'}
+            size={96} grosor={9}
+            etiqueta={`${pctHoy}% del objetivo de pasos de hoy`}
+          >
+            <div className="metric" style={{ color: pctHoy >= 100 ? MET : 'var(--color-accent)' }}>{pctHoy}%</div>
+          </Ring>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+            <div>
+              <div className="label mb-1.5">Hoy</div>
+              <div className="metric-lg">{(s.hoy?.pasos ?? 0).toLocaleString('es-ES')}</div>
+            </div>
+            {media7 !== null && (
+              <div>
+                <div className="label mb-1.5">Media 7 días</div>
+                <div className="metric-lg">{media7.toLocaleString('es-ES')}</div>
+              </div>
+            )}
+            <div>
+              <div className="label mb-1.5">Objetivo</div>
+              <div className="metric-lg">{s.diasCumplidos}<span className="metric-unit">de {s.ventana.length} días</span></div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    )
+  }
 
   return (
     <Card className="p-5">
