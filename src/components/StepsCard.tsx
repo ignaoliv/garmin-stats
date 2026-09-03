@@ -117,6 +117,19 @@ export default function StepsCard({
 
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={s.ventana} margin={{ top: 4, right: 74, bottom: 0, left: -6 }} barCategoryGap="16%">
+          {/* Solid where the value is read, fading out toward the baseline so the
+              surface behind shows through. Keeping the top edge opaque is what
+              lets the bar still be compared precisely. */}
+          <defs>
+            <linearGradient id="gPasosMet" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={MET} stopOpacity={0.95} />
+              <stop offset="100%" stopColor={MET} stopOpacity={0.28} />
+            </linearGradient>
+            <linearGradient id="gPasosShort" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={SHORT} stopOpacity={0.9} />
+              <stop offset="100%" stopColor={SHORT} stopOpacity={0.22} />
+            </linearGradient>
+          </defs>
           <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={26} />
           <YAxis
@@ -147,7 +160,7 @@ export default function StepsCard({
           />
           <Bar dataKey="pasos" name="Pasos" radius={[3, 3, 0, 0]} isAnimationActive={false}>
             {s.ventana.map(d => (
-              <Cell key={d.fecha} fill={d.cumplido ? MET : SHORT} />
+              <Cell key={d.fecha} fill={d.cumplido ? 'url(#gPasosMet)' : 'url(#gPasosShort)'} />
             ))}
           </Bar>
           {/* The bars are the noise; this is the habit. */}

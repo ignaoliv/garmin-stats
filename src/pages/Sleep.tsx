@@ -3,7 +3,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useSleep, type NocheEvaluada } from '../hooks/useSleep'
 import { Card, CardHeader, Insight, LegendItem, ChartTooltip } from '../components/ui'
 import Ring from '../components/Ring'
-import MetricasDisponibles from '../components/MetricasDisponibles'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -135,6 +134,14 @@ export default function Sleep() {
           <CardHeader title="Fases del sueño" hint="Cada noche registrada, en horas" />
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={grafico} margin={{ top: 4, right: 8, bottom: 0, left: -18 }} barCategoryGap="24%">
+              <defs>
+                {FASES.map(f => (
+                  <linearGradient key={f.clave} id={`gF-${f.clave}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={f.color} stopOpacity={0.92} />
+                    <stop offset="100%" stopColor={f.color} stopOpacity={0.42} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="fecha" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} width={44} unit=" h" />
@@ -143,7 +150,7 @@ export default function Sleep() {
               <ReferenceLine y={7} stroke="#cbd5e1" strokeDasharray="5 4" strokeWidth={1.5}
                 label={{ value: 'objetivo 7h', position: 'right', fill: '#cbd5e1', fontSize: 11, dx: -4 }} />
               {FASES.map(f => (
-                <Bar key={f.clave} dataKey={f.clave} name={f.label} stackId="s" fill={f.color}
+                <Bar key={f.clave} dataKey={f.clave} name={f.label} stackId="s" fill={`url(#gF-${f.clave})`}
                   radius={f.clave === 'despierto_s' ? [3, 3, 0, 0] : undefined} isAnimationActive={false} />
               ))}
             </BarChart>
@@ -224,8 +231,6 @@ export default function Sleep() {
             </div>
           </Card>
         )}
-
-        <MetricasDisponibles />
 
         <div className="h-2" />
       </div>

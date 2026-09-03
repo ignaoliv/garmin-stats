@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useActivityStore } from '../stores/activityStore'
 import Icon, { type IconName } from './Icon'
 import SyncButton from './SyncButton'
+import InfoDispositivo from './InfoDispositivo'
 
 /**
  * Grouped rail. Eleven flat entries gave no sense of what belonged with what;
@@ -64,7 +65,8 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <div className="px-2 pb-2">
+      <div className="px-2 pb-2 space-y-0.5">
+        <InfoDispositivo />
         <SyncButton />
       </div>
 

@@ -45,7 +45,9 @@ export function useSteps(windowDays = 30): StepsData {
     if (dias.length === 0) return { ...VACIO, loaded: true }
 
     const byDate = new Map(dias.map(d => [d.fecha, d]))
-    const objetivo = dias.find(d => d.objetivo > 0)?.objetivo ?? 10000
+    // The most RECENT goal, not the first: Garmin adjusts it over time, and
+    // `find` on an oldest-first list was pinning the app to a stale target.
+    const objetivo = [...dias].reverse().find(d => d.objetivo > 0)?.objetivo ?? 10000
 
     // Walk real calendar days so a day Garmin never recorded reads as zero
     // rather than silently collapsing the timeline.

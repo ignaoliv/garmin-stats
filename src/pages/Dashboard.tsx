@@ -418,6 +418,16 @@ export default function Dashboard() {
           />
           <ResponsiveContainer width="100%" height={190}>
             <BarChart data={weeklyLoad} margin={{ top: 4, right: 66, bottom: 0, left: -16 }} barCategoryGap="20%">
+              <defs>
+                <linearGradient id="gCargaActual" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3987e5" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="#3987e5" stopOpacity={0.3} />
+                </linearGradient>
+                <linearGradient id="gCargaPrevia" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#33456b" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#33456b" stopOpacity={0.25} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="week" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={18} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} width={46} />
@@ -434,7 +444,7 @@ export default function Dashboard() {
               />
               <Bar dataKey="tss" name="Carga" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                 {weeklyLoad.map((w, i) => (
-                  <Cell key={w.week} fill={i === weeklyLoad.length - 1 ? '#3987e5' : '#33456b'} />
+                  <Cell key={w.week} fill={i === weeklyLoad.length - 1 ? 'url(#gCargaActual)' : 'url(#gCargaPrevia)'} />
                 ))}
               </Bar>
             </BarChart>
