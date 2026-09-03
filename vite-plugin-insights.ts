@@ -29,9 +29,9 @@ export function insightsPlugin(): Plugin {
       proc.on('error', fail)
     })
 
-  const runArgs = (script: string, args: string[]): Promise<string> =>
+  const runArgs = (script: string, args: string[], timeout = 180_000): Promise<string> =>
     new Promise((ok, fail) => {
-      const proc = spawn('python3', [resolve(root, script), ...args], { cwd: root, timeout: 180_000 })
+      const proc = spawn('python3', [resolve(root, script), ...args], { cwd: root, timeout })
       let out = '', err = ''
       proc.stdout.on('data', d => (out += d))
       proc.stderr.on('data', d => (err += d))
@@ -57,6 +57,26 @@ export function insightsPlugin(): Plugin {
   return {
     name: 'garmin-activity-insights',
     configureServer(server) {
+      // Full sync: activities, plan, steps, sleep, wellness, then the local
+      // enrichment pass. Generous timeout because it walks every activity and
+      // Garmin is rate limited, so it cannot be hurried.
+      server.middlewares.use('/api/sync', async (_req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        try {
+          if (!inFlight.has('__sync__')) {
+            inFlight.set('__sync__', runArgs('fetch/sync.py', [], 20 * 60_000)
+              .finally(() => inFlight.delete('__sync__')))
+          }
+          const salida = await inFlight.get('__sync__')!
+          // The script is chatty; the last lines are what says how it went.
+          const lineas = salida.trim().split('\n').filter(l => !l.includes('already cached'))
+          res.end(JSON.stringify({ ok: true, resumen: lineas.slice(-6) }))
+        } catch (e) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+        }
+      })
+
       // Daily refresh of the dashboard analysis. Reads local data and calls the
       // model; writes nothing to Garmin.
       server.middlewares.use('/api/insights', async (_req, res) => {

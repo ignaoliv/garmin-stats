@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useActivityStore } from '../stores/activityStore'
 import Icon, { type IconName } from './Icon'
+import SyncButton from './SyncButton'
 
 /**
  * Grouped rail. Eleven flat entries gave no sense of what belonged with what;
@@ -62,6 +63,10 @@ export default function Sidebar() {
               ))}
         </div>
       </nav>
+
+      <div className="px-2 pb-2">
+        <SyncButton />
+      </div>
 
       <div className="px-5 py-4 border-t border-white/[0.06] hidden lg:block">
         <NavLink to="/settings" className="flex items-center gap-3 text-[13.5px] text-ink-muted hover:text-ink-secondary transition-colors">
