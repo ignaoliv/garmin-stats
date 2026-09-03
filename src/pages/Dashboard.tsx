@@ -14,11 +14,9 @@ import { useTrainingStreak } from '../hooks/useTrainingStreak'
 import { useZoneDistribution } from '../hooks/useZoneDistribution'
 import { useWeeklyLoad } from '../hooks/useWeeklyLoad'
 import { useStrength } from '../hooks/useStrength'
-import { useACWR, useConsistencyHeatmap } from '../hooks/useTrainingInsights'
-import Heatmap from '../components/Heatmap'
+import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
-import StepsCard from '../components/StepsCard'
 import DescansoCard from '../components/DescansoCard'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
@@ -71,7 +69,6 @@ export default function Dashboard() {
   const weeklyLoad = useWeeklyLoad(16)
   const strength = useStrength(12)
   const acwr = useACWR(120)
-  const heat = useConsistencyHeatmap(182)
 
   if (loading) return <LoadingScreen />
   if (error || activities.length === 0) return <EmptyScreen />
@@ -120,7 +117,7 @@ export default function Dashboard() {
           <CardHeader
             title="Estado de forma"
             hint="Forma = Fitness − Fatiga. Positivo es descanso; negativo, carga acumulada."
-            action={{ to: '/fitness', label: 'Ver detalle →' }}
+            action={{ to: '/analizar', label: 'Ver detalle →' }}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
@@ -364,7 +361,7 @@ export default function Dashboard() {
             <CardHeader
               title="Fuerza"
               hint={`${strength.totalSessions} sesiones registradas · ${strength.totalHours.toFixed(0)} h acumuladas`}
-              action={{ to: '/fuerza', label: 'Ver análisis completo →' }}
+              action={{ to: '/entrenar', label: 'Ver análisis completo →' }}
             />
             <div className="grid grid-cols-1 lg:grid-cols-[repeat(3,150px)_1fr] gap-4 items-start">
               <div className="glass-sunk rounded-lg px-4 py-3">
@@ -414,7 +411,7 @@ export default function Dashboard() {
           <CardHeader
             title="Carga semanal"
             hint="TSS por semana · últimas 16 semanas"
-            action={{ to: '/fitness', label: 'Ver detalle →' }}
+            action={{ to: '/analizar', label: 'Ver detalle →' }}
           />
           <ResponsiveContainer width="100%" height={190}>
             <BarChart data={weeklyLoad} margin={{ top: 4, right: 66, bottom: 0, left: -16 }} barCategoryGap="20%">
@@ -445,17 +442,6 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <StepsCard windowDays={30} />
-
-        {/* ── Consistency ────────────────────────────────────────────────── */}
-        <Card className="p-5">
-          <CardHeader
-            title="Constancia"
-            hint="Últimos 6 meses · cada cuadro es un día, más brillante = más carga"
-            action={{ to: '/progreso', label: 'Ver año completo →' }}
-          />
-          <Heatmap days={heat.days} weeks={heat.weeks} monthTicks={heat.monthTicks} cell={13} gap={3} />
-        </Card>
 
         {/* ── Recent activities ──────────────────────────────────────────── */}
         <section>

@@ -34,7 +34,7 @@ export default function DescansoCard() {
       <CardHeader
         title="Descanso"
         hint="Cómo venís recuperando · últimas 2 semanas"
-        action={{ to: '/sueno', label: 'Ver sueño →' }}
+        action={{ to: '/salud', label: 'Ver sueño →' }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 items-start">
@@ -104,7 +104,7 @@ export default function DescansoCard() {
       </div>
 
       <p className="label-plain mt-4 pt-3 border-t border-white/[0.06]">
-        <Link to="/sueno" className="text-accent hover:text-accent-soft">Ver el detalle del sueño</Link>
+        <Link to="/salud" className="text-accent hover:text-accent-soft">Ver el detalle del sueño</Link>
         {' '}y qué mide tu dispositivo.
       </p>
     </Card>

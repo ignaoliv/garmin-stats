@@ -8,6 +8,21 @@ import {
   ResponsiveContainer
 } from 'recharts'
 
+/**
+ * Seconds per zone for one activity.
+ *
+ * Prefers Garmin's own per-zone measurement. The estimate below drops the whole
+ * session into a single zone based on average heart rate, which turns an
+ * interval workout into one flat block — this page was still doing that while
+ * the real numbers sat unused in the synced data.
+ */
+function segundosPorZona(act: { zonasFC?: number[]; avgHR: number; duration: number }, maxHR: number): number[] {
+  if (act.zonasFC?.length === 5 && act.zonasFC.some(s => s > 0)) return act.zonasFC
+  const out = [0, 0, 0, 0, 0]
+  estimateZonesFromHR(act.avgHR, act.duration, maxHR).forEach(z => { out[z.zone - 1] = z.seconds })
+  return out
+}
+
 export default function ZoneAnalysis() {
   const activities = useActivityStore(s => s.activities)
   const settings = useActivityStore(s => s.settings)
@@ -21,13 +36,16 @@ export default function ZoneAnalysis() {
   const zoneSeconds = useMemo(() => {
     const totals: number[] = [0, 0, 0, 0, 0]
     for (const act of filtered) {
-      const zones = estimateZonesFromHR(act.avgHR, act.duration, settings.maxHR)
-      zones.forEach(z => { totals[z.zone - 1] += z.seconds })
+      segundosPorZona(act, settings.maxHR).forEach((s, i) => { totals[i] += s })
     }
     return totals
   }, [filtered, settings.maxHR])
 
   const totalSeconds = zoneSeconds.reduce((a, b) => a + b, 0)
+  const estimadas = useMemo(
+    () => filtered.filter(a => !(a.zonasFC?.length === 5 && a.zonasFC.some(s => s > 0))).length,
+    [filtered],
+  )
 
   const weeklyZoneData = useMemo(() => {
     const weeks: Record<string, number[]> = {}
@@ -37,10 +55,10 @@ export default function ZoneAnalysis() {
       const diff = day === 0 ? -6 : 1 - day
       const monday = new Date(d)
       monday.setDate(d.getDate() + diff)
-      const weekKey = monday.toISOString().slice(0, 10)
+      // Local date parts: toISOString() shifts evening sessions into the next week.
+      const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
       if (!weeks[weekKey]) weeks[weekKey] = [0, 0, 0, 0, 0]
-      const zones = estimateZonesFromHR(act.avgHR, act.duration, settings.maxHR)
-      zones.forEach(z => { weeks[weekKey][z.zone - 1] += z.seconds / 3600 })
+      segundosPorZona(act, settings.maxHR).forEach((s, i) => { weeks[weekKey][i] += s / 3600 })
     }
     return Object.entries(weeks)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -56,7 +74,7 @@ export default function ZoneAnalysis() {
   }, [filtered, settings.maxHR])
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto page-in">
+    <div className="px-6 pb-6 page-in">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink-primary">Análisis de Zonas</h1>
@@ -102,12 +120,12 @@ export default function ZoneAnalysis() {
           <div className="text-[13px] text-ink-muted uppercase tracking-wider mb-4">Distribución semanal (últimas 24 semanas)</div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={weeklyZoneData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#28334a" />
-              <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} unit="h" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-line)" />
+              <XAxis dataKey="date" tick={{ fill: 'var(--color-ink-muted)', fontSize: 12 }} />
+              <YAxis tick={{ fill: 'var(--color-ink-muted)', fontSize: 12 }} unit="h" />
               <Tooltip
-                contentStyle={{ background: '#0b1425', border: '1px solid #3a4767', borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: '#94a3b8' }}
+                contentStyle={{ background: 'var(--color-surface-overlay)', border: '1px solid var(--color-surface-line-strong)', borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: 'var(--color-ink-muted)' }}
                 formatter={(v: unknown) => [`${Number(v).toFixed(1)}h`]}
               />
               {HR_ZONE_DEFS.map(def => (
@@ -118,8 +136,10 @@ export default function ZoneAnalysis() {
         </div>
       )}
 
-      <p className="mt-4 text-[13px] text-ink-muted">
-        Zonas estimadas en base a FC media y FCmax configurada ({settings.maxHR} bpm).
+      <p className="mt-4 label-plain">
+        {estimadas === 0
+          ? `Tiempo por zona medido por Garmin en las ${filtered.length} actividades del filtro.`
+          : `${filtered.length - estimadas} actividades con zonas medidas por Garmin y ${estimadas} estimadas desde la FC media (FCmax ${settings.maxHR} bpm).`}
       </p>
     </div>
   )

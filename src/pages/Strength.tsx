@@ -7,7 +7,6 @@ import { useStrength } from '../hooks/useStrength'
 import { useTrainingPatterns } from '../hooks/useTrainingInsights'
 import { useActivityStore } from '../stores/activityStore'
 import { formatDuration } from '../utils/formatters'
-import { daysAgo } from '../utils/date'
 import { Card, CardHeader, StatTile, ChartTooltip, Insight, LegendItem } from '../components/ui'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
@@ -67,16 +66,9 @@ export default function Strength() {
   const trend = s.last30 - s.prev30
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
+    <div className="pb-2">
+      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
 
-        <header>
-          <h1 className="title-page">Fuerza</h1>
-          <p className="label-plain mt-2">
-            {s.totalSessions} sesiones · {s.totalHours.toFixed(0)} horas acumuladas
-            {s.lastSession && <> · última {daysAgo(s.lastSession.startTime) === 0 ? 'hoy' : `hace ${daysAgo(s.lastSession.startTime)} días`}</>}
-          </p>
-        </header>
 
         {/* ── Headline numbers ───────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

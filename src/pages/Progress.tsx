@@ -38,8 +38,6 @@ export default function Progress() {
   }
 
   const thisYear = new Date().getFullYear()
-  // yoy.years is capped at the last 4 seasons; the archive itself goes back further.
-  const firstYear = Math.min(...activities.map(a => +a.startTime.slice(0, 4)))
   const maxDuration = Math.max(...patterns.durationBuckets.map(b => b.sessions), 1)
   const maxHour = Math.max(...patterns.byHour.map(b => b.sessions), 1)
   const avgHour = patterns.byHour.reduce((a, h) => a + h.sessions, 0) / 24
@@ -48,15 +46,9 @@ export default function Progress() {
   const pctDelta = yoy.ytdPrev.hours > 0 ? (hoursDelta / yoy.ytdPrev.hours) * 100 : 0
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
+    <div className="pb-2">
+      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
 
-        <header>
-          <h1 className="title-page">Progreso</h1>
-          <p className="label-plain mt-2">
-            Comparativa entre temporadas y tus patrones de entrenamiento · {activities.length.toLocaleString('es-ES')} actividades desde {firstYear}
-          </p>
-        </header>
 
         {/* ── Year to date ───────────────────────────────────────────────── */}
         <section>

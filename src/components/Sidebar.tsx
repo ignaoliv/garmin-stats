@@ -6,32 +6,12 @@ import Icon, { type IconName } from './Icon'
  * Grouped rail. Eleven flat entries gave no sense of what belonged with what;
  * three short groups let the eye skip straight to the right area.
  */
-const GRUPOS: { titulo: string | null; items: { to: string; label: string; icon: IconName }[] }[] = [
-  {
-    titulo: null,
-    items: [
-      { to: '/', label: 'Resumen', icon: 'dashboard' },
-      { to: '/activities', label: 'Actividades', icon: 'actividades' },
-    ],
-  },
-  {
-    titulo: 'Entrenar',
-    items: [
-      { to: '/fuerza', label: 'Fuerza', icon: 'fuerza' },
-      { to: '/planificar', label: 'Planificar', icon: 'planificar' },
-      { to: '/zones', label: 'Zonas', icon: 'zonas' },
-    ],
-  },
-  {
-    titulo: 'Analizar',
-    items: [
-      { to: '/progreso', label: 'Progreso', icon: 'progreso' },
-      { to: '/fitness', label: 'Forma', icon: 'fitness' },
-      { to: '/performance', label: 'Rendimiento', icon: 'rendimiento' },
-      { to: '/sueno', label: 'Sueño', icon: 'sueno' },
-      { to: '/records', label: 'Récords', icon: 'records' },
-    ],
-  },
+const NAV: { to: string; label: string; icon: IconName }[] = [
+  { to: '/', label: 'Resumen', icon: 'dashboard' },
+  { to: '/activities', label: 'Actividades', icon: 'actividades' },
+  { to: '/entrenar', label: 'Entrenar', icon: 'fuerza' },
+  { to: '/analizar', label: 'Analizar', icon: 'progreso' },
+  { to: '/salud', label: 'Salud', icon: 'corazon' },
 ]
 
 export default function Sidebar() {
@@ -50,16 +30,9 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 pb-4 space-y-5">
-        {GRUPOS.map((g, i) => (
-          <div key={i}>
-            {g.titulo && (
-              <div className="hidden lg:block px-3 pb-1.5 text-[11px] font-medium text-ink-faint tracking-[0.01em]">
-                {g.titulo}
-              </div>
-            )}
-            <div className="space-y-0.5">
-              {g.items.map(({ to, label, icon }) => (
+      <nav className="flex-1 px-2 pb-4">
+        <div className="space-y-0.5">
+              {NAV.map(({ to, label, icon }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -87,9 +60,7 @@ export default function Sidebar() {
                   )}
                 </NavLink>
               ))}
-            </div>
-          </div>
-        ))}
+        </div>
       </nav>
 
       <div className="px-5 py-4 border-t border-white/[0.06] hidden lg:block">

@@ -84,15 +84,9 @@ export default function Sleep() {
   }))
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
+    <div className="pb-2">
+      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
 
-        <header>
-          <h1 className="title-page">Sueño</h1>
-          <p className="label-plain mt-2">
-            {s.cobertura.conRegistro} noches registradas en {s.cobertura.diasBarridos} días ({s.cobertura.pct}% de cobertura)
-          </p>
-        </header>
 
         {s.cobertura.pct < 50 && (
           <Card className="p-4">

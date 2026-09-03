@@ -35,7 +35,7 @@ export default function FitnessChartPage() {
   const current = fitnessHistory[fitnessHistory.length - 1]
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto page-in">
+    <div className="px-6 pb-6 page-in">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink-primary">Fitness & Forma</h1>

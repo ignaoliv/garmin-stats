@@ -3,17 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useActivityStore } from './stores/activityStore'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
+import Entrenar from './pages/Entrenar'
+import Analizar from './pages/Analizar'
+import Salud from './pages/Salud'
 import Activities from './pages/Activities'
 import ActivityDetailPage from './pages/ActivityDetail'
-import FitnessChartPage from './pages/FitnessChartPage'
-import ZoneAnalysis from './pages/ZoneAnalysis'
-import Records from './pages/Records'
 import Settings from './pages/Settings'
-import PerformanceAnalysis from './pages/PerformanceAnalysis'
-import Strength from './pages/Strength'
-import Progress from './pages/Progress'
-import PlanStrength from './pages/PlanStrength'
-import Sleep from './pages/Sleep'
 
 export default function App() {
   const loadActivities = useActivityStore(s => s.loadActivities)
@@ -33,14 +28,9 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/activities" element={<Activities />} />
             <Route path="/activity/:id" element={<ActivityDetailPage />} />
-            <Route path="/fitness" element={<FitnessChartPage />} />
-            <Route path="/fuerza" element={<Strength />} />
-            <Route path="/progreso" element={<Progress />} />
-            <Route path="/planificar" element={<PlanStrength />} />
-            <Route path="/sueno" element={<Sleep />} />
-            <Route path="/zones" element={<ZoneAnalysis />} />
-            <Route path="/records" element={<Records />} />
-            <Route path="/performance" element={<PerformanceAnalysis />} />
+            <Route path="/entrenar" element={<Entrenar />} />
+            <Route path="/analizar" element={<Analizar />} />
+            <Route path="/salud" element={<Salud />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
