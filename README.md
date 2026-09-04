@@ -4,6 +4,34 @@ Panel personal para ver tus estadísticas de entrenamiento de Garmin Connect: ac
 
 Los datos se descargan de tu cuenta de Garmin a archivos locales en tu ordenador. La app los lee desde ahí; no hay servidor en la nube ni base de datos.
 
+> **¿Recién llegás?** El camino más corto es
+> [INSTALAR-CON-CLAUDE.md](INSTALAR-CON-CLAUDE.md): un prompt para pegar en
+> Claude Code que hace la instalación entera. Si preferís a mano, seguí la guía
+> de acá abajo.
+
+---
+
+## Créditos
+
+Este proyecto es un derivado de **[RafaTatay/garming-stats](https://github.com/RafaTatay/garming-stats)**,
+de donde vienen la base del panel, el modelo de fitness CTL/ATL/TSB y el
+pipeline de sincronización con Garmin. Todo el mérito de los cimientos es de
+ahí.
+
+Lo que agrega esta versión:
+
+- Soporte de entrenamiento de fuerza, con creación de sesiones y envío al reloj
+- Análisis diario con IA (Cloudflare Workers AI) sobre carga, sueño y recuperación
+- Generador de planes de varias semanas, orientado a una fecha objetivo
+- Pasos, sueño y recuperación, con las métricas que no registra el dispositivo declaradas como tales
+- Calendario de eventos deportivos de la región, con cuenta regresiva
+- Rediseño completo de la interfaz
+
+**Sobre la licencia:** el repositorio original no publica ninguna, así que por
+defecto se aplica "todos los derechos reservados". Si querés reutilizar esto
+más allá de usarlo para vos, lo correcto es pedirle permiso a
+[RafaTatay](https://github.com/RafaTatay) primero.
+
 ---
 
 ## Qué necesitas antes de empezar

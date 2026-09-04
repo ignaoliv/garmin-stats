@@ -14,8 +14,8 @@ Quiero instalar y dejar andando en mi computadora un panel personal de
 entrenamiento que lee mis datos de Garmin Connect. Guiame paso a paso y hacé
 vos los comandos, pero pará y preguntame cada vez que necesites algo mío.
 
-El repositorio es https://github.com/ignaoliv/garmin-stats y es privado: si
-`git clone` te da error de permisos, avisame para que le pida acceso al dueño.
+El repositorio es https://github.com/ignaoliv/garmin-stats y es público, así
+que podés clonarlo sin pedir permiso ni configurar credenciales de GitHub.
 
 Reglas importantes, no las saltees:
 
@@ -26,7 +26,8 @@ Reglas importantes, no las saltees:
    mostrar el contenido del archivo por pantalla.
 
 2. Nunca subas nada: no hagas `git push`, ni commits con `.env` o con la
-   carpeta `public/data/` (son mis datos y mis credenciales).
+   carpeta `public/data/` (son mis datos y mis credenciales). Si querés
+   guardar cambios propios, avisame y lo hablamos.
 
 3. Si Garmin responde 429 o "Too Many Requests", PARÁ. No reintentes en bucle:
    cada intento fallido alarga el bloqueo. Decime que hay que esperar entre 5 y
@@ -77,12 +78,12 @@ programación: si algo falla, explicame qué pasó antes de arreglarlo.
 
 ---
 
-## Si el repo es privado
+## Qué NO hace este prompt
 
-El dueño te tiene que dar acceso de lectura. Del lado de él:
+- No toca tu cuenta de Garmin más allá de leer tus actividades.
+- No sube nada a ningún lado: todos tus datos quedan en tu computadora, en
+  `public/data/`, que está ignorado por git.
+- No te pide la contraseña por chat. La escribís vos en un archivo local.
 
-```bash
-gh api -X PUT repos/ignaoliv/garmin-stats/collaborators/TU-USUARIO -f permission=pull
-```
-
-O desde la web, en **Settings → Collaborators**.
+Si algo del prompt te hace ruido, borralo antes de pegarlo: es texto, no un
+instalador.
