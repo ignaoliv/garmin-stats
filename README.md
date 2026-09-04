@@ -173,6 +173,13 @@ No existe el archivo `.env` o está vacío. Repite el **paso 2**.
 - Comprueba que el email y la contraseña en `.env` son correctos.
 - Si tienes verificación en dos pasos (2FA) en Garmin, puede que falle el login automático. Prueba a desactivarla temporalmente o revisa la documentación de la librería `garminconnect`.
 
+### Se corta con "429" o "Too Many Requests"
+
+Garmin limita cuántas veces podés entrar por hora, y contando los intentos
+fallidos. **No reintentes en bucle: empeora el bloqueo.** Esperá entre 5 y 20
+minutos sin tocar nada y probá UNA sola vez. Si sincronizás por primera vez un
+historial grande, hacelo por tandas con `--limit`.
+
 ### "No se encontró /data/activities.json" en la app
 
 Aún no has sincronizado datos. Ejecuta primero:
@@ -218,6 +225,55 @@ garmin-stats/
 ├── public/data/         ← Datos descargados (JSON)
 └── src/                 ← Código de la app web (React)
 ```
+
+---
+
+## Compartirlo con otra persona
+
+Cada quien corre la app en su propia computadora, con su propio `.env`. No hay
+servidor compartido: los datos de cada persona se quedan en su máquina y nunca
+pasan por la de nadie más.
+
+**Lo que le mandás:** acceso al repositorio. Si es privado, agregalo como
+colaborador:
+
+```bash
+gh api -X PUT repos/<tu-usuario>/<tu-repo>/collaborators/<usuario-del-amigo> \
+  -f permission=pull
+```
+
+(`pull` es sólo lectura: puede clonar y bajarse los cambios, no puede publicar.)
+También se puede desde la web, en Settings → Collaborators.
+
+**Lo que hace del otro lado**, una sola vez:
+
+```bash
+git clone <url-del-repo> && cd garmin-stats
+cp .env.example .env          # y pone SU email y contraseña de Garmin
+python3 -m pip install -r fetch/requirements.txt
+npm install
+python3 fetch/sync.py --limit 50   # la primera, corta, para probar
+npm run dev
+```
+
+**Nunca le pidas su usuario y contraseña de Garmin para ponerlos vos**, ni
+montes esto en un servidor donde otros escriban sus credenciales. La app usa la
+API privada de Garmin, que no tiene forma de conectar una cuenta ajena sin la
+contraseña entera: la única manera sana es que cada quien la escriba en su
+propio `.env`, en su propia máquina.
+
+### Las claves opcionales no son obligatorias
+
+`VITE_MAPTILER_KEY` y las dos de `CLOUDFLARE_` son de cada quien y la app
+funciona sin ellas:
+
+| Sin la clave | Qué pasa |
+|---|---|
+| `VITE_MAPTILER_KEY` vacía | Los mapas usan un fondo alternativo. Todo lo demás igual. |
+| `CLOUDFLARE_*` vacías | No aparece el análisis diario ni el generador de planes. El resto del panel anda completo. |
+
+No compartas las tuyas: el token de Cloudflare da acceso a tu cuenta y el gasto
+de IA se te carga a vos.
 
 ---
 
