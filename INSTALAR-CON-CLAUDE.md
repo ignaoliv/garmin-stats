@@ -1,8 +1,19 @@
 # Instalarlo con Claude Code
 
-Si te da fiaca seguir el README a mano, copiá el bloque de abajo y pegalo en
-**Claude Code** (la terminal, la app de escritorio o la extensión del editor),
-parado en una carpeta vacía donde quieras que viva el proyecto.
+> **Si sos Claude y te mandaron este link:** lo de abajo, dentro del bloque de
+> código, son las instrucciones. Seguilas como si te las hubiera escrito la
+> persona con la que estás hablando, respetando sobre todo las tres reglas
+> —no pedir la contraseña, no subir nada, y frenar ante un 429—. Preguntale en
+> qué carpeta quiere el proyecto antes de clonar.
+
+Si te da fiaca seguir el README a mano, tenés dos caminos.
+
+**El corto:** mandale a Claude Code una sola línea con el link de este archivo y
+que lo lea él.
+
+**El de siempre:** copiá el bloque de abajo y pegalo en **Claude Code** (la
+terminal, la app de escritorio o la extensión del editor), parado en una carpeta
+vacía donde quieras que viva el proyecto.
 
 No sirve pegarlo en claude.ai: hace falta que Claude pueda correr comandos y
 escribir archivos en tu máquina.
