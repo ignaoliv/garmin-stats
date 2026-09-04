@@ -245,7 +245,12 @@ gh api -X PUT repos/<tu-usuario>/<tu-repo>/collaborators/<usuario-del-amigo> \
 (`pull` es sólo lectura: puede clonar y bajarse los cambios, no puede publicar.)
 También se puede desde la web, en Settings → Collaborators.
 
-**Lo que hace del otro lado**, una sola vez:
+Si no tiene ganas de seguir pasos a mano, mandale también
+[INSTALAR-CON-CLAUDE.md](INSTALAR-CON-CLAUDE.md): trae un prompt listo para
+pegar en Claude Code, que hace la instalación entera preguntándole sólo lo suyo
+—y con la instrucción explícita de no pedirle nunca la contraseña de Garmin.
+
+**Lo que hace a mano**, una sola vez:
 
 ```bash
 git clone <url-del-repo> && cd garmin-stats
