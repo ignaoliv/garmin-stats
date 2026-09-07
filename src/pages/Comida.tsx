@@ -29,6 +29,24 @@ const MICROS: [string, string, string][] = [
   ['vitamina_c', 'Vitamina C', 'mg'],
 ]
 
+/** Los momentos del día. Son los mismos que acepta fetch/comidas.py. */
+const MOMENTOS = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Colación'] as const
+type Momento = typeof MOMENTOS[number]
+
+/** Cuál proponer según la hora.
+ *
+ *  Escribir el nombre a mano era pedirle tipear a alguien que está por comer,
+ *  con una mano en el teléfono. Casi siempre es uno de cinco, y a esta hora
+ *  casi siempre es uno solo. */
+function momentoProbable(): Momento {
+  const h = new Date().getHours()
+  if (h < 11) return 'Desayuno'
+  if (h < 15) return 'Almuerzo'
+  if (h < 19) return 'Merienda'
+  if (h < 23) return 'Cena'
+  return 'Colación'
+}
+
 const n = (v: number | undefined, dec = 0) =>
   v === undefined ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: dec })
 
@@ -69,15 +87,15 @@ async function achicar(f: File, lado = 1024): Promise<string> {
 
 export default function Comida() {
   const { delDia, total, recargar } = useComidas()
-  // Dos entradas y no una: `capture` manda derecho a la cámara en el teléfono
-  // y no deja llegar al carrete. Con una sola había que elegir cuál de los dos
-  // caminos sacrificar.
-  const camara = useRef<HTMLInputElement>(null)
-  const galeria = useRef<HTMLInputElement>(null)
+  // Una sola entrada, y SIN `capture`: con capture el teléfono abre la cámara
+  // directo y no deja llegar al carrete. Sin él, iOS muestra su hoja con las
+  // tres opciones —fototeca, sacar foto, elegir archivo— que es la elección
+  // que el sistema ya sabe presentar mejor que dos botones nuestros.
+  const archivo = useRef<HTMLInputElement>(null)
 
   const [analisis, setAnalisis] = useState<Analisis | null>(null)
   const [vista, setVista] = useState<string | null>(null)
-  const [nombre, setNombre] = useState('')
+  const [momento, setMomento] = useState<Momento>(momentoProbable)
   const [estado, setEstado] = useState<'idle' | 'analizando' | 'guardando' | 'error'>('idle')
   const [mensaje, setMensaje] = useState('')
 
@@ -133,7 +151,8 @@ export default function Comida() {
     setEstado('guardando'); setMensaje('')
     try {
       await enviar('/api/comida/guardar', {
-        nombre: nombre.trim() || 'Comida',
+        nombre: momento,
+        momento: momento.toLowerCase(),
         alimentos: analisis.alimentos,
         total: analisis.total,
         nota: analisis.nota,
@@ -141,7 +160,7 @@ export default function Comida() {
         corregido: true,
       })
       await recargar()
-      setAnalisis(null); setVista(null); setNombre('')
+      setAnalisis(null); setVista(null); setMomento(momentoProbable())
       setEstado('idle'); setMensaje('Guardada')
     } catch (e) {
       setEstado('error'); setMensaje(explicarError(e))
@@ -180,37 +199,22 @@ export default function Comida() {
           />
 
           <input
-            ref={camara} type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f); e.target.value = '' }}
-          />
-          <input
-            ref={galeria} type="file" accept="image/*" className="hidden"
+            ref={archivo} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f); e.target.value = '' }}
           />
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => camara.current?.click()}
+              onClick={() => archivo.current?.click()}
               disabled={!comidaDisponible || estado === 'analizando'}
               className="px-4 py-2.5 rounded-xl border border-accent text-accent hover:bg-accent
                          hover:text-white text-[15px] font-semibold transition-colors
                          disabled:opacity-50 flex items-center gap-2"
             >
               <Icon name="camara" size={18} />
-              {estado === 'analizando' ? 'Analizando…' : 'Sacar una foto'}
+              {estado === 'analizando' ? 'Analizando…' : 'Agregar una foto'}
             </button>
 
-            <button
-              onClick={() => galeria.current?.click()}
-              disabled={!comidaDisponible || estado === 'analizando'}
-              className="px-4 py-2.5 rounded-xl border border-surface-line text-ink-secondary
-                         hover:text-ink-primary hover:border-surface-line-strong hover:bg-surface-hover
-                         text-[15px] font-medium transition-colors disabled:opacity-50
-                         flex items-center gap-2"
-            >
-              <Icon name="galeria" size={18} />
-              Elegir de la galería
-            </button>
             {vista && (
               <img src={vista} alt="La foto del plato"
                 className="h-[46px] w-[46px] object-cover rounded-lg border border-surface-line" />
@@ -318,20 +322,36 @@ export default function Comida() {
                 </p>
               </details>
 
-              <div className="flex flex-wrap gap-3 items-end">
-                <label className="flex-1 min-w-[200px]">
-                  <span className="text-[13px] text-ink-muted block mb-1.5">Nombre</span>
-                  <input value={nombre} onChange={e => setNombre(e.target.value)}
-                    placeholder="Almuerzo"
-                    className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line
-                               text-[15px] text-ink-primary focus:outline-none focus:border-accent" />
-                </label>
-                <button onClick={guardar} disabled={estado === 'guardando' || analisis.alimentos.length === 0}
-                  className="px-5 py-2.5 rounded-xl border border-accent text-accent hover:bg-accent
-                             hover:text-white text-[15px] font-semibold transition-colors disabled:opacity-50">
-                  {estado === 'guardando' ? 'Guardando…' : 'Guardar'}
-                </button>
+              <div>
+                <span className="text-[13px] text-ink-muted block mb-2">Qué comida es</span>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Momento del día">
+                  {MOMENTOS.map(m => {
+                    const elegido = m === momento
+                    return (
+                      <button
+                        key={m}
+                        role="radio"
+                        aria-checked={elegido}
+                        onClick={() => setMomento(m)}
+                        className={`px-3.5 py-2 rounded-lg text-[14px] font-medium border
+                                    transition-colors ${
+                          elegido
+                            ? 'bg-accent/15 border-accent/50 text-accent'
+                            : 'bg-surface-card border-surface-line text-ink-muted hover:text-ink-secondary'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
+
+              <button onClick={guardar} disabled={estado === 'guardando' || analisis.alimentos.length === 0}
+                className="w-full py-3 rounded-xl border border-accent text-accent hover:bg-accent
+                           hover:text-white text-[15px] font-semibold transition-colors disabled:opacity-50">
+                {estado === 'guardando' ? 'Guardando…' : `Guardar ${momento.toLowerCase()}`}
+              </button>
             </div>
           )}
         </Card>
