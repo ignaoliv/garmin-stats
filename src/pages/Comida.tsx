@@ -56,7 +56,11 @@ async function achicar(f: File, lado = 1024): Promise<string> {
 
 export default function Comida() {
   const { delDia, total, recargar } = useComidas()
-  const archivo = useRef<HTMLInputElement>(null)
+  // Dos entradas y no una: `capture` manda derecho a la cámara en el teléfono
+  // y no deja llegar al carrete. Con una sola había que elegir cuál de los dos
+  // caminos sacrificar.
+  const camara = useRef<HTMLInputElement>(null)
+  const galeria = useRef<HTMLInputElement>(null)
 
   const [analisis, setAnalisis] = useState<Analisis | null>(null)
   const [vista, setVista] = useState<string | null>(null)
@@ -163,24 +167,36 @@ export default function Comida() {
           />
 
           <input
-            ref={archivo}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f) }}
+            ref={camara} type="file" accept="image/*" capture="environment" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f); e.target.value = '' }}
+          />
+          <input
+            ref={galeria} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f); e.target.value = '' }}
           />
 
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => archivo.current?.click()}
+              onClick={() => camara.current?.click()}
               disabled={!comidaDisponible || estado === 'analizando'}
               className="px-4 py-2.5 rounded-xl border border-accent text-accent hover:bg-accent
                          hover:text-white text-[15px] font-semibold transition-colors
                          disabled:opacity-50 flex items-center gap-2"
             >
-              <Icon name="pasos" size={18} />
-              {estado === 'analizando' ? 'Analizando…' : 'Sacar o elegir una foto'}
+              <Icon name="camara" size={18} />
+              {estado === 'analizando' ? 'Analizando…' : 'Sacar una foto'}
+            </button>
+
+            <button
+              onClick={() => galeria.current?.click()}
+              disabled={!comidaDisponible || estado === 'analizando'}
+              className="px-4 py-2.5 rounded-xl border border-surface-line text-ink-secondary
+                         hover:text-ink-primary hover:border-surface-line-strong hover:bg-surface-hover
+                         text-[15px] font-medium transition-colors disabled:opacity-50
+                         flex items-center gap-2"
+            >
+              <Icon name="galeria" size={18} />
+              Elegir de la galería
             </button>
             {vista && (
               <img src={vista} alt="La foto del plato"
