@@ -45,13 +45,26 @@ interface Analisis {
  *  el celular con datos eso es la diferencia entre esperar dos segundos y
  *  esperar veinte, y el modelo no ve nada más por los píxeles de sobra. */
 async function achicar(f: File, lado = 1024): Promise<string> {
-  const bitmap = await createImageBitmap(f)
-  const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height))
-  const lienzo = document.createElement('canvas')
-  lienzo.width = Math.round(bitmap.width * escala)
-  lienzo.height = Math.round(bitmap.height * escala)
-  lienzo.getContext('2d')!.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height)
-  return lienzo.toDataURL('image/jpeg', 0.85).split(',')[1]
+  try {
+    const bitmap = await createImageBitmap(f)
+    const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height))
+    const lienzo = document.createElement('canvas')
+    lienzo.width = Math.round(bitmap.width * escala)
+    lienzo.height = Math.round(bitmap.height * escala)
+    lienzo.getContext('2d')!.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height)
+    return lienzo.toDataURL('image/jpeg', 0.85).split(',')[1]
+  } catch {
+    // createImageBitmap no decodifica todo: un HEIC de iPhone que el sistema
+    // no convirtió, o un archivo con la extensión cambiada, lo hacen fallar.
+    // Achicar es una optimización, no un requisito: si no se puede, se manda
+    // la foto tal cual y tarda un poco más. Peor sería no poder cargar nada.
+    return await new Promise<string>((ok, fail) => {
+      const r = new FileReader()
+      r.onload = () => ok(String(r.result).split(',')[1])
+      r.onerror = () => fail(new Error('No se pudo leer la foto'))
+      r.readAsDataURL(f)
+    })
+  }
 }
 
 export default function Comida() {
@@ -137,7 +150,7 @@ export default function Comida() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 py-7 space-y-6 page-in">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-7 space-y-6 page-in">
         <header>
           <h1 className="title-page">Comida</h1>
           <p className="label-plain mt-2">Sacá una foto del plato y se calculan los nutrientes</p>
@@ -152,7 +165,7 @@ export default function Comida() {
                `${delDia.length} ${delDia.length === 1 ? 'comida' : 'comidas'}`}
             </span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 stagger">
             {MACROS.map(([k, etiqueta, unidad]) => (
               <StatTile key={k} label={etiqueta} value={n(total[k])} unit={unidad} />
             ))}
@@ -231,35 +244,47 @@ export default function Comida() {
                 {analisis.alimentos.map((a, i) => {
                   const c = CONFIANZA[a.confianza ?? 'media'] ?? CONFIANZA.media
                   return (
-                    <div key={i} className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl
-                                            border border-surface-line">
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }}
-                        title={c.texto} />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[15px] font-medium text-ink-primary truncate">{a.nombre}</div>
-                        <div className="text-[12px] text-ink-muted truncate">
-                          {a.encontrado
-                            ? <>{a.fuente}: {a.coincidencia}</>
-                            : <span className="text-state-warning">sin datos nutricionales para esto</span>}
-                          {' · '}{c.texto}
+                    /* En el teléfono el nombre va en su propia línea y los
+                       controles debajo. Todo en una fila dejaba los nombres en
+                       "C…", "E…", "B…" — y no se puede corregir la porción de
+                       algo que no se lee. */
+                    <div key={i} className="px-4 py-3 rounded-xl border border-surface-line">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-2 h-2 rounded-full shrink-0 mt-2"
+                          style={{ background: c.color }} title={c.texto} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[15px] font-medium text-ink-primary">{a.nombre}</div>
+                          <div className="text-[12px] text-ink-muted">
+                            {a.encontrado
+                              ? <>{a.fuente}: {a.coincidencia}</>
+                              : <span className="text-state-warning">sin datos nutricionales para esto</span>}
+                            {' · '}{c.texto}
+                          </div>
                         </div>
+                        <button onClick={() => quitar(i)} title="Sacar este alimento"
+                          aria-label={`Sacar ${a.nombre}`}
+                          className="shrink-0 -mt-1 -mr-1 w-9 h-9 rounded-lg text-ink-muted
+                                     hover:text-state-critical hover:bg-surface-hover
+                                     transition-colors">✕</button>
                       </div>
-                      <label className="flex items-center gap-1.5 shrink-0">
-                        <input
-                          type="number" min={0} step={5} value={a.gramos}
-                          onChange={e => cambiarGramos(i, Number(e.target.value))}
-                          className="w-[86px] px-2.5 py-1.5 rounded-lg bg-surface-sunk border
-                                     border-surface-line text-[15px] text-ink-primary tabular-nums
-                                     focus:outline-none focus:border-accent"
-                        />
-                        <span className="text-[13px] text-ink-muted">g</span>
-                      </label>
-                      <span className="w-[74px] text-right metric text-[17px] shrink-0">
-                        {n(a.nutrientes?.calorias)}
-                      </span>
-                      <button onClick={() => quitar(i)} title="Sacar este alimento"
-                        className="shrink-0 w-8 h-8 rounded-lg text-ink-muted hover:text-state-critical
-                                   hover:bg-surface-hover transition-colors">✕</button>
+
+                      <div className="flex items-center gap-3 mt-2.5 pl-[18px]">
+                        <label className="flex items-center gap-1.5">
+                          <input
+                            type="number" min={0} step={5} value={a.gramos}
+                            onChange={e => cambiarGramos(i, Number(e.target.value))}
+                            aria-label={`Gramos de ${a.nombre}`}
+                            className="w-[92px] px-2.5 py-2 rounded-lg bg-surface-sunk border
+                                       border-surface-line text-[16px] text-ink-primary tabular-nums
+                                       focus:outline-none focus:border-accent"
+                          />
+                          <span className="text-[13px] text-ink-muted">g</span>
+                        </label>
+                        <span className="ml-auto metric text-[19px]">
+                          {n(a.nutrientes?.calorias)}
+                          <span className="metric-unit">kcal</span>
+                        </span>
+                      </div>
                     </div>
                   )
                 })}
@@ -267,7 +292,7 @@ export default function Comida() {
 
               {analisis.nota && <p className="label-plain">{analisis.nota}</p>}
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                 {MACROS.map(([k, etiqueta, unidad]) => (
                   <StatTile key={k} label={etiqueta} value={n(analisis.total[k])} unit={unidad} />
                 ))}
@@ -277,7 +302,7 @@ export default function Comida() {
                 <summary className="text-[13.5px] text-ink-secondary cursor-pointer">
                   Micronutrientes
                 </summary>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 mt-3">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-x-6 gap-y-2 mt-3">
                   {MICROS.map(([k, etiqueta, unidad]) => (
                     <div key={k} className="flex items-baseline justify-between gap-2">
                       <span className="text-[13px] text-ink-muted">{etiqueta}</span>

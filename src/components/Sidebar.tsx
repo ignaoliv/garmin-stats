@@ -23,13 +23,12 @@ export default function Sidebar() {
   const activities = useActivityStore(s => s.activities)
 
   return (
-    <aside className="w-16 lg:w-[218px] shrink-0 glass border-y-0 border-l-0 rounded-none flex flex-col h-screen sticky top-0 transition-[width]">
-      <div className="px-3 lg:px-5 pt-5 pb-4">
+    <aside className="hidden lg:flex w-[218px] shrink-0 glass border-y-0 border-l-0 rounded-none flex-col h-screen sticky top-0">
+      <div className="px-5 pt-5 pb-4">
         <div className="text-ink-primary font-semibold text-[15px] tracking-[-0.02em]">
-          <span className="lg:hidden">GS</span>
-          <span className="hidden lg:inline">Garmin Stats</span>
+          <span>Garmin Stats</span>
         </div>
-        <div className="label-plain mt-0.5 hidden lg:block">
+        <div className="label-plain mt-0.5">
           {activities.length > 0 ? `${activities.length.toLocaleString('es-ES')} actividades` : 'Sin datos aún'}
         </div>
       </div>
@@ -44,7 +43,7 @@ export default function Sidebar() {
                   title={label}
                   className={({ isActive }) =>
                     `relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] transition-colors
-                     justify-center lg:justify-start ${
+                     justify-start ${
                        isActive
                          ? 'bg-white/[0.07] text-ink-primary font-medium'
                          : 'text-ink-muted hover:text-ink-secondary hover:bg-white/[0.035]'
@@ -59,7 +58,7 @@ export default function Sidebar() {
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2.5px] rounded-r bg-accent" />
                       )}
                       <Icon name={icon} />
-                      <span className="hidden lg:inline">{label}</span>
+                      <span>{label}</span>
                     </>
                   )}
                 </NavLink>
@@ -72,7 +71,7 @@ export default function Sidebar() {
         <SyncButton />
       </div>
 
-      <div className="px-5 py-4 border-t border-white/[0.06] hidden lg:block">
+      <div className="px-5 py-4 border-t border-white/[0.06]">
         <NavLink to="/settings" className="flex items-center gap-3 text-[13.5px] text-ink-muted hover:text-ink-secondary transition-colors">
           <Icon name="ajustes" />
           Ajustes
