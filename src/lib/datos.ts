@@ -25,6 +25,11 @@ export type Archivo =
 
 export const rutaDe = (nombre: string) => `${BASE}/${nombre}.json`
 
+/** Contra la API hace falta sesión; contra archivos en disco, no. Se deduce de
+ *  a dónde apuntan los datos en vez de pedir otra variable que se puede
+ *  contradecir con esta. */
+export const requiereSesion = BASE.startsWith('/api')
+
 /**
  * Lee un archivo de datos, o devuelve null si todavía no existe.
  *
