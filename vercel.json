@@ -8,5 +8,8 @@
       "source": "/((?!api/|assets/|data/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
+  ],
+  "regions": [
+    "iad1"
   ]
 }
