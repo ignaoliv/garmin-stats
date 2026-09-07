@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Card } from './ui'
 import AIProgress from './AIProgress'
 import { leer } from '../lib/datos'
+import { pedir, accionesDisponibles } from '../lib/acciones'
 
 interface Insight {
   titular: string
@@ -31,7 +32,7 @@ const VERDICT = {
  */
 export default function ActivityInsight({ activityId }: { activityId: number }) {
   const [data, setData] = useState<Insight | null>(null)
-  const [state, setState] = useState<'idle' | 'generando' | 'error'>('idle')
+  const [state, setState] = useState<'idle' | 'generando' | 'error' | 'no-disponible'>('idle')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -48,13 +49,15 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
         return
       }
 
+      // Sin endpoint no hay análisis nuevo que pedir, y decirlo es mejor que
+      // dejar un spinner girando para siempre.
+      if (!accionesDisponibles) { setState('no-disponible'); return }
+
       setState('generando')
       try {
-        const res = await fetch(`/api/activity-insight/${activityId}`)
-        const body = await res.json()
+        const body = await pedir(`/api/activity-insight/${activityId}`)
         if (cancelled) return
-        if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`)
-        setData(body)
+        setData(body as never)
         setState('idle')
       } catch (e) {
         if (cancelled) return
@@ -65,6 +68,8 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
     load()
     return () => { cancelled = true }
   }, [activityId])
+
+  if (state === 'no-disponible') return null
 
   if (state === 'generando') {
     return (

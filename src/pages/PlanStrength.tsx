@@ -4,6 +4,7 @@ import ExercisePicker, { type Ejercicio, musculoEs } from '../components/Exercis
 import { Card, CardHeader, Insight, explicarError } from '../components/ui'
 import PlanGenerator from '../components/PlanGenerator'
 import meta from '../data/exercise_meta.json'
+import { enviar as enviarAccion, accionesDisponibles } from '../lib/acciones'
 
 const MUSCULOS = meta.musculosPorCategoria as Record<string, { primarios: string[]; secundarios: string[] }>
 
@@ -60,24 +61,18 @@ export default function PlanStrength() {
   const enviar = async () => {
     setEstado('enviando'); setMensaje('')
     try {
-      const res = await fetch('/api/strength-workout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: nombre.trim() || 'Fuerza',
-          description: 'Creado desde Garmin Stats',
-          date: fecha || null,
-          bloques: bloques.map(({ category, exercise, sets, reps, weight_kg, rest_s }) => ({
-            category, exercise: exercise || null, sets, reps, weight_kg, rest_s,
-          })),
-        }),
+      const body = await enviarAccion('/api/strength-workout', {
+        name: nombre.trim() || 'Fuerza',
+        description: 'Creado desde Garmin Stats',
+        date: fecha || null,
+        bloques: bloques.map(({ category, exercise, sets, reps, weight_kg, rest_s }) => ({
+          category, exercise: exercise || null, sets, reps, weight_kg, rest_s,
+        })),
       })
-      const body = await res.json()
-      if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`)
       setEstado('ok')
       setMensaje(
-        body.programado
-          ? `Subido y agendado para el ${new Date(body.programado + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}. Sincronizá el reloj.`
+        (body as { programado?: string }).programado
+          ? `Subido y agendado para el ${new Date((body as { programado?: string }).programado + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}. Sincronizá el reloj.`
           : 'Subido a tu biblioteca de Garmin (sin fecha, no aparece en el calendario).',
       )
     } catch (e) {
@@ -88,6 +83,12 @@ export default function PlanStrength() {
   return (
     <div className="pb-2">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
+        {!accionesDisponibles && (
+          <Insight tone="neutral">
+            Mandar entrenamientos al reloj necesita el servidor local: por ahora
+            corre con <code className="mx-1">npm run dev</code>, no en la versión publicada.
+          </Insight>
+        )}
 
 
         <PlanGenerator />

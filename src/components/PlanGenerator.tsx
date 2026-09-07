@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, CardHeader, Insight, explicarError } from './ui'
 import PlanCalendar, { type SemanaPlan, type BloquePlan } from './PlanCalendar'
 import AIProgress from './AIProgress'
+import { enviar, accionesDisponibles } from '../lib/acciones'
 
 interface Plan {
   titulo: string
@@ -72,14 +73,8 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
   const generar = async () => {
     setEstado('generando'); setMensaje(''); setPlan(null)
     try {
-      const res = await fetch('/api/plan-ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weeks: semanas, days: dias, objetivo, evento }),
-      })
-      const body = await res.json()
-      if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`)
-      setPlan(body); setEstado('idle')
+      const body = await enviar('/api/plan-ai', { weeks: semanas, days: dias, objetivo, evento })
+      setPlan(body as never); setEstado('idle')
     } catch (e) {
       setEstado('error'); setMensaje(explicarError(e))
     }
@@ -160,7 +155,16 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
         </label>
       </div>
 
-      <button onClick={generar} disabled={estado === 'generando'}
+      {!accionesDisponibles && (
+        <div className="mb-3">
+          <Insight tone="neutral">
+            Generar planes necesita el servidor local: por ahora corre con
+            <code className="mx-1">npm run dev</code>, no en la versión publicada.
+          </Insight>
+        </div>
+      )}
+
+      <button onClick={generar} disabled={estado === 'generando' || !accionesDisponibles}
         className="w-full py-2.5 rounded-xl border border-accent text-accent hover:bg-accent hover:text-white
                    text-[15px] font-semibold transition-colors disabled:opacity-60">
         {estado === 'generando' ? 'Diseñando el plan…' : plan ? 'Generar otro' : 'Generar plan'}

@@ -5,6 +5,7 @@ import Icon from './Icon'
 import AIProgress from './AIProgress'
 import { useActivityStore } from '../stores/activityStore'
 import { leer } from '../lib/datos'
+import { pedir, accionesDisponibles } from '../lib/acciones'
 
 interface Bloque {
   estado: 'bien' | 'atencion' | 'alerta'
@@ -206,11 +207,12 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
         (!syncedAt || guardado.datos_hasta === syncedAt)
       if (alDia) return
 
+      // Sin endpoint no hay nada que regenerar: se muestra lo último guardado.
+      if (!accionesDisponibles) return
       setRegenerando(true)
       try {
-        const res = await fetch('/api/insights')
-        const nuevo = await res.json()
-        if (!cancelado && res.ok && !nuevo.error) setData(nuevo)
+        const nuevo = await pedir('/api/insights')
+        if (!cancelado) setData(nuevo as unknown as Insights)
       } catch {
         // Keep yesterday's analysis rather than blanking the card.
       } finally {
