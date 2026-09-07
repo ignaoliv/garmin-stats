@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { contraseñaValida, crearCookie, cookieBorrada, haySesion } from '../lib/api/sesion'
+import { contraseñaValida, crearCookie, cookieBorrada, haySesion } from '../lib/api/sesion.js'
 
 /**
  * Entrar y salir del panel.

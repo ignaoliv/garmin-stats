@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { get } from '@vercel/blob'
-import { haySesion } from '../../lib/api/sesion'
+import { haySesion } from '../../lib/api/sesion.js'
 
 /**
  * Sirve un archivo de datos desde el blob privado.
