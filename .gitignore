@@ -41,3 +41,4 @@ dist/data/**
 # Cache de Python
 __pycache__/
 *.pyc
+.vercel
