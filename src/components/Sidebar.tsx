@@ -15,6 +15,7 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/eventos', label: 'Eventos', icon: 'records' },
   { to: '/analizar', label: 'Analizar', icon: 'progreso' },
   { to: '/salud', label: 'Salud', icon: 'corazon' },
+  { to: '/comida', label: 'Comida', icon: 'comida' },
 ]
 
 export default function Sidebar() {

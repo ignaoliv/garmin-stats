@@ -39,11 +39,11 @@ export function insightsPlugin(): Plugin {
       proc.on('error', fail)
     })
 
-  const runWithInput = (script: string, input: string): Promise<string> =>
+  const runWithInput = (script: string, input: string, timeout = 120_000): Promise<string> =>
     new Promise((ok, fail) => {
       const proc = spawn('python3', [resolve(root, script), '--from-stdin'], {
+        timeout,
         cwd: root,
-        timeout: 120_000,
       })
       let out = '', err = ''
       proc.stdout.on('data', d => (out += d))
@@ -117,6 +117,52 @@ export function insightsPlugin(): Plugin {
 
       // Creating a workout writes to the user's Garmin account, so it runs here
       // in Node with the credentials from .env rather than from the browser.
+      // ── Comida ──────────────────────────────────────────────────────
+      // La foto viaja en base64 dentro del JSON, así que el cuerpo es grande:
+      // una imagen de teléfono achicada a 1024px ronda los 200 KB, que en
+      // base64 son casi 300. El límite por defecto de un middleware alcanza,
+      // pero el timeout no: la vuelta al modelo más las búsquedas en las
+      // tablas de nutrientes se van tranquilamente a un minuto.
+      server.middlewares.use('/api/comida/analizar', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/comida.py', body, 180_000)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message }))
+          }
+        })
+      })
+
+      server.middlewares.use('/api/comida/guardar', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/comidas.py', body)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message }))
+          }
+        })
+      })
+
       server.middlewares.use('/api/strength-workout', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         if (req.method !== 'POST') {
