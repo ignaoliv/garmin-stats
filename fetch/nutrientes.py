@@ -96,9 +96,21 @@ def _valor(nutrientes: list[dict], nombre: str, unidad: str) -> float | None:
 # Palabras que no aportan a la identificación del alimento.
 _VACIAS = {"a", "of", "with", "and", "the", "in", "raw", "fresh", "sliced", "chopped"}
 
-# Presentaciones que cambian por completo la densidad calórica.
+# Presentaciones que cambian por completo la densidad calórica o la naturaleza
+# del alimento. Un tomate son 18 kcal por 100 g; su polvo, 300; su salsa
+# enlatada, 32 y con azúcar y sal agregadas.
 _CONCENTRADO = ("powder", "dried", "dehydrated", "concentrate", "paste",
-                "extract", "syrup", "freeze-dried", "infant formula")
+                "extract", "syrup", "freeze-dried", "infant formula",
+                "canned", "sauce", "juice", "products", "entree", "soup")
+
+# Fiambres y preparados que USDA nombra igual que el alimento entero. "Chicken
+# breast, roll, oven-roasted" es un fiambre de 134 kcal; la pechuga de verdad
+# ronda 165 y tiene otro perfil de sodio.
+_PREPARADO = ("roll", "luncheon", "lunchmeat", "deli", "breaded", "meatless",
+              "restaurant", "fast food", "prepared", "frozen meal",
+              # "fat-free" y "low fat" son reformulaciones industriales: el
+              # alimento entero no viene descremado.
+              "fat-free", "low fat", "reduced fat", "nonfat")
 
 # Cadenas cuyos nombres contaminan la búsqueda de alimentos simples.
 _MARCAS = ("BURGER KING", "MCDONALD", "WENDY", "KFC", "TACO BELL",
@@ -145,6 +157,11 @@ def puntuar(consulta: str, descripcion: str) -> float:
     for w in _CONCENTRADO:
         if w in d and w not in consulta.lower():
             puntos -= 1.2
+            break
+
+    for w in _PREPARADO:
+        if w in d and w not in consulta.lower():
+            puntos -= 1.0
             break
 
     # Mayúsculas = nombre comercial. Un nombre de cadena de comida rápida
