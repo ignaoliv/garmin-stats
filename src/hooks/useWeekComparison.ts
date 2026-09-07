@@ -17,7 +17,12 @@ export interface WeekComparisonData {
   thisWeek: ActivitySummary[]
   lastWeek: ActivitySummary[]
   current: WeekTotals
+  /** La semana pasada hasta el mismo día y hora, que es contra lo que se compara. */
   previous: WeekTotals
+  /** La semana pasada entera, para saber dónde terminó. */
+  previousFull: WeekTotals
+  /** Días de la semana ya transcurridos, 1 el lunes. */
+  daysIn: number
 }
 
 function sumWeek(acts: ActivitySummary[], settings: ReturnType<typeof useActivityStore.getState>['settings']): WeekTotals {
@@ -49,8 +54,25 @@ export function useWeekComparison(): WeekComparisonData {
     })
   }, [activities])
 
-  const current = useMemo(() => sumWeek(thisWeek, settings), [thisWeek, settings])
-  const previous = useMemo(() => sumWeek(lastWeek, settings), [lastWeek, settings])
+  /* La semana pasada recortada al mismo tramo transcurrido.
+   *
+   * Comparar un lunes al mediodía contra siete días completos daba "▼ 8
+   * sesiones" todos los lunes: verdad aritmética, disparate deportivo. La
+   * comparación va contra los mismos días de la semana anterior. */
+  const lastWeekSoFar = useMemo(() => {
+    const mon = startOfWeek(1)
+    const corte = new Date(mon.getTime() + (Date.now() - startOfWeek().getTime()))
+    return activities.filter(a => {
+      const t = new Date(a.startTime)
+      return t >= mon && t < corte
+    })
+  }, [activities])
 
-  return { thisWeek, lastWeek, current, previous }
+  const current = useMemo(() => sumWeek(thisWeek, settings), [thisWeek, settings])
+  const previous = useMemo(() => sumWeek(lastWeekSoFar, settings), [lastWeekSoFar, settings])
+  const previousFull = useMemo(() => sumWeek(lastWeek, settings), [lastWeek, settings])
+
+  const daysIn = Math.floor((Date.now() - startOfWeek().getTime()) / 86_400_000) + 1
+
+  return { thisWeek, lastWeek, current, previous, previousFull, daysIn }
 }

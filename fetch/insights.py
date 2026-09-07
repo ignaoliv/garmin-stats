@@ -22,7 +22,7 @@ import sys
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -32,6 +32,10 @@ load_dotenv(ROOT / ".env")
 
 DATA = ROOT / "public" / "data"
 DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+
+# Las tres ventanas, de la más corta a la más larga.
+VENTANAS = ("3d", "7d", "30d")
+ETIQUETA_VENTANA = {"3d": "Últimos 3 días", "7d": "Esta semana", "30d": "Últimos 30 días"}
 API = "https://api.cloudflare.com/client/v4"
 
 SPORT_LABELS = {
@@ -380,9 +384,146 @@ def build_recovery_digest(now: datetime) -> dict | None:
     return out
 
 
+# ─── Focos por ventana ────────────────────────────────────────────────────────
+#
+# Las tres ventanas miran los mismos datos con preguntas distintas. Tres días
+# responden "¿cómo llego a mañana?" y por eso pesan el descanso y la carga de
+# cada sesión; la semana y el mes responden "¿estoy progresando?" y por eso
+# pesan el total y la comparación con el período anterior. Mezclarlas daba un
+# análisis que hablaba del año pasado cuando la pregunta era si entrenar hoy.
+
+def _dia(fecha: str) -> str:
+    DIAS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+    return DIAS[date.fromisoformat(fecha).weekday()]
+
+
+def _filas(nombre: str) -> list[dict]:
+    ruta = DATA / f"{nombre}.json"
+    if not ruta.exists():
+        return []
+    try:
+        d = json.loads(ruta.read_text())
+    except ValueError:
+        return []
+    if isinstance(d, list):
+        return d
+    return next((v for v in d.values() if isinstance(v, list)), [])
+
+
+def foco_3_dias(acts: list[dict], now: datetime) -> dict:
+    """Qué pasó recién y con qué cuerpo se llega a mañana."""
+    parse = lambda a: datetime.fromisoformat(a["startTime"])
+    desde = (now - timedelta(days=3)).date().isoformat()
+
+    sesiones = [
+        {
+            "fecha": a["startTime"][:10],
+            "dia": _dia(a["startTime"][:10]),
+            "deporte": SPORT_LABELS.get(_sport(a), "otro"),
+            "titulo": a["title"],
+            "minutos": round(a["duration"] / 60),
+            "km": round(a["distance"], 1) or None,
+            "carga_tss": round(a["tss"]) if a.get("tss") else None,
+            "fc_media": a.get("avgHR") or None,
+        }
+        for a in sorted(acts, key=parse) if a["startTime"][:10] >= desde
+    ]
+
+    pasos = [{"fecha": r["fecha"], "dia": _dia(r["fecha"]), "pasos": r.get("pasos"),
+              "objetivo": r.get("objetivo")}
+             for r in _filas("steps") if r.get("fecha", "") >= desde]
+
+    noches = [{"fecha": r["fecha"], "horas": round((r.get("total_s") or 0) / 3600, 1),
+               "profundo_pct": round((r.get("profundo_s") or 0) / (r["total_s"] or 1) * 100),
+               "rem_pct": round((r.get("rem_s") or 0) / (r["total_s"] or 1) * 100)}
+              for r in _filas("sleep") if r.get("fecha", "") >= desde]
+
+    bienestar = [{"fecha": r["fecha"], "fc_reposo": r.get("fcReposo"),
+                  "bateria_min": r.get("bateriaMin"), "bateria_max": r.get("bateriaMax"),
+                  "estres_medio": r.get("estresMedio")}
+                 for r in _filas("wellness") if r.get("fecha", "") >= desde]
+
+    carga = sum(s["carga_tss"] or 0 for s in sesiones)
+    ultima = sesiones[-1]["fecha"] if sesiones else None
+    return {
+        "ventana": "últimos 3 días",
+        "sesiones": sesiones,
+        "carga_total_tss": carga or None,
+        "horas_desde_la_ultima_sesion": (
+            round((now - datetime.fromisoformat(ultima + "T12:00:00")).total_seconds() / 3600)
+            if ultima else None
+        ),
+        "pasos_por_dia": pasos or None,
+        "sueño_por_noche": noches or None,
+        "recuperacion_por_dia": bienestar or None,
+    }
+
+
+def _rango(acts: list[dict], desde: datetime, hasta: datetime) -> dict:
+    parse = lambda a: datetime.fromisoformat(a["startTime"])
+    filas = [a for a in acts if desde <= parse(a) < hasta]
+    h: dict[str, float] = defaultdict(float)
+    for a in filas:
+        h[SPORT_LABELS.get(_sport(a), "otro")] += a["duration"] / 3600
+    return {
+        "sesiones": len(filas),
+        "horas": round(sum(a["duration"] for a in filas) / 3600, 1),
+        "km": round(sum(a["distance"] for a in filas), 1),
+        "desnivel_m": round(sum(a.get("elevationGain") or 0 for a in filas)),
+        "carga_tss": round(sum(a.get("tss") or 0 for a in filas)),
+        "mezcla_horas": {k: round(v, 1) for k, v in sorted(h.items(), key=lambda x: -x[1])},
+    }
+
+
+def _media_pasos(desde: str, hasta: str) -> int | None:
+    v = [r["pasos"] for r in _filas("steps")
+         if desde <= r.get("fecha", "") < hasta and r.get("pasos")]
+    return round(sum(v) / len(v)) if v else None
+
+
+def foco_semana(acts: list[dict], now: datetime) -> dict:
+    """Esta semana contra la anterior. La comparación ES el análisis.
+
+    Y para que sea una comparación y no una trampa, va contra el MISMO TRAMO de
+    la semana pasada. Un lunes al mediodía, medir un día contra siete completos
+    da "esta semana va un 100% peor", que es verdad aritmética y mentira
+    deportiva. La semana pasada completa se manda igual, pero como referencia
+    de dónde terminó, no como vara.
+    """
+    inicio = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    previa = inicio - timedelta(days=7)
+    transcurrido = now - inicio
+    corte_previo = previa + transcurrido
+
+    return {
+        "ventana": "semana en curso contra la anterior",
+        "dias_transcurridos_de_la_semana": now.weekday() + 1,
+        "esta_semana": _rango(acts, inicio, now),
+        "semana_pasada_hasta_el_mismo_dia": _rango(acts, previa, corte_previo),
+        "semana_pasada_completa": _rango(acts, previa, inicio),
+        "media_pasos_esta_semana": _media_pasos(inicio.date().isoformat(), now.date().isoformat()),
+        "media_pasos_semana_pasada_mismo_tramo": _media_pasos(
+            previa.date().isoformat(), corte_previo.date().isoformat()),
+        "media_pasos_semana_pasada_completa": _media_pasos(
+            previa.date().isoformat(), inicio.date().isoformat()),
+    }
+
+
+def foco_mes(acts: list[dict], now: datetime) -> dict:
+    """Volumen de 30 días contra los 30 anteriores."""
+    d30, d60 = now - timedelta(days=30), now - timedelta(days=60)
+    return {
+        "ventana": "últimos 30 días contra los 30 previos",
+        "ultimos_30_dias": _rango(acts, d30, now),
+        "30_dias_previos": _rango(acts, d60, d30),
+        "media_pasos_ultimos_30": _media_pasos(d30.date().isoformat(), now.date().isoformat()),
+        "media_pasos_30_previos": _media_pasos(d60.date().isoformat(), d30.date().isoformat()),
+    }
+
+
 # ─── Prompt ───────────────────────────────────────────────────────────────────
 
-SYSTEM = """Sos un entrenador deportivo analizando los datos de un atleta amateur.
+SYSTEM_BASE = """Sos un entrenador deportivo analizando los datos de un atleta amateur.
 
 IDIOMA: español rioplatense, hablándole DIRECTAMENTE al atleta de vos.
 Escribís "llevás", "venís", "tenés", "entrenaste". NUNCA digas "el atleta"
@@ -397,31 +538,7 @@ en prosa natural ("67% menos horas que el año pasado"). NUNCA menciones nombres
 de campos del JSON ni uses paréntesis con claves tipo "señales_clave.xxx: -67".
 Las fechas en castellano ("26 de junio"), no en formato ISO.
 
-QUÉ PRIORIZAR — el campo "señales_clave" ya trae lo importante calculado.
-Empezá por ahí y ordená por magnitud:
-1. Qué está pasando AHORA: los últimos 7 días y las semanas seguidas entrenando.
-2. Caídas o subidas grandes de volumen contra el año pasado o el mes anterior.
-3. Huecos largos sin entrenar y semanas vacías.
-4. Cambios en la mezcla de deportes.
-Un dato chico (desnivel de una salida, calorías) NO va en las observaciones
-salvo que sea lo único relevante que haya. Y ninguna observación repite el
-titular con otras palabras: el titular ya se lee arriba, las observaciones
-agregan algo distinto.
-
-EL PRESENTE PESA MÁS QUE EL PROMEDIO ANUAL. La comparación contra el año
-pasado describe doce meses; la última semana describe hoy, y es sobre hoy que
-se decide qué hacer mañana.
-- Si "dias_desde_que_volvio_a_entrenar" es chico, el hueco YA TERMINÓ: es una
-  VUELTA al entrenamiento y se cuenta como tal ("volviste a entrenar hace X
-  días"), nunca como un parate en curso.
-- Si "semanas_seguidas_entrenando_hasta_hoy" es 2 o más, hay una racha en
-  marcha. Nombrala antes que la caída anual: es lo que el atleta está
-  sosteniendo ahora.
-- Un arranque después de un parate se sostiene subiendo de a poco. NUNCA
-  recomiendes saltar a sesiones largas ni duplicar el volumen en la primera
-  semana de vuelta: la lesión aparece justamente ahí.
-- El promedio anual se puede seguir mencionando, pero como contexto de dónde
-  viene, no como el titular de lo que está pasando.
+{lente}
 
 PASOS DIARIOS ("pasos_diarios"): miden todo lo que se mueve FUERA del
 entrenamiento. Son una dimensión distinta del volumen de entrenamiento y hay que
@@ -465,11 +582,11 @@ Reglas:
 
 Devolvés JSON válido y NADA más, con esta forma exacta:
 {
-  "titular": "una frase de 10 palabras máximo que resuma el momento actual",
+  "titular": "una frase de 10 palabras máximo, sobre ESTA ventana y ninguna otra",
   "estado": "bien" | "atencion" | "alerta",
-  "resumen": "2-3 oraciones sobre cómo viene entrenando",
+  "resumen": "2-3 oraciones sobre lo que muestra ESTA ventana",
   "observaciones": ["3 a 5 observaciones concretas, cada una citando un número"],
-  "recomendaciones": ["2 a 3 sugerencias accionables para las próximas semanas"],
+  "recomendaciones": ["2 a 3 sugerencias accionables en el horizonte de esta ventana"],
   "recuperacion": {
     "estado": "bien" | "atencion" | "alerta",
     "titular": "una frase corta sobre cómo viene tu recuperación",
@@ -483,11 +600,75 @@ Devolvés JSON válido y NADA más, con esta forma exacta:
 }"""
 
 
+# ─── Lentes ───────────────────────────────────────────────────────────────────
+#
+# Una sola forma de salida y tres preguntas distintas. Sin esto las tres
+# ventanas devolvían el mismo texto con otro título: el modelo se agarra de las
+# señales más llamativas —la caída contra el año pasado— sin importar qué se le
+# haya preguntado.
+
+LENTES: dict[str, str] = {
+    "3d": """QUÉ MIRAR — la ventana es "foco_3_dias" y la pregunta es UNA:
+¿con qué cuerpo llega mañana? Nada de tendencias anuales acá.
+1. La carga de cada sesión de estos tres días ("carga_tss") y cuánto suma.
+2. El descanso: FC en reposo del día, batería corporal mínima y máxima, estrés,
+   y las horas de sueño de cada noche.
+3. Los pasos de cada día, que dicen cuánto se movió fuera del entrenamiento.
+4. Cuántas horas pasaron desde la última sesión.
+La recomendación es sobre HOY o MAÑANA: si conviene una sesión fuerte, una
+suave o descanso. Nunca "en las próximas semanas".
+Si no hay sesiones en los tres días, eso ES el hallazgo: decilo y mirá el
+descanso y los pasos para saber si fue descanso buscado o parate.
+Los bloques "recuperacion" y "pasos" hablan de estos tres días, no del mes.""",
+
+    "7d": """QUÉ MIRAR — la ventana es "foco_semana" y la pregunta es:
+¿esta semana va mejor o peor que la anterior?
+1. La COMPARACIÓN es el análisis, y va SIEMPRE contra
+   "semana_pasada_hasta_el_mismo_dia", nunca contra la semana completa. Ese
+   campo trae los mismos días transcurridos de la semana pasada, así que es la
+   única comparación honesta. Nombrá las dos cifras, no sólo la diferencia.
+2. "semana_pasada_completa" es SÓLO referencia de dónde terminó la semana
+   anterior. Nunca la uses para decir que esta semana va peor: comparar dos
+   días contra siete no es un hallazgo, es un error de cuentas.
+3. Si "dias_transcurridos_de_la_semana" es 1 o 2, la semana recién arranca.
+   Decilo con esas palabras y hablá de lo que queda por delante, no de una
+   caída. Un lunes sin entrenar no es una mala semana, es un lunes.
+4. La mezcla de deportes de un tramo contra el otro.
+5. La media de pasos, también contra el mismo tramo.
+La recomendación es para lo que queda de la semana, y si quedan días de sobra
+decí cuántas sesiones harían falta para igualar o superar la semana anterior.
+Los bloques "recuperacion" y "pasos" hablan de esta semana contra la anterior.""",
+
+    "30d": """QUÉ MIRAR — la ventana es "foco_mes" y la pregunta es:
+¿cuánto volumen acumuló y cómo se compara con el mes anterior?
+1. El VOLUMEN TOTAL primero: horas, kilómetros, sesiones y carga de los últimos
+   30 días. Es la cifra que manda en esta ventana.
+2. Después la comparación contra los 30 días previos, en porcentaje y en
+   valores absolutos.
+3. La mezcla de deportes y si cambió el reparto entre un período y otro.
+4. La media de pasos de los dos períodos.
+Acá sí valen las señales de largo plazo de "señales_clave": huecos, semanas
+vacías y la comparación contra el año pasado, pero después del volumen del mes.
+La recomendación es para el mes que viene.
+Los bloques "recuperacion" y "pasos" hablan de los 30 días, en tendencia."""
+}
+
+
 def build_prompt(digest: dict) -> str:
     return (
         "Analizá estos datos de entrenamiento y devolvé el JSON pedido.\n\n"
         + json.dumps(digest, ensure_ascii=False, indent=1)
     )
+
+
+def sistema_para(ventana: str) -> str:
+    """El prompt de una ventana.
+
+    Con `.format()` no: el esquema de salida lleva llaves de JSON y habría que
+    escaparlas todas, que es exactamente el tipo de detalle que se rompe callado
+    la próxima vez que alguien toque el esquema.
+    """
+    return SYSTEM_BASE.replace("{lente}", LENTES[ventana])
 
 
 def extract_json(text: object) -> dict | None:
@@ -523,6 +704,7 @@ def main() -> None:
     ap.add_argument("--list-models", action="store_true", help="Listar los modelos de texto disponibles y salir")
     ap.add_argument("--dry-run", action="store_true", help="Mostrar el digest sin llamar al modelo")
     ap.add_argument("--json", action="store_true", help="Emitir sólo el JSON resultante (para el endpoint)")
+    ap.add_argument("--ventanas", default="", help="Cuáles regenerar: 3d,7d,30d (por defecto las tres)")
     args = ap.parse_args()
 
     acts_path = DATA / "activities.json"
@@ -544,39 +726,68 @@ def main() -> None:
         return
 
     digest = build_digest(acts)
-    print(f"Analizando {digest['historial']['total_actividades']} actividades con {args.model}…")
+    now = datetime.now()
+    focos = {
+        "3d": foco_3_dias(acts, now),
+        "7d": foco_semana(acts, now),
+        "30d": foco_mes(acts, now),
+    }
+    pedidas = [v for v in VENTANAS if v in (args.ventanas.split(",") if args.ventanas else VENTANAS)]
 
-    res = call_api(
-        f"/accounts/{account}/ai/run/{args.model}",
-        token,
-        {
-            "messages": [
-                {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": build_prompt(digest)},
-            ],
-            "max_tokens": 1200,
-            "temperature": 0.3,
-        },
-    )
+    if not args.json:
+        print(f"Analizando {digest['historial']['total_actividades']} actividades con {args.model}…")
 
-    raw = (res.get("result") or {}).get("response", "")
-    parsed = extract_json(raw)
-    if not parsed:
-        print("ERROR: el modelo no devolvió JSON válido. Respuesta cruda:\n", raw[:600], file=sys.stderr)
-        sys.exit(1)
+    ventanas: dict[str, dict] = {}
+    for v in pedidas:
+        # Cada ventana recibe el digest completo más SU foco: el contexto largo
+        # sigue disponible, pero lo que tiene que mirar viene señalado aparte.
+        entrada = digest | {"foco_" + v: focos[v]}
+        parsed = None
+        for temperatura in (0.3, 0.0):
+            res = call_api(
+                f"/accounts/{account}/ai/run/{args.model}",
+                token,
+                {
+                    "messages": [
+                        {"role": "system", "content": sistema_para(v)},
+                        {"role": "user", "content": build_prompt(entrada)},
+                    ],
+                    "max_tokens": 1200,
+                    "temperature": temperatura,
+                },
+            )
+            raw = (res.get("result") or {}).get("response", "")
+            parsed = extract_json(raw)
+            if parsed:
+                break
+            if not args.json:
+                print(f"  {v}: JSON inválido, reintentando…", file=sys.stderr)
+        if not parsed:
+            print(f"ERROR: la ventana {v} no devolvió JSON válido.", file=sys.stderr)
+            sys.exit(1)
+        ventanas[v] = parsed
+        if not args.json:
+            print(f"  ✔ {ETIQUETA_VENTANA[v]}: {parsed.get('titular')}")
 
-    out = parsed | {
+    previo = {}
+    salida = DATA / "insights.json"
+    if salida.exists() and len(pedidas) < len(VENTANAS):
+        try:
+            previo = (json.loads(salida.read_text()).get("ventanas") or {})
+        except ValueError:
+            previo = {}
+
+    out = {
         "generado": digest["generado"],
         "datos_hasta": digest["datos_hasta"],
         "modelo": args.model,
+        "ventanas": previo | ventanas,
     }
-    (DATA / "insights.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
+    salida.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     if args.json:
         print(json.dumps(out, ensure_ascii=False))
         return
-    print(f"\n✔ Guardado en public/data/insights.json\n")
-    print(f"  {out.get('titular')}")
-    print(f"  estado: {out.get('estado')}")
+    print("\n✔ Guardado en public/data/insights.json")
 
 
 if __name__ == "__main__":

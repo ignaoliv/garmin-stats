@@ -11,7 +11,7 @@ interface Bloque {
   detalle: string
 }
 
-interface Insights {
+interface Analisis {
   titular: string
   estado: 'bien' | 'atencion' | 'alerta'
   resumen: string
@@ -19,11 +19,25 @@ interface Insights {
   recomendaciones: string[]
   recuperacion?: Bloque
   pasos?: Bloque
+}
+
+type Ventana = '3d' | '7d' | '30d'
+
+interface Insights {
   generado: string
   /** Marca de la sincronización que leyó este análisis. */
   datos_hasta?: string
   modelo: string
+  ventanas: Partial<Record<Ventana, Analisis>>
 }
+
+/** Tres preguntas distintas, no la misma con otro título: qué cuerpo tengo hoy,
+ *  cómo va la semana contra la anterior, y cuánto volumen acumulé en el mes. */
+const VENTANAS: { clave: Ventana; label: string; pregunta: string }[] = [
+  { clave: '3d', label: 'Últimos 3 días', pregunta: 'Carga reciente, descanso y pasos' },
+  { clave: '7d', label: 'Esta semana', pregunta: 'Comparado con la semana pasada' },
+  { clave: '30d', label: 'Últimos 30 días', pregunta: 'Volumen y comparación con el mes anterior' },
+]
 
 const TONE = {
   bien:     { color: '#34d399', label: 'Todo en orden' },
@@ -45,7 +59,10 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
     }
   }, [onClose])
 
-  const tone = TONE[data.estado] ?? TONE.bien
+  const disponibles = VENTANAS.filter(v => data.ventanas?.[v.clave])
+  const [activa, setActiva] = useState<Ventana>(disponibles[0]?.clave ?? '3d')
+  const analisis = data.ventanas?.[activa]
+  const tone = TONE[analisis?.estado ?? 'bien'] ?? TONE.bien
 
 // Los diálogos se montan en <body>: cualquier ancestro con transform o
 // backdrop-filter (la barra lateral, sin ir más lejos) pasa a ser el bloque
@@ -68,7 +85,7 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: tone.color }} />
               <span className="text-[13px] font-medium" style={{ color: tone.color }}>{tone.label}</span>
             </div>
-            <h2 className="text-[21px] font-bold text-ink-primary leading-snug">{data.titular}</h2>
+            <h2 className="text-[21px] font-bold text-ink-primary leading-snug">{analisis?.titular}</h2>
           </div>
           <button
             onClick={onClose}
@@ -79,14 +96,40 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
-          <p className="text-[15px] text-ink-secondary leading-relaxed">{data.resumen}</p>
+        <div className="flex gap-1 px-6 pt-3 -mb-px overflow-x-auto" role="tablist">
+          {disponibles.map(v => {
+            const esActiva = v.clave === activa
+            const t = TONE[data.ventanas[v.clave]!.estado] ?? TONE.bien
+            return (
+              <button
+                key={v.clave}
+                role="tab"
+                aria-selected={esActiva}
+                onClick={() => setActiva(v.clave)}
+                title={v.pregunta}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg text-[13.5px] font-medium
+                            whitespace-nowrap border-b-2 transition-colors ${
+                  esActiva
+                    ? 'border-accent text-ink-primary bg-surface-hover'
+                    : 'border-transparent text-ink-muted hover:text-ink-secondary'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: t.color }} />
+                {v.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="px-6 py-5 space-y-5 border-t border-surface-line">
+          <p className="label-plain">{VENTANAS.find(v => v.clave === activa)?.pregunta}</p>
+          <p className="text-[15px] text-ink-secondary leading-relaxed">{analisis?.resumen}</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
               <h3 className="text-[13px] font-semibold text-ink-muted mb-2.5">Qué muestran los números</h3>
               <ul className="space-y-2">
-                {data.observaciones?.map((o, i) => (
+                {analisis?.observaciones?.map((o, i) => (
                   <li key={i} className="flex gap-2.5 text-[14px] text-ink-secondary leading-relaxed">
                     <span className="text-ink-faint shrink-0">·</span><span>{o}</span>
                   </li>
@@ -96,7 +139,7 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
             <div>
               <h3 className="text-[13px] font-semibold text-ink-muted mb-2.5">Qué haría ahora</h3>
               <ul className="space-y-2">
-                {data.recomendaciones?.map((r, i) => (
+                {analisis?.recomendaciones?.map((r, i) => (
                   <li key={i} className="flex gap-2.5 text-[14px] text-ink-secondary leading-relaxed">
                     <span className="shrink-0" style={{ color: tone.color }}>→</span><span>{r}</span>
                   </li>
@@ -106,8 +149,8 @@ function DetailModal({ data, onClose }: { data: Insights; onClose: () => void })
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Bloque icono="corazon" bloque={data.recuperacion} />
-            <Bloque icono="pasos" bloque={data.pasos} />
+            <Bloque icono="corazon" bloque={analisis?.recuperacion} />
+            <Bloque icono="pasos" bloque={analisis?.pasos} />
           </div>
 
           <p className="text-[12px] text-ink-muted pt-3 border-t border-surface-line">
@@ -188,22 +231,24 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
           <span className="w-9 h-9 rounded-full grid place-items-center text-accent-soft">
             <Icon name="cerebro" size={19} />
           </span>
-          <span className="text-[13px] text-ink-secondary">Analizando tu día…</span>
+          <span className="text-[13px] text-ink-secondary">Analizando tu entrenamiento…</span>
         </div>
       )
     }
     return (
       <Card className="p-4">
         <AIProgress
-          titulo="Analizando tu día"
-          detalle="entrenamiento, pasos, sueño y recuperación"
-          esperaTipica={25}
-          lineas={2}
+          titulo="Analizando tu entrenamiento"
+          detalle="tres miradas: últimos 3 días, la semana y el mes"
+          esperaTipica={75}
+          lineas={3}
         />
       </Card>
     )
   }
-  const tone = TONE[data.estado] ?? TONE.bien
+  const breve = data.ventanas?.['3d'] ?? data.ventanas?.['7d'] ?? data.ventanas?.['30d']
+  if (!breve) return null
+  const tone = TONE[breve.estado] ?? TONE.bien
 
   // En el encabezado el análisis compite con el título, así que va condensado:
   // el titular y el estado alcanzan para decidir si vale abrirlo.
@@ -217,7 +262,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
                      hover:bg-surface-hover focus:outline-none focus-visible:ring-2
                      focus-visible:ring-accent focus-visible:ring-offset-2
                      focus-visible:ring-offset-[#0b1220]"
-          aria-label={`${tone.label}: ${data.titular}. Ver el análisis completo`}
+          aria-label={`${tone.label}: ${breve.titular}. Ver el análisis completo`}
         >
           <span className="halo-ring relative shrink-0 w-9 h-9 rounded-full grid place-items-center
                            text-accent-soft group-hover:text-accent transition-colors">
@@ -233,7 +278,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
                   title="Actualizando con los datos de hoy" />
               )}
             </span>
-            <span className="block text-[15px] font-semibold text-ink-primary leading-snug truncate">{data.titular}</span>
+            <span className="block text-[15px] font-semibold text-ink-primary leading-snug truncate">{breve.titular}</span>
           </span>
 
           <span className="shrink-0 text-ink-muted group-hover:text-ink-primary transition-colors" aria-hidden="true">
@@ -269,7 +314,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
               <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: tone.color }}>{tone.label}</span>
             </div>
             <div className="flex items-center gap-2 min-w-0">
-              <p className="text-[16px] font-semibold text-ink-primary leading-snug truncate">{data.titular}</p>
+              <p className="text-[16px] font-semibold text-ink-primary leading-snug truncate">{breve.titular}</p>
               {regenerando && (
                 <span className="w-3 h-3 shrink-0 rounded-full border-2 border-accent border-t-transparent animate-spin"
                   title="Actualizando con los datos de hoy" />

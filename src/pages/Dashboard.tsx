@@ -61,7 +61,7 @@ export default function Dashboard() {
   const error = useActivityStore(s => s.error)
 
   const { current: fitness, sparkPoints } = useFitnessHistory()
-  const { current: week, previous: lastWeek } = useWeekComparison()
+  const { current: week, previous: lastWeek, daysIn } = useWeekComparison()
   const { ranked: sportVolume, totalHours, totalCount } = useSportVolume(30)
   const { slices: zoneSlices, isAerobicFocused, estimadas: zonasEstimadas } = useZoneDistribution(30)
   const acwr = useACWR(120)
@@ -98,7 +98,11 @@ export default function Dashboard() {
         <section>
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-[15px] font-semibold text-ink-primary">Esta semana</h2>
-            <span className="text-[13px] text-ink-muted">comparado con la semana anterior</span>
+            <span className="text-[13px] text-ink-muted">
+              {daysIn <= 2
+                ? `recién empieza · ${daysIn === 1 ? 'primer día' : `${daysIn} días`}, comparado con el mismo tramo`
+                : `${daysIn} días, comparado con el mismo tramo de la semana anterior`}
+            </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
             <StatTile label="Sesiones"  value={String(week.count)}                 delta={week.count - lastWeek.count} />
