@@ -38,6 +38,10 @@ FIELDS = {
     "bateriaMax":    ["bodyBatteryHighestValue"],
     "minutosIntensos": ["vigorousIntensityMinutes"],
     "minutosModerados": ["moderateIntensityMinutes"],
+    # Calorías: el total del día y cuánto de eso fue movimiento. El metabolismo
+    # basal es la diferencia y no hace falta guardarlo aparte.
+    "caloriasTotales": ["totalKilocalories"],
+    "caloriasActivas": ["activeKilocalories"],
 }
 
 
@@ -100,7 +104,8 @@ def archive_wellness(api, days: int = 90) -> int:
     con_fc = sum(1 for r in dias if r.get("fcReposo"))
     con_sueño = sum(1 for r in dias if r.get("sueñoSegundos"))
     print(f"  Recuperación archivada: {len(dias)} días ({nuevos} nuevos)")
-    print(f"    con FC en reposo: {con_fc} · con sueño: {con_sueño}")
+    con_kcal = sum(1 for r in dias if r.get("caloriasTotales"))
+    print(f"    con FC en reposo: {con_fc} · con sueño: {con_sueño} · con calorías: {con_kcal}")
     if claves_vistas:
         interes = sorted(k for k in claves_vistas if any(w in k.lower() for w in ("sleep", "rest", "stress", "battery", "hrv")))
         print(f"    campos disponibles en el resumen: {', '.join(interes[:10]) or '(ninguno reconocido)'}")

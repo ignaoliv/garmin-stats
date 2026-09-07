@@ -15,6 +15,8 @@ import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
 import DescansoCard from '../components/DescansoCard'
+import FCReposoCard from '../components/FCReposoCard'
+import CaloriasCard from '../components/CaloriasCard'
 import StepsCard from '../components/StepsCard'
 import ProximoEvento from '../components/ProximoEvento'
 
@@ -193,9 +195,17 @@ export default function Dashboard() {
           </div>
         </Card>
 
+        {/* Las cuatro de salud, en dos filas.
+            Las dos cortas arriba y las dos con gráfico abajo: con una tarjeta
+            alta al lado de una baja, la fila queda con un hueco enorme. */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
           <DescansoCard />
           <StepsCard windowDays={30} compacto />
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+          <FCReposoCard />
+          <CaloriasCard />
         </div>
 
 
