@@ -45,6 +45,12 @@
   --color-ink-faintest:  #4a5771;
 
   /* ── Status (reserved: never reused as a series colour) ───────────────── */
+  /* Métricas con identidad propia. El verde-azulado de la FC en reposo se
+     eligió corriendo el validador: entra en la banda de luminosidad sobre la
+     tarjeta oscura y es el que más se separa de los colores de deportes que
+     comparten pantalla. No es un color de estado: no significa "bien". */
+  --color-metric-fc:      #1e9aad;
+
   --color-state-good:     #34d399;
   --color-state-warning:  #fbbf24;
   --color-state-serious:  #fb923c;

@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
+import {
+  AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+} from 'recharts'
 import { useDescanso } from '../hooks/useDescanso'
-import { Card, CardHeader, Insight } from './ui'
+import { Card, CardHeader, Insight, ChartTooltip } from './ui'
 import Ring from './Ring'
 import Icon from './Icon'
 
@@ -10,6 +13,10 @@ const TONO = {
   alerta:      'var(--color-state-critical)',
   'sin-datos': 'var(--color-ink-muted)',
 } as const
+
+const AXIS = { fill: '#94a3b8', fontSize: 12 }
+const GRID = '#28334a'
+const FC = 'var(--color-metric-fc)'
 
 const h = (s: number) => `${Math.floor(s / 3600)}h ${String(Math.round((s % 3600) / 60)).padStart(2, '0')}m`
 
@@ -102,6 +109,72 @@ export default function DescansoCard() {
           )}
         </div>
       </div>
+
+      {d.serieFC.some(p => p.media7 !== null) && (
+        <div className="mt-5 pt-4 border-t border-white/[0.06]">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="label">FC en reposo · últimos 90 días</span>
+            <span className="text-[12px] text-ink-muted">
+              menos pulsaciones es mejor
+            </span>
+          </div>
+
+          <ResponsiveContainer width="100%" height={168}>
+            <AreaChart data={d.serieFC} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+              <defs>
+                <linearGradient id="gFC" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#1e9aad" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#1e9aad" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={40} />
+              {/* Sin cero forzado: entre 35 y 60 ppm, arrancar en cero aplasta
+                  la curva y esconde justo lo que se viene a mirar. */}
+              <YAxis domain={['dataMin - 3', 'dataMax + 3']} tick={AXIS} tickLine={false}
+                axisLine={false} width={44} allowDecimals={false} unit=" " />
+              <Tooltip
+                cursor={{ stroke: GRID }}
+                content={<ChartTooltip
+                  formatter={(v, n) => `${Number(v).toFixed(n === 'Media de 7 días' ? 1 : 0)} ppm${
+                    n === 'Media de 7 días' ? ' de media' : ''}`}
+                />}
+              />
+              {d.fcReposoMedia !== null && (
+                <ReferenceLine
+                  y={d.fcReposoMedia}
+                  stroke="#cbd5e1"
+                  strokeDasharray="5 4"
+                  strokeWidth={1.5}
+                  label={{ value: `media ${d.fcReposoMedia.toFixed(0)}`, position: 'right',
+                           fill: '#cbd5e1', fontSize: 11, dx: -6 }}
+                />
+              )}
+              {/* El diario es el ruido y se queda como relleno: dibujarlo también
+                  como línea daba dos trazos del mismo tono peleando, y no se
+                  sabía cuál leer. La progresión es una sola línea. */}
+              <Area type="monotone" dataKey="fc" name="FC del día" stroke="#1e9aad"
+                strokeOpacity={0.18} strokeWidth={1} fill="url(#gFC)" connectNulls
+                isAnimationActive animationDuration={650} animationEasing="ease-out" />
+              <Line type="monotone" dataKey="media7" name="Media de 7 días" stroke={FC}
+                strokeWidth={2.5} dot={false} connectNulls
+                isAnimationActive animationDuration={650} animationEasing="ease-out" />
+            </AreaChart>
+          </ResponsiveContainer>
+
+          <div className="flex flex-wrap gap-4 mt-2">
+            <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
+              <span className="w-4 h-[2.5px] rounded-full" style={{ background: FC }} />
+              Media de 7 días
+            </span>
+            <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
+              <span className="w-4 h-2.5 rounded-[3px]"
+                style={{ background: FC, opacity: 0.22 }} />
+              Lectura de cada día
+            </span>
+          </div>
+        </div>
+      )}
 
       <p className="label-plain mt-4 pt-3 border-t border-white/[0.06]">
         <Link to="/salud" className="text-accent hover:text-accent-soft">Ver el detalle del sueño</Link>
