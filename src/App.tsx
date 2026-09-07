@@ -12,7 +12,16 @@ import Activities from './pages/Activities'
 import ActivityDetailPage from './pages/ActivityDetail'
 import Settings from './pages/Settings'
 
-export default function App() {
+/**
+ * El panel, ya con sesión.
+ *
+ * Separado de App a propósito: la carga de datos vive acá adentro para que no
+ * arranque hasta que haya sesión. Cuando estaba arriba, pedía las actividades
+ * mientras se mostraba la puerta, se comía un 401, y el store quedaba en
+ * estado de error — así que al entrar la contraseña aparecía "Sin datos de
+ * Garmin" en vez del panel, porque nada volvía a intentar.
+ */
+function Panel() {
   const loadActivities = useActivityStore(s => s.loadActivities)
   const loadStats = useActivityStore(s => s.loadStats)
 
@@ -22,8 +31,7 @@ export default function App() {
   }, [loadActivities, loadStats])
 
   return (
-    <Sesion>
-      <BrowserRouter>
+    <BrowserRouter>
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-hidden flex flex-col">
@@ -39,7 +47,14 @@ export default function App() {
           </Routes>
         </main>
       </div>
-      </BrowserRouter>
+    </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <Sesion>
+      <Panel />
     </Sesion>
   )
 }
