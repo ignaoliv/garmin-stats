@@ -11,5 +11,10 @@
   ],
   "regions": [
     "iad1"
-  ]
+  ],
+  "functions": {
+    "api/comida/analizar.py": {
+      "maxDuration": 60
+    }
+  }
 }

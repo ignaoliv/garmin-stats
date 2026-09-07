@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Card, CardHeader, Insight, StatTile, explicarError } from '../components/ui'
 import Icon from '../components/Icon'
 import AIProgress from '../components/AIProgress'
-import { enviar, accionesDisponibles } from '../lib/acciones'
+import { enviar, comidaDisponible } from '../lib/acciones'
 import { useComidas, hoyLocal, type AlimentoRegistrado } from '../hooks/useComidas'
 
 const CONFIANZA = {
@@ -39,6 +39,21 @@ interface Analisis {
   nota: string
 }
 
+/** Achica la foto antes de subirla.
+ *
+ *  Una foto de teléfono son 3 o 4 MB, y en base64 crece un tercio más. Desde
+ *  el celular con datos eso es la diferencia entre esperar dos segundos y
+ *  esperar veinte, y el modelo no ve nada más por los píxeles de sobra. */
+async function achicar(f: File, lado = 1024): Promise<string> {
+  const bitmap = await createImageBitmap(f)
+  const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height))
+  const lienzo = document.createElement('canvas')
+  lienzo.width = Math.round(bitmap.width * escala)
+  lienzo.height = Math.round(bitmap.height * escala)
+  lienzo.getContext('2d')!.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height)
+  return lienzo.toDataURL('image/jpeg', 0.85).split(',')[1]
+}
+
 export default function Comida() {
   const { delDia, total, recargar } = useComidas()
   const archivo = useRef<HTMLInputElement>(null)
@@ -53,12 +68,7 @@ export default function Comida() {
     setEstado('analizando'); setMensaje(''); setAnalisis(null)
     setVista(URL.createObjectURL(f))
     try {
-      const b64 = await new Promise<string>((ok, fail) => {
-        const r = new FileReader()
-        r.onload = () => ok(String(r.result).split(',')[1])
-        r.onerror = () => fail(new Error('No se pudo leer la foto'))
-        r.readAsDataURL(f)
-      })
+      const b64 = await achicar(f)
       const r = await enviar('/api/comida/analizar', { imagen_b64: b64 })
       setAnalisis(r as unknown as Analisis)
       setEstado('idle')
@@ -129,13 +139,6 @@ export default function Comida() {
           <p className="label-plain mt-2">Sacá una foto del plato y se calculan los nutrientes</p>
         </header>
 
-        {!accionesDisponibles && (
-          <Insight tone="neutral">
-            Analizar fotos necesita el servidor local: por ahora corre con
-            <code className="mx-1">npm run dev</code>, no en la versión publicada.
-          </Insight>
-        )}
-
         {/* ── Lo que va del día ──────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline justify-between mb-3">
@@ -171,7 +174,7 @@ export default function Comida() {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => archivo.current?.click()}
-              disabled={!accionesDisponibles || estado === 'analizando'}
+              disabled={!comidaDisponible || estado === 'analizando'}
               className="px-4 py-2.5 rounded-xl border border-accent text-accent hover:bg-accent
                          hover:text-white text-[15px] font-semibold transition-colors
                          disabled:opacity-50 flex items-center gap-2"

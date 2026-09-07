@@ -1,0 +1,2 @@
+# Las funciones de Python usan sólo la biblioteca estándar.
+# El achicado de la foto ahora lo hace el navegador, así que no hace falta Pillow.

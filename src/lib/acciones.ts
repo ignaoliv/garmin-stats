@@ -24,9 +24,18 @@ export class AccionNoDisponible extends Error {
   }
 }
 
-/** Las acciones de servidor no existen desplegadas, y conviene saberlo antes
- *  de apretar el botón y no después de un error críptico. */
+/** Las que ya viven como funciones de Vercel y andan en los dos lados. */
+const PORTADAS = ['/api/comida/']
+
+const estaPortada = (ruta: string) => PORTADAS.some(p => ruta.startsWith(p))
+
+/** Las acciones de servidor que todavía NO están desplegadas, para poder
+ *  avisarlo antes de apretar el botón y no después de un error críptico. */
 export const accionesDisponibles = !desplegado
+
+/** La comida sí anda desplegada: la foto se saca con el teléfono, que era el
+ *  punto de publicar esto. */
+export const comidaDisponible = true
 
 async function leerRespuesta(r: Response): Promise<Record<string, unknown>> {
   // Un 404 de Vercel llega como HTML. Mirar el content-type antes de parsear
@@ -41,12 +50,12 @@ async function leerRespuesta(r: Response): Promise<Record<string, unknown>> {
 }
 
 export async function pedir(ruta: string): Promise<Record<string, unknown>> {
-  if (desplegado) throw new AccionNoDisponible()
+  if (desplegado && !estaPortada(ruta)) throw new AccionNoDisponible()
   return leerRespuesta(await fetch(ruta))
 }
 
 export async function enviar(ruta: string, cuerpo: unknown): Promise<Record<string, unknown>> {
-  if (desplegado) throw new AccionNoDisponible()
+  if (desplegado && !estaPortada(ruta)) throw new AccionNoDisponible()
   return leerRespuesta(await fetch(ruta, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
