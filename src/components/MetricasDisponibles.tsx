@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardHeader } from './ui'
 import { evaluarMetricas, type Evaluada } from '../utils/metricas'
+import { leer } from '../lib/datos'
 
 const ESTADO = {
   disponible:    { color: 'var(--color-state-good)',    label: 'Registrando' },
@@ -20,13 +21,11 @@ export default function MetricasDisponibles() {
   const [metricas, setMetricas] = useState<Evaluada[] | null>(null)
 
   useEffect(() => {
-    const leer = (u: string, k: string) =>
-      fetch(u)
-        .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-        .then(d => (d?.[k] ?? []) as Record<string, unknown>[])
-        .catch(() => [])
+    const filas = (archivo: string, clave: string) =>
+      leer<Record<string, Record<string, unknown>[]>>(archivo)
+        .then(d => d?.[clave] ?? [])
 
-    Promise.all([leer('/data/sleep.json', 'noches'), leer('/data/wellness.json', 'dias')])
+    Promise.all([filas('sleep', 'noches'), filas('wellness', 'dias')])
       .then(([noches, dias]) => setMetricas(evaluarMetricas(noches, dias)))
   }, [])
 

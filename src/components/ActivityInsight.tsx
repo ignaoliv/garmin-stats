@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from './ui'
 import AIProgress from './AIProgress'
+import { leer } from '../lib/datos'
 
 interface Insight {
   titular: string
@@ -40,17 +41,11 @@ export default function ActivityInsight({ activityId }: { activityId: number }) 
 
     const load = async () => {
       // Static file first: no server round-trip once it exists.
-      // Vite answers a missing file with index.html and a 200, so `ok` alone
-      // would happily hand us an HTML page to parse as JSON.
-      const cached = await fetch(`/data/insight_${activityId}.json`).catch(() => null)
+      const cached = await leer<Insight>(`insight_${activityId}`)
       if (cancelled) return
-      if (cached?.ok && cached.headers.get('content-type')?.includes('json')) {
-        try {
-          setData(await cached.json())
-          return
-        } catch {
-          // fall through and regenerate
-        }
+      if (cached) {
+        setData(cached)
+        return
       }
 
       setState('generando')

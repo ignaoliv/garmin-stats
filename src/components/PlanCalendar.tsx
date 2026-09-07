@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
 import { createPortal } from 'react-dom'
+import { leer } from '../lib/datos'
 
 export interface BloquePlan {
   category: string
@@ -31,10 +32,8 @@ export default function PlanCalendar({
   // What Garmin already has scheduled, so a clash is visible while planning
   // rather than after uploading.
   useEffect(() => {
-    fetch('/data/plan.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-      .then(d => setAgenda((d?.programados ?? []).map((w: { fecha: string; titulo: string }) => ({ fecha: w.fecha, titulo: w.titulo }))))
-      .catch(() => setAgenda([]))
+    leer<{ programados?: { fecha: string; titulo: string }[] }>('plan')
+      .then(d => setAgenda((d?.programados ?? []).map(w => ({ fecha: w.fecha, titulo: w.titulo }))))
   }, [])
 
   const filas = useMemo(() => {

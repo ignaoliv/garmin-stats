@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { leer } from '../lib/datos'
 
 export interface Noche {
   fecha: string
@@ -135,10 +136,7 @@ export function useSleep(): SleepData {
   const [raw, setRaw] = useState<Noche[] | null>(null)
 
   useEffect(() => {
-    fetch('/data/sleep.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-      .then(d => setRaw(d?.noches ?? []))
-      .catch(() => setRaw([]))
+    leer<{ noches?: Noche[] }>('sleep').then(d => setRaw(d?.noches ?? []))
   }, [])
 
   return useMemo(() => {

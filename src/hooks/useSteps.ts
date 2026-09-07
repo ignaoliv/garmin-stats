@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { leer } from '../lib/datos'
 
 export interface StepDay {
   fecha: string
@@ -34,10 +35,7 @@ export function useSteps(windowDays = 30): StepsData {
   const [dias, setDias] = useState<StepDay[] | null>(null)
 
   useEffect(() => {
-    fetch('/data/steps.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-      .then(d => setDias(d?.dias ?? []))
-      .catch(() => setDias([]))
+    leer<StepsData>('steps').then(d => setDias(d?.dias ?? []))
   }, [])
 
   return useMemo(() => {

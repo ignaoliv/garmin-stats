@@ -4,6 +4,7 @@ import { Card } from './ui'
 import Icon from './Icon'
 import AIProgress from './AIProgress'
 import { useActivityStore } from '../stores/activityStore'
+import { leer } from '../lib/datos'
 
 interface Bloque {
   estado: 'bien' | 'atencion' | 'alerta'
@@ -192,9 +193,7 @@ export default function InsightsCard({ compacto = false }: { compacto?: boolean 
     let cancelado = false
 
     const cargar = async () => {
-      const r = await fetch('/data/insights.json').catch(() => null)
-      const guardado: Insights | null =
-        r?.ok && r.headers.get('content-type')?.includes('json') ? await r.json() : null
+      const guardado = await leer<Insights>('insights')
       if (cancelado) return
       if (guardado) setData(guardado)
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { leer as leerDatos } from '../lib/datos'
 
 export interface Evento {
   id: string
@@ -103,14 +104,12 @@ export function useEventos() {
 
   useEffect(() => {
     let cancelado = false
-    fetch('/data/eventos.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
+    leerDatos<{ eventos?: Evento[]; actualizado?: string }>('eventos')
       .then(d => {
         if (cancelado || !d) return
         setTodos(d.eventos ?? [])
         setActualizado(d.actualizado ?? null)
       })
-      .catch(() => {})
       .finally(() => { if (!cancelado) setCargando(false) })
     return () => { cancelado = true }
   }, [])

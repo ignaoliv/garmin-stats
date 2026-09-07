@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSleep, type NocheEvaluada } from './useSleep'
+import { leer } from '../lib/datos'
 
 interface DiaBienestar {
   fecha: string
@@ -55,10 +56,7 @@ export function useDescanso(): Descanso {
   const sueño = useSleep()
 
   useEffect(() => {
-    fetch('/data/wellness.json')
-      .then(r => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : null))
-      .then(d => setDias(d?.dias ?? []))
-      .catch(() => setDias([]))
+    leer<{ dias?: DiaBienestar[] }>('wellness').then(d => setDias(d?.dias ?? []))
   }, [])
 
   return useMemo(() => {

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { ActivitySummary, ActivityDetail, GlobalStats, UserSettings } from '../types/garmin'
 import { DEFAULT_SETTINGS } from '../types/garmin'
 import { sportOf } from '../utils/sports'
+import { leer, leerOFallar } from '../lib/datos'
 
 interface ActivityState {
   activities: ActivitySummary[]
@@ -31,9 +32,7 @@ export const useActivityStore = create<ActivityState>()(
       loadActivities: async () => {
         set({ loading: true, error: null })
         try {
-          const res = await fetch('/data/activities.json')
-          if (!res.ok) throw new Error(`No se encontró /data/activities.json (status ${res.status})`)
-          const raw: ActivitySummary[] = await res.json()
+          const raw = await leerOFallar<ActivitySummary[]>('activities')
           // Resolve the sport once, here, so every page/hook agrees on the taxonomy.
           const data = raw.map(a => ({ ...a, sport: sportOf(a) }))
           data.sort((a, b) => b.startTime.localeCompare(a.startTime))
@@ -45,10 +44,8 @@ export const useActivityStore = create<ActivityState>()(
 
       loadStats: async () => {
         try {
-          const res = await fetch('/data/stats.json')
-          if (!res.ok) return
-          const data: GlobalStats = await res.json()
-          set({ stats: data })
+          const data = await leer<GlobalStats>('stats')
+          if (data) set({ stats: data })
         } catch {
           // stats are optional
         }
@@ -62,9 +59,8 @@ export const useActivityStore = create<ActivityState>()(
         const cached = get().detailCache[id]
         if (cached) return cached
         try {
-          const res = await fetch(`/data/activity_${id}.json`)
-          if (!res.ok) return null
-          const raw: ActivityDetail = await res.json()
+          const raw = await leer<ActivityDetail>(`activity_${id}`)
+          if (!raw) return null
           // Same taxonomy resolution the summary list gets — otherwise the detail
           // page shows the raw Garmin bucket ("Otro") for a mapped sport.
           const detail: ActivityDetail = { ...raw, sport: sportOf(raw) }
