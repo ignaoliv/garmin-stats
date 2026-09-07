@@ -1,0 +1,20 @@
+# Los datos NO viajan con el despliegue.
+#
+# `vercel deploy` sube lo que hay en la carpeta, no lo que está en git, así que
+# .gitignore no alcanza: sin esto un despliegue desde la máquina se lleva las
+# rutas de GPS, la frecuencia cardíaca y el sueño, y encima el build los copia
+# de public/ a dist/ (51 MB). Los datos viven en un blob privado y se leen por
+# la API.
+public/data/
+dist/data/
+
+# Credenciales, por si acaso. Ya están en .gitignore, pero acá el criterio es
+# otro y conviene decirlo dos veces.
+.env
+.env.*
+!.env.example
+
+# Sólo sirven en la máquina.
+fetch/__pycache__/
+.venv/
+node_modules/
