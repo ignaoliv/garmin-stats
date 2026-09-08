@@ -163,6 +163,28 @@ export function insightsPlugin(): Plugin {
         })
       })
 
+      // El brief del objetivo: recibe el digest que armó el navegador —el
+      // puntaje ya viene calculado— y sólo pone el token de Cloudflare.
+      server.middlewares.use('/api/objetivo/brief', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/objetivo.py', body)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+          }
+        })
+      })
+
       server.middlewares.use('/api/strength-workout', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         if (req.method !== 'POST') {

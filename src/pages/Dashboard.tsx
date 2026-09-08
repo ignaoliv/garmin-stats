@@ -19,6 +19,7 @@ import FCReposoCard from '../components/FCReposoCard'
 import CaloriasCard from '../components/CaloriasCard'
 import StepsCard from '../components/StepsCard'
 import ProximoEvento from '../components/ProximoEvento'
+import ObjetivoCard from '../components/ObjetivoCard'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -95,6 +96,11 @@ export default function Dashboard() {
           </div>
           <InsightsCard compacto />
         </header>
+
+        {/* Arriba de todo, antes que cualquier métrica: el resto del panel
+            dice cómo venís, y esta tarjeta dice cómo venís para lo que querés.
+            Leído después, cada número ya se leyó sin marco. */}
+        <ObjetivoCard />
 
         {/* ── This week ──────────────────────────────────────────────────── */}
         <section>

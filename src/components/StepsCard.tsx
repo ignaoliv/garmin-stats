@@ -1,4 +1,4 @@
-import { BarChart, ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useSteps } from '../hooks/useSteps'
 import { Card, CardHeader, ChartTooltip, LegendItem, Delta } from './ui'
 import Ring from './Ring'
@@ -72,7 +72,7 @@ export default function StepsCard({
               </span>
             </div>
             <ResponsiveContainer width="100%" height={132}>
-              <BarChart data={ultimos14} margin={{ top: 4, right: 6, bottom: 0, left: -14 }}>
+              <ComposedChart data={ultimos14} margin={{ top: 4, right: 6, bottom: 0, left: -14 }}>
                 <defs>
                   <linearGradient id="gPasosMetMini" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={MET} stopOpacity={0.95} />
@@ -100,8 +100,23 @@ export default function StepsCard({
                     <Cell key={d.fecha} fill={d.cumplido ? 'url(#gPasosMetMini)' : 'url(#gPasosShortMini)'} />
                   ))}
                 </Bar>
-              </BarChart>
+                {/* Las barras son el ruido del día a día; la media móvil es el
+                    hábito, que es lo que se puede sostener o cambiar. */}
+                <Line type="monotone" dataKey="media7" name="Media de 7 días"
+                  stroke="var(--color-accent)" strokeWidth={2.5} dot={false} connectNulls
+                  isAnimationActive animationDuration={650} animationEasing="ease-out" />
+              </ComposedChart>
             </ResponsiveContainer>
+            <div className="flex flex-wrap gap-4 mt-2">
+              <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
+                <span className="w-4 h-[2.5px] rounded-full" style={{ background: 'var(--color-accent)' }} />
+                Media de 7 días
+              </span>
+              <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
+                <span className="w-3 h-2.5 rounded-[3px]" style={{ background: MET, opacity: 0.8 }} />
+                Llegó al objetivo
+              </span>
+            </div>
           </div>
         )}
       </Card>
