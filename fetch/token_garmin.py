@@ -51,8 +51,9 @@ def _cliente_desde_token(token: str):
     """
     from garminconnect import Garmin
     api = Garmin()
-    # `login()` trata a una cadena de más de 512 caracteres como el token en sí;
-    # más corta, la interpreta como la ruta de un directorio.
+    # `login()` distingue el token de una ruta de archivo mirando la cadena:
+    # 0.3.2 por el largo (>512), 0.3.11 con `_looks_like_json()`. Nuestro token
+    # es un JSON de 2 KB, así que pasa por las dos.
     api.login(token)
     return api
 
@@ -71,15 +72,18 @@ def crear() -> None:
     api.login()
 
     token = api.client.dumps()
-    if len(token) <= 512:
-        sys.exit(
-            f"ERROR: el token quedó en {len(token)} caracteres y garminconnect\n"
-            "  trata a cualquier cadena de 512 o menos como una RUTA de archivo.\n"
-            "  Con este token el cron intentaría login con contraseña igual."
-        )
 
-    # Nada de imprimir el token: da acceso completo a la cuenta de Garmin.
-    campos = sorted(json.loads(token).keys())
+    # Que sea JSON con los tres campos es la forma de que `login()` lo reconozca
+    # como token y no como la ruta de un archivo. Las dos versiones lo deciden
+    # distinto —0.3.2 por el largo, 0.3.11 con `_looks_like_json()`— y un JSON
+    # de 2 KB pasa por las dos.
+    try:
+        campos = sorted(json.loads(token).keys())
+    except ValueError:
+        sys.exit("ERROR: el token no salió como JSON; garminconnect lo tomaría como una ruta.")
+    faltan = {"di_token", "di_refresh_token", "di_client_id"} - set(campos)
+    if faltan:
+        sys.exit(f"ERROR: al token le faltan campos: {', '.join(sorted(faltan))}")
     print(f"  ✔ sesión obtenida · {len(token)} caracteres · campos: {', '.join(campos)}")
 
     print("Probando el token solo, sin contraseña…")

@@ -11,5 +11,13 @@
 #                    no encuentra nada, que es lo correcto: ahí las variables ya
 #                    están en el entorno. Se instala igual para que el import no
 #                    falle.
-garminconnect>=0.3.2
+#
+# garminconnect va CLAVADO en una versión, no con >=. La sincronización depende
+# de dos comportamientos angostos: que `login()` acepte el token como cadena
+# JSON en vez de una ruta, y que `client.dumps()` lo devuelva. Eso ya cambió una
+# vez —0.3.2 decidía por el largo (>512 caracteres), 0.3.11 con
+# `_looks_like_json()`— y es el tipo de cambio que rompe una tarea automática a
+# las 8 de la mañana sin que nadie se entere. Al subir la versión: correr
+# `python3 fetch/token_garmin.py --verificar` con esa versión ANTES de desplegar.
+garminconnect==0.3.11
 python-dotenv>=1.0.0
