@@ -1,4 +1,4 @@
-import { ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { BarChart, ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useSteps } from '../hooks/useSteps'
 import { Card, CardHeader, ChartTooltip, LegendItem, Delta } from './ui'
 import Ring from './Ring'
@@ -19,6 +19,7 @@ export default function StepsCard({
   const pct = Math.round((s.diasCumplidos / s.ventana.length) * 100)
   const pctHoy = Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)
   const media7 = s.ventana[s.ventana.length - 1]?.media7 ?? null
+  const ultimos14 = s.ventana.slice(-14)
 
   // Compact form for the daily screen: today against the goal and the seven-day
   // habit, with the full thirty-day breakdown one click away. The alternative —
@@ -58,6 +59,51 @@ export default function StepsCard({
             </div>
           </div>
         </div>
+
+        {/* Los últimos catorce días. Dos semanas es lo que hace falta para ver
+            si el patrón es de días laborales o de fin de semana; con treinta,
+            a este ancho las barras quedan de un píxel. */}
+        {ultimos14.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-white/[0.06]">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="label">Últimos 14 días</span>
+              <span className="text-[12px] text-ink-muted">
+                {ultimos14.filter(d => d.cumplido).length} llegaron al objetivo
+              </span>
+            </div>
+            <ResponsiveContainer width="100%" height={132}>
+              <BarChart data={ultimos14} margin={{ top: 4, right: 6, bottom: 0, left: -14 }}>
+                <defs>
+                  <linearGradient id="gPasosMetMini" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={MET} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={MET} stopOpacity={0.28} />
+                  </linearGradient>
+                  <linearGradient id="gPasosShortMini" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SHORT} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={SHORT} stopOpacity={0.35} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }}
+                  minTickGap={16} />
+                <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40}
+                  tickFormatter={v => `${Math.round(Number(v) / 1000)}k`} />
+                <Tooltip
+                  cursor={{ fill: '#ffffff08' }}
+                  content={<ChartTooltip
+                    formatter={v => `${Number(v).toLocaleString('es-ES')} pasos`} />}
+                />
+                <ReferenceLine y={s.objetivo} stroke="#cbd5e1" strokeDasharray="5 4" strokeWidth={1.5} />
+                <Bar dataKey="pasos" name="Pasos" radius={[3, 3, 0, 0]}
+                  isAnimationActive animationDuration={650} animationEasing="ease-out">
+                  {ultimos14.map(d => (
+                    <Cell key={d.fecha} fill={d.cumplido ? 'url(#gPasosMetMini)' : 'url(#gPasosShortMini)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </Card>
     )
   }

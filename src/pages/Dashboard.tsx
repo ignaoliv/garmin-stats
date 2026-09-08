@@ -198,12 +198,15 @@ export default function Dashboard() {
         {/* Las cuatro de salud, en dos filas.
             Las dos cortas arriba y las dos con gráfico abajo: con una tarjeta
             alta al lado de una baja, la fila queda con un hueco enorme. */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+        {/* `[&>*]:h-full` empareja las dos de cada fila: sin eso, la que tiene
+            una línea de más queda cuarenta píxeles más alta y la fila se ve
+            desprolija. */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 [&>*]:h-full">
           <DescansoCard />
           <StepsCard windowDays={30} compacto />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 [&>*]:h-full">
           <FCReposoCard />
           <CaloriasCard />
         </div>

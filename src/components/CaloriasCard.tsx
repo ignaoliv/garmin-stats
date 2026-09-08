@@ -2,7 +2,7 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import { useCalorias } from '../hooks/useCalorias'
-import { Card, CardHeader, ChartTooltip, Delta, Insight } from './ui'
+import { Card, CardHeader, ChartTooltip, Delta } from './ui'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -84,13 +84,13 @@ export default function CaloriasCard() {
         </span>
       </div>
 
+      {/* Una línea y no una caja: el aviso importa, pero en caja empujaba la
+          tarjeta cincuenta píxeles por debajo de las otras tres de la fila. */}
       {parcial && (
-        <div className="mt-3">
-          <Insight tone="neutral">
-            {c.cobertura.conDato} de los últimos {c.cobertura.dias} días tienen medición: los
-            demás son días sin el reloj puesto y quedan fuera de la media.
-          </Insight>
-        </div>
+        <p className="label-plain mt-3">
+          {c.cobertura.conDato} de los últimos {c.cobertura.dias} días tienen medición;
+          los demás son días sin el reloj y quedan fuera de la media.
+        </p>
       )}
     </Card>
   )
