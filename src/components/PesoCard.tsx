@@ -17,10 +17,11 @@ const fechaLarga = (f: string) => {
 /**
  * La evolución del peso.
  *
- * El peso se registra salteado —acá van de una vez por día a una vez por mes—
- * así que la línea no puede tratarse como una serie continua. Los tramos sin
- * medir de más de mes y medio quedan cortados a propósito: unir los extremos
- * dibuja una subida gradual que nadie midió.
+ * El registro es salteado: acá va de una vez por día a una vez por año. La
+ * línea cruza igual esos tramos y lo que marca dónde hubo medición son los
+ * puntos — un trecho largo de línea sin un solo punto encima se lee, sin
+ * explicar nada, como un trecho sin registrar. La nota de abajo pone los
+ * números por si el ojo no alcanza.
  */
 export default function PesoCard() {
   const p = usePeso()
@@ -81,12 +82,13 @@ export default function PesoCard() {
               label={{ value: `mínimo ${p.minimo.kg.toFixed(0)}`, position: 'right',
                        fill: '#cbd5e1', fontSize: 11, dx: -6 }} />
           )}
-          {/* connectNulls en false es lo que corta los tramos sin medir. */}
+          {/* La línea cruza los huecos; los puntos son los que dicen dónde
+              hubo medición. */}
           <Area type="monotone" dataKey="kg" name="Peso" stroke={PESO} strokeWidth={2}
-            fill="url(#gPeso)" connectNulls={false} dot={{ r: 2.5, fill: PESO, strokeWidth: 0 }}
+            fill="url(#gPeso)" connectNulls dot={{ r: 2.5, fill: PESO, strokeWidth: 0 }}
             isAnimationActive animationDuration={650} animationEasing="ease-out" />
           <Line type="monotone" dataKey="suave" name="Tendencia" stroke="#cbd5e1" strokeWidth={1.5}
-            strokeDasharray="4 3" dot={false} connectNulls={false}
+            strokeDasharray="4 3" dot={false} connectNulls
             isAnimationActive animationDuration={650} animationEasing="ease-out" />
         </ComposedChart>
       </ResponsiveContainer>
@@ -94,7 +96,7 @@ export default function PesoCard() {
       <div className="flex flex-wrap gap-4 mt-2">
         <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
           <span className="w-4 h-[2px] rounded-full" style={{ background: PESO }} />
-          Cada medición
+          Peso · cada punto es una medición
         </span>
         <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
           <span className="w-4 h-[1.5px] rounded-full border-t border-dashed border-ink-secondary" />
@@ -106,8 +108,8 @@ export default function PesoCard() {
         <div className="mt-4">
           <Insight tone="neutral">
             {p.huecos.length === 1 ? 'Hay un tramo sin medir' : `Hay ${p.huecos.length} tramos sin medir`}
-            {' '}y la línea queda cortada ahí a propósito: unir los extremos dibujaría
-            un cambio gradual que nadie registró. El más largo va del{' '}
+            {' '}y la línea los cruza en recta: ese tramo no describe cómo fue el
+            cambio, sólo une las dos puntas. El más largo va del{' '}
             {fechaLarga(p.huecos[p.huecos.length - 1].desde)} al{' '}
             {fechaLarga(p.huecos[p.huecos.length - 1].hasta)}, con{' '}
             {p.huecos[p.huecos.length - 1].kg > 0 ? '+' : ''}

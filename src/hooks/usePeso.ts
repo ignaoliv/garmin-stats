@@ -67,14 +67,16 @@ export function usePeso(): Peso {
         : []
     })
 
-    // La serie lleva un punto nulo dentro de cada hueco. Sin eso Recharts une
-    // los extremos con una recta y dibuja un año de subida gradual que nadie
-    // midió: once kilos que aparecen como si se hubieran registrado.
+    // La línea cruza los huecos y va derecho al punto siguiente. Lo que marca
+    // dónde hubo medición y dónde no son los puntos: un tramo largo de línea
+    // sin un solo punto encima es, a la vista, un tramo sin registrar.
+    //
+    // La media móvil sí se reinicia después de un hueco: promediar el peso de
+    // agosto de 2025 con el de agosto de 2026 no describe ninguna tendencia.
     const serie: PuntoPeso[] = []
     const ventana: number[] = []
     rs.forEach((r, i) => {
       if (i > 0 && dias(rs[i - 1].fecha, r.fecha) > HUECO_DIAS) {
-        serie.push({ fecha: `${rs[i - 1].fecha}~`, label: '', kg: null, suave: null })
         ventana.length = 0
       }
       ventana.push(r.kg)
