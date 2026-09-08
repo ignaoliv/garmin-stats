@@ -10,6 +10,7 @@ import Eventos from './pages/Eventos'
 import Analizar from './pages/Analizar'
 import Salud from './pages/Salud'
 import Comida from './pages/Comida'
+import Pantalla from './pages/Pantalla'
 import Activities from './pages/Activities'
 import ActivityDetailPage from './pages/ActivityDetail'
 import Settings from './pages/Settings'
@@ -46,6 +47,7 @@ function Panel() {
             <Route path="/analizar" element={<Analizar />} />
             <Route path="/salud" element={<Salud />} />
             <Route path="/comida" element={<Comida />} />
+            <Route path="/pantalla" element={<Pantalla />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

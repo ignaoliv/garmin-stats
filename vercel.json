@@ -21,6 +21,9 @@
     },
     "api/sincronizar.py": {
       "maxDuration": 300
+    },
+    "api/pantalla/analizar.py": {
+      "maxDuration": 60
     }
   },
   "crons": [

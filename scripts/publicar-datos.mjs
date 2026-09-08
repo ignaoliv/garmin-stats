@@ -41,7 +41,7 @@ const RESUMEN = ['activities', 'stats', 'steps', 'sleep', 'wellness', 'plan', 'e
  *
  * Si querés la copia de arriba en local, va en el otro sentido: bajala.
  */
-const DEL_SERVIDOR = ['comidas.json']
+const DEL_SERVIDOR = ['comidas.json', 'pantalla.json']
 
 /** Cuántas subidas en paralelo. Más que esto y Blob empieza a cortar. */
 const EN_PARALELO = 8

@@ -16,6 +16,7 @@ import Icon, { type IconName } from './Icon'
 const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: 'Resumen', icon: 'dashboard' },
   { to: '/comida', label: 'Comida', icon: 'comida' },
+  { to: '/pantalla', label: 'Pantalla', icon: 'pantalla' },
   { to: '/entrenar', label: 'Entrenar', icon: 'fuerza' },
   { to: '/salud', label: 'Salud', icon: 'corazon' },
   { to: '/analizar', label: 'Analizar', icon: 'progreso' },
