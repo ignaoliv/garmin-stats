@@ -26,8 +26,10 @@ import json
 import math
 from pathlib import Path
 
+import rutas
+
 ROOT = Path(__file__).parent.parent
-DATA = ROOT / "public" / "data"
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron la mueve con GARMIN_DATA_DIR
 
 # Mirrors DEFAULT_SETTINGS in src/types/garmin.ts.
 DEFAULT_MAX_HR = 185

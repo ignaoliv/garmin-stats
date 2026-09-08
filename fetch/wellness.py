@@ -23,9 +23,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+import rutas
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
-DATA = ROOT / "public" / "data"
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron la mueve con GARMIN_DATA_DIR
 
 # Field names Garmin uses in the daily summary. Kept as candidate lists because
 # the payload varies with device and account.

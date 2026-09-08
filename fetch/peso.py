@@ -24,8 +24,10 @@ import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import rutas
+
 ROOT = Path(__file__).parent.parent
-DATA = ROOT / "public" / "data"
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron la mueve con GARMIN_DATA_DIR
 
 try:
     from dotenv import load_dotenv

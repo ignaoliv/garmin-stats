@@ -21,7 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const r = await get(`datos/${archivo}`, { access: 'private' })
+    // `useCache: false` no es opcional: la lectura privada pasa por una caché
+    // de borde y, sin esto, el panel puede seguir mostrando los datos de ayer
+    // durante un rato después de que el cron los actualizó.
+    const r = await get(`datos/${archivo}`, { access: 'private', useCache: false })
     if (r?.statusCode !== 200) return res.status(404).json({ error: 'no existe' })
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8')

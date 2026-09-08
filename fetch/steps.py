@@ -21,9 +21,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+import rutas
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
-DATA = ROOT / "public" / "data"
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron la mueve con GARMIN_DATA_DIR
 
 # Garmin rejects long spans on this endpoint, so ask month by month.
 CHUNK_DAYS = 28

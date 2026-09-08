@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
-import { pedir, accionesDisponibles } from '../lib/acciones'
+import { pedir } from '../lib/acciones'
 
 type Estado = 'idle' | 'sincronizando' | 'ok' | 'error'
 
@@ -27,7 +27,7 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
     if (estado === 'sincronizando') return
     setEstado('sincronizando'); setSegundos(0); setMensaje('')
     try {
-      await pedir('/api/sync')
+      await pedir('/api/sincronizar')
       setEstado('ok')
       setMensaje('Datos actualizados')
       // Everything on screen reads from the JSON files the sync just rewrote,
@@ -41,11 +41,6 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
         : (e as Error).message)
     }
   }
-
-  // Un botón que no puede hacer nada es peor que ninguno: promete y falla.
-  // Mientras la sincronización viva sólo en el servidor de desarrollo, en la
-  // versión publicada no se muestra.
-  if (!accionesDisponibles) return null
 
   const mmss = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`
 

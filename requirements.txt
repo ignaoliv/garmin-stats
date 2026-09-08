@@ -1,2 +1,15 @@
-# Las funciones de Python usan sólo la biblioteca estándar.
-# El achicado de la foto ahora lo hace el navegador, así que no hace falta Pillow.
+# Dependencias de las funciones de Python en api/.
+#
+# `api/comida/analizar.py` y `api/objetivo/brief.py` usan sólo la biblioteca
+# estándar: hablan con Cloudflare por urllib y nada más.
+#
+# `api/sincronizar.py` sí necesita estas dos:
+#   garminconnect  — el cliente de Garmin Connect; no hay equivalente en Node
+#                    que valga la pena, y por eso la sincronización es Python.
+#   python-dotenv  — varios módulos de fetch/ lo importan al cargarse para leer
+#                    el .env de desarrollo. En Vercel no hay .env y load_dotenv
+#                    no encuentra nada, que es lo correcto: ahí las variables ya
+#                    están en el entorno. Se instala igual para que el import no
+#                    falle.
+garminconnect>=0.3.2
+python-dotenv>=1.0.0
