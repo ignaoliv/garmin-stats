@@ -36,6 +36,28 @@ FIELDS = {
     "sueñoSegundos": ["sleepingSeconds", "measurableAsleepDuration"],
     "estresMedio":   ["averageStressLevel"],
     "estresMaximo":  ["maxStressLevel"],
+    # El reparto del día en segundos. El promedio solo esconde lo que importa:
+    # un 25 de media puede ser un día parejo o dos horas de estrés alto metidas
+    # en un día tranquilo, y no son la misma cosa.
+    #
+    # Las seis categorías particionan las 24 horas: reposo + bajo + medio + alto
+    # + actividad + sin medir = totalStressDuration. "Actividad" es el rato en
+    # que estabas entrenando, que Garmin saca de la cuenta a propósito porque el
+    # pulso alto ahí no es estrés; "sin medir" es reloj afuera o sin señal.
+    #
+    # Ojo con los nombres: `estresMedio` es el NIVEL promedio del día (0-100) y
+    # `estresSegMedio` son los segundos en la categoría "medio". Se parecen
+    # demasiado como para no decirlo.
+    "estresSegReposo":     ["restStressDuration"],
+    "estresSegBajo":       ["lowStressDuration"],
+    "estresSegMedio":      ["mediumStressDuration"],
+    "estresSegAlto":       ["highStressDuration"],
+    "estresSegActividad":  ["activityStressDuration"],
+    "estresSegSinMedir":   ["uncategorizedStressDuration"],
+    # Cuánto cargó y cuánto gastó la batería corporal en el día. Los valores
+    # mínimo y máximo dicen dónde estuvo; estos dicen cuánto se movió.
+    "bateriaCargada": ["bodyBatteryChargedValue"],
+    "bateriaGastada": ["bodyBatteryDrainedValue"],
     "bateriaMin":    ["bodyBatteryLowestValue"],
     "bateriaMax":    ["bodyBatteryHighestValue"],
     "minutosIntensos": ["vigorousIntensityMinutes"],
@@ -107,7 +129,9 @@ def archive_wellness(api, days: int = 90) -> int:
     con_sueño = sum(1 for r in dias if r.get("sueñoSegundos"))
     print(f"  Recuperación archivada: {len(dias)} días ({nuevos} nuevos)")
     con_kcal = sum(1 for r in dias if r.get("caloriasTotales"))
+    con_reparto = sum(1 for r in dias if r.get("estresSegReposo") is not None)
     print(f"    con FC en reposo: {con_fc} · con sueño: {con_sueño} · con calorías: {con_kcal}")
+    print(f"    con reparto de estrés: {con_reparto}")
     if claves_vistas:
         interes = sorted(k for k in claves_vistas if any(w in k.lower() for w in ("sleep", "rest", "stress", "battery", "hrv")))
         print(f"    campos disponibles en el resumen: {', '.join(interes[:10]) or '(ninguno reconocido)'}")
