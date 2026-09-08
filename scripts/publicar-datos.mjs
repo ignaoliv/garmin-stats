@@ -30,6 +30,19 @@ const PREFIJO = 'datos'
  *  actividad, que se piden de a uno cuando abrís una. */
 const RESUMEN = ['activities', 'stats', 'steps', 'sleep', 'wellness', 'plan', 'eventos', 'insights']
 
+/**
+ * Los que escribe el SERVIDOR y no la sincronización. Estos nunca se suben.
+ *
+ * comidas.json lo escribe api/comida/guardar.ts cada vez que registrás un plato
+ * desde el teléfono, así que la copia buena vive arriba y la de acá está vieja
+ * o vacía. Subirla es pisar comidas reales con nada — que es exactamente lo que
+ * estuvo a punto de pasar el 8 de septiembre de 2026, con tres comidas cargadas
+ * arriba y el archivo local en cero.
+ *
+ * Si querés la copia de arriba en local, va en el otro sentido: bajala.
+ */
+const DEL_SERVIDOR = ['comidas.json']
+
 /** Cuántas subidas en paralelo. Más que esto y Blob empieza a cortar. */
 const EN_PARALELO = 8
 
@@ -60,6 +73,7 @@ async function main() {
 
   const archivos = (await readdir(ORIGEN))
     .filter(f => f.endsWith('.json'))
+    .filter(f => !DEL_SERVIDOR.includes(f))
     .filter(f => !soloResumen || RESUMEN.includes(f.replace(/\.json$/, '')))
 
   if (archivos.length === 0) {
@@ -113,6 +127,7 @@ async function main() {
     `${simulacro ? '[simulacro] ' : ''}Publicando ${archivos.length} archivos ` +
     `en ${PREFIJO}/ como privados…`,
   )
+  console.log(`  (${DEL_SERVIDOR.join(', ')} no se toca: lo escribe el servidor)`)
 
   const cola = [...archivos]
   await Promise.all(
