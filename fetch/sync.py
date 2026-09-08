@@ -249,6 +249,12 @@ def main():
     except Exception as e:
         print(f"  aviso: no se pudo bajar la recuperación ({str(e)[:90]})")
 
+    try:
+        from peso import archive_peso
+        archive_peso(api, dias=730)
+    except Exception as e:
+        print(f"  aviso: no se pudo bajar el peso ({str(e)[:90]})")
+
     # El calendario de carreras no viene de Garmin, pero se refresca acá para
     # que el botón de sincronizar deje todo al día de una sola pasada.
     try:

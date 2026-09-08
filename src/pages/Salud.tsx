@@ -1,5 +1,6 @@
 import Sleep from './Sleep'
 import StepsCard from '../components/StepsCard'
+import PesoCard from '../components/PesoCard'
 
 /**
  * Sleep and daily movement on one page.
@@ -11,12 +12,13 @@ import StepsCard from '../components/StepsCard'
 export default function Salud() {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1180px] mx-auto px-6 pt-7 pb-2">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 pt-7 pb-2">
         <h1 className="title-page">Salud</h1>
-        <p className="label-plain mt-2">Sueño, movimiento diario y recuperación</p>
+        <p className="label-plain mt-2">Peso, sueño, movimiento diario y recuperación</p>
       </div>
 
-      <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 space-y-6 page-in">
+        <PesoCard />
         <StepsCard windowDays={30} />
       </div>
 
