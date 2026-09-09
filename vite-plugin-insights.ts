@@ -143,6 +143,33 @@ export function insightsPlugin(): Plugin {
         })
       })
 
+      // Lo mismo pero desde una descripción escrita, y un alimento suelto
+      // para el que se agrega o se renombra a mano.
+      for (const [ruta, script] of [
+        ['/api/comida/texto', 'fetch/comida_texto.py'],
+        ['/api/comida/alimento', 'fetch/comida.py'],
+      ] as const) {
+        server.middlewares.use(ruta, async (req, res) => {
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            res.end(JSON.stringify({ error: 'usa POST' }))
+            return
+          }
+          let body = ''
+          req.on('data', c => (body += c))
+          req.on('end', async () => {
+            try {
+              const out = await runWithInput(script, body, 120_000)
+              res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+            } catch (e) {
+              res.statusCode = 500
+              res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+            }
+          })
+        })
+      }
+
       server.middlewares.use('/api/comida/guardar', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         if (req.method !== 'POST') {

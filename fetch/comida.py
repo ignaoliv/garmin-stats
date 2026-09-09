@@ -195,12 +195,17 @@ def identificar(imagen: bytes, nota: str = "") -> dict:
     sys.exit(f"ERROR: el modelo no devolvió JSON válido.\n{crudo[:400]}")
 
 
-def analizar(imagen: bytes, nota: str = "") -> dict:
-    """Los dos pasos juntos: identificar y después buscar los nutrientes."""
-    visto = identificar(imagen, nota)
+def resolver(alimentos: list[dict], nota: str = "", origen: str = MODELO) -> dict:
+    """Paso 2: de una lista de alimentos con gramos, a los nutrientes.
 
+    Está separado de `identificar` a propósito. De acá para abajo el trabajo es
+    el mismo venga la lista de una foto, de una descripción escrita o de un
+    alimento suelto que agregaste a mano — y las reglas de emparejado con la
+    tabla son justo las que costó afinar. Tenerlas en un solo lugar es lo que
+    evita que el mismo "milanesa" resuelva distinto según por dónde entró.
+    """
     items = []
-    for a in visto.get("alimentos", []):
+    for a in alimentos:
         gramos = a.get("gramos")
         if not isinstance(gramos, (int, float)) or gramos <= 0:
             continue
@@ -224,9 +229,52 @@ def analizar(imagen: bytes, nota: str = "") -> dict:
         "alimentos": items,
         "total": sumar(items),
         "sin_resolver": sin_resolver,
-        "nota": visto.get("nota", ""),
-        "modelo": MODELO,
+        "nota": nota,
+        "modelo": origen,
     }
+
+
+def analizar(imagen: bytes, nota: str = "") -> dict:
+    """Los dos pasos juntos: identificar en la foto y buscar los nutrientes."""
+    visto = identificar(imagen, nota)
+    return resolver(visto.get("alimentos", []), visto.get("nota", ""))
+
+
+def buscar_uno(nombre: str, gramos: float, nombre_en: str = "") -> dict:
+    """Un alimento suelto: el que agregás o el que renombrás a mano.
+
+    EL MODELO SE USA SÓLO PARA TRADUCIR, no para decidir qué comiste ni cuánto.
+    Eso lo pusiste vos y se respeta tal cual: tus gramos y tu nombre en la
+    pantalla. Lo único que se le pide es la forma que entiende la tabla.
+
+    Hace falta porque la tabla está en inglés y la pantalla en castellano, y
+    buscar el nombre en castellano no falla en silencio: devuelve basura de
+    productos de marca. Medido antes de agregar esto — "milanesa de carne" daba
+    *TILAPIA MILANESA* (pescado), "arroz blanco" daba un pan dulce y "tuco"
+    daba un condimento. Renombrar habría dado PEOR resultado que no tocar nada,
+    que es la peor forma posible de estrenar una función.
+    """
+    consulta = nombre_en.strip()
+    if not consulta:
+        try:
+            # Se importa acá y no arriba: comida_texto importa este módulo y
+            # arriba sería una importación circular.
+            from comida_texto import interpretar
+            visto = interpretar(f"{gramos:.0f} g de {nombre}")
+            primero = (visto.get("alimentos") or [{}])[0]
+            consulta = str(primero.get("nombre_en") or "").strip()
+        except Exception:
+            # Si el modelo no contesta, se busca con el nombre tal cual. Puede
+            # no encontrar nada, y eso la pantalla lo dice.
+            consulta = ""
+
+    return resolver([{
+        "nombre": nombre,
+        "nombre_en": consulta or nombre,
+        "gramos": gramos,
+        # A mano no hay porción que dudar: el número lo pusiste vos.
+        "confianza": "alta",
+    }], origen="manual")
 
 
 def imprimir(r: dict) -> None:
@@ -263,6 +311,12 @@ def main() -> None:
 
     if args.from_stdin:
         req = json.load(sys.stdin)
+        # El mismo script atiende dos pedidos distintos: una foto para
+        # identificar, o un alimento suelto que ya viene nombrado.
+        if req.get("nombre") and not req.get("imagen_b64"):
+            print(json.dumps(buscar_uno(req["nombre"], float(req.get("gramos") or 0),
+                                        req.get("nombre_en", "")), ensure_ascii=False))
+            return
         imagen = base64.b64decode(req["imagen_b64"])
         nota = req.get("nota", "")
     elif args.foto:

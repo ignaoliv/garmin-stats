@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Card, CardHeader, Insight, StatTile, explicarError } from '../components/ui'
 import Icon from '../components/Icon'
 import AIProgress from '../components/AIProgress'
+import BalanceCard from '../components/BalanceCard'
 import { enviar, comidaDisponible } from '../lib/acciones'
 import { useComidas, hoyLocal, type AlimentoRegistrado } from '../hooks/useComidas'
 
@@ -98,18 +99,43 @@ export default function Comida() {
   const [momento, setMomento] = useState<Momento>(momentoProbable)
   const [estado, setEstado] = useState<'idle' | 'analizando' | 'guardando' | 'error'>('idle')
   const [mensaje, setMensaje] = useState('')
+  const [texto, setTexto] = useState('')
+  const [nuevoNombre, setNuevoNombre] = useState('')
+  const [nuevoGramos, setNuevoGramos] = useState('')
+  /** Qué fila está esperando a la tabla; -1 es la de agregar. */
+  const [buscando, setBuscando] = useState<number | null>(null)
 
   const analizar = async (f: File) => {
     setEstado('analizando'); setMensaje(''); setAnalisis(null)
     setVista(URL.createObjectURL(f))
     try {
       const b64 = await achicar(f)
-      const r = await enviar('/api/comida/analizar', { imagen_b64: b64 })
+      const r = await enviar('/api/comida/analizar', { imagen_b64: b64, nota: texto.trim() })
       setAnalisis(r as unknown as Analisis)
       setEstado('idle')
     } catch (e) {
       setEstado('error'); setMensaje(explicarError(e))
     }
+  }
+
+  /** El total sale SIEMPRE de la lista, nunca se ajusta a mano.
+   *
+   *  Con alimentos que se agregan, se sacan, se renombran y se reescalan, un
+   *  total que se actualiza por su cuenta se desincroniza en cuanto se olvide
+   *  un camino. Recalcularlo entero es barato y no puede quedar mal. */
+  const conTotal = (alimentos: AlimentoRegistrado[], resto: Partial<Analisis> = {}) => {
+    const t: Record<string, number> = {}
+    for (const x of alimentos) {
+      for (const [k, v] of Object.entries(x.nutrientes ?? {})) t[k] = (t[k] ?? 0) + v
+    }
+    setAnalisis({
+      nota: analisis?.nota ?? '',
+      sin_resolver: alimentos.filter(x => !x.encontrado).map(x => x.nombre),
+      ...analisis,
+      ...resto,
+      alimentos,
+      total: Object.fromEntries(Object.entries(t).map(([k, v]) => [k, Math.round(v * 10) / 10])),
+    } as Analisis)
   }
 
   /** Corregir los gramos es la parte importante: de una foto plana no se saca
@@ -118,7 +144,7 @@ export default function Comida() {
     if (!analisis) return
     const a = analisis.alimentos[i]
     const factor = a.gramos > 0 ? gramos / a.gramos : 0
-    const nuevos = analisis.alimentos.map((x, j) =>
+    conTotal(analisis.alimentos.map((x, j) =>
       j !== i ? x : {
         ...x,
         gramos,
@@ -126,24 +152,74 @@ export default function Comida() {
           ? Object.fromEntries(Object.entries(x.nutrientes).map(([k, v]) => [k, Math.round(v * factor * 10) / 10]))
           : x.nutrientes,
       },
-    )
-    const t: Record<string, number> = {}
-    for (const x of nuevos) {
-      for (const [k, v] of Object.entries(x.nutrientes ?? {})) t[k] = (t[k] ?? 0) + v
-    }
-    setAnalisis({ ...analisis, alimentos: nuevos, total: Object.fromEntries(
-      Object.entries(t).map(([k, v]) => [k, Math.round(v * 10) / 10]),
-    ) })
+    ))
   }
 
   const quitar = (i: number) => {
     if (!analisis) return
-    const nuevos = analisis.alimentos.filter((_, j) => j !== i)
-    const t: Record<string, number> = {}
-    for (const x of nuevos) for (const [k, v] of Object.entries(x.nutrientes ?? {})) t[k] = (t[k] ?? 0) + v
-    setAnalisis({ ...analisis, alimentos: nuevos, total: Object.fromEntries(
-      Object.entries(t).map(([k, v]) => [k, Math.round(v * 10) / 10]),
-    ) })
+    conTotal(analisis.alimentos.filter((_, j) => j !== i))
+  }
+
+  /** Renombrar vuelve a buscar en la tabla.
+   *
+   *  Es el arreglo de fondo para cuando el modelo identifica mal: antes podías
+   *  corregir los gramos de algo que no era lo que comiste, o sea corregir la
+   *  cantidad de un alimento equivocado. Ahora escribís qué era y los números
+   *  se rehacen contra la tabla. */
+  const renombrar = async (i: number, nombre: string) => {
+    if (!analisis) return
+    const a = analisis.alimentos[i]
+    if (!nombre.trim() || nombre.trim() === a.nombre) return
+    setBuscando(i)
+    try {
+      const r = await enviar('/api/comida/alimento', { nombre: nombre.trim(), gramos: a.gramos })
+      const nuevo = (r as unknown as Analisis).alimentos[0]
+      if (nuevo) conTotal(analisis.alimentos.map((x, j) => (j === i ? nuevo : x)))
+    } catch (e) {
+      setMensaje(explicarError(e))
+    } finally {
+      setBuscando(null)
+    }
+  }
+
+  const agregar = async () => {
+    const nombre = nuevoNombre.trim()
+    const gramos = Number(nuevoGramos)
+    if (!nombre || !(gramos > 0)) return
+    setBuscando(-1)
+    try {
+      const r = await enviar('/api/comida/alimento', { nombre, gramos })
+      const nuevo = (r as unknown as Analisis).alimentos[0]
+      if (nuevo) {
+        conTotal([...(analisis?.alimentos ?? []), nuevo])
+        setNuevoNombre(''); setNuevoGramos('')
+      }
+    } catch (e) {
+      setMensaje(explicarError(e))
+    } finally {
+      setBuscando(null)
+    }
+  }
+
+  /** Describir lo que comiste, con o sin foto.
+   *
+   *  Con foto, el texto viaja como nota y guía la identificación — el backend
+   *  siempre lo aceptó y la pantalla nunca se lo mandaba, que era parte de por
+   *  qué acertaba menos de lo que podía. Sin foto, es la entrada principal:
+   *  vos sabés que eran dos milanesas, la foto tiene que adivinarlo. */
+  const describir = async () => {
+    if (!texto.trim()) return
+    setEstado('analizando'); setMensaje('')
+    try {
+      const r = await enviar('/api/comida/texto', { texto: texto.trim() })
+      const nuevo = r as unknown as Analisis
+      if (analisis) conTotal([...analisis.alimentos, ...nuevo.alimentos])
+      else setAnalisis(nuevo)
+      setTexto('')
+      setEstado('idle')
+    } catch (e) {
+      setEstado('error'); setMensaje(explicarError(e))
+    }
   }
 
   const guardar = async () => {
@@ -172,7 +248,7 @@ export default function Comida() {
       <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-7 space-y-6 page-in">
         <header>
           <h1 className="title-page">Comida</h1>
-          <p className="label-plain mt-2">Sacá una foto del plato y se calculan los nutrientes</p>
+          <p className="label-plain mt-2">Sacá una foto o escribí lo que comiste; después corregís lo que haga falta</p>
         </header>
 
         {/* ── Lo que va del día ──────────────────────────────────────────── */}
@@ -191,17 +267,51 @@ export default function Comida() {
           </div>
         </section>
 
+        <BalanceCard />
+
         {/* ── Sacar la foto ──────────────────────────────────────────────── */}
         <Card className="p-5">
           <CardHeader
             title="Agregar una comida"
-            hint="El modelo identifica los alimentos; los nutrientes salen de una tabla de composición"
+            hint="El modelo identifica los alimentos; los nutrientes salen de una tabla de composición. Todo se puede corregir antes de guardar"
           />
 
           <input
             ref={archivo} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) analizar(f); e.target.value = '' }}
           />
+
+          {/* Un solo campo con dos usos, y por eso el texto de ayuda cambia:
+              solo, es la entrada principal —vos sabés que eran dos milanesas y
+              la foto tiene que adivinarlo—; junto a una foto, viaja como nota
+              y guía la identificación. */}
+          <div className="mb-3">
+            <textarea
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+              rows={2}
+              placeholder="Contá qué comiste: dos milanesas con puré y una ensalada"
+              aria-label="Descripción de lo que comiste"
+              className="w-full px-3 py-2.5 rounded-xl bg-surface-sunk border border-surface-line
+                         text-[16px] text-ink-primary leading-relaxed resize-y
+                         focus:outline-none focus:border-accent placeholder:text-ink-faint"
+            />
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <button
+                onClick={describir}
+                disabled={!texto.trim() || estado === 'analizando'}
+                className="px-4 py-2.5 rounded-xl bg-accent text-white text-[15px] font-semibold
+                           hover:bg-accent-soft disabled:opacity-40"
+              >
+                {estado === 'analizando' ? 'Calculando…' : 'Agregar lo que escribí'}
+              </button>
+              <span className="text-[13px] text-ink-muted">
+                {analisis
+                  ? 'Se suma a la lista de abajo.'
+                  : 'O sacá una foto: si escribís algo también, sirve de pista para identificar el plato.'}
+              </span>
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -257,12 +367,26 @@ export default function Comida() {
                         <span className="w-2 h-2 rounded-full shrink-0 mt-2"
                           style={{ background: c.color }} title={c.texto} />
                         <div className="min-w-0 flex-1">
-                          <div className="text-[15px] font-medium text-ink-primary">{a.nombre}</div>
-                          <div className="text-[12px] text-ink-muted">
-                            {a.encontrado
-                              ? <>{a.fuente}: {a.coincidencia}</>
-                              : <span className="text-state-warning">sin datos nutricionales para esto</span>}
-                            {' · '}{c.texto}
+                          {/* El nombre es un campo, no un rótulo. Si el modelo
+                              erró el alimento, corregir los gramos sólo
+                              corregía la cantidad de algo equivocado. */}
+                          <input
+                            defaultValue={a.nombre}
+                            onBlur={e => renombrar(i, e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                            aria-label={`Nombre del alimento ${i + 1}`}
+                            className="w-full bg-transparent text-[15px] font-medium text-ink-primary
+                                       rounded-md -ml-1 px-1 py-0.5 border border-transparent
+                                       hover:border-surface-line focus:outline-none focus:border-accent
+                                       focus:bg-surface-sunk"
+                          />
+                          <div className="text-[12px] text-ink-muted px-1">
+                            {buscando === i
+                              ? <span className="text-accent">buscando en la tabla…</span>
+                              : a.encontrado
+                                ? <>{a.fuente}: {a.coincidencia}</>
+                                : <span className="text-state-warning">sin datos nutricionales para esto</span>}
+                            {buscando !== i && <>{' · '}{c.texto}</>}
                           </div>
                         </div>
                         <button onClick={() => quitar(i)} title="Sacar este alimento"
@@ -292,6 +416,41 @@ export default function Comida() {
                     </div>
                   )
                 })}
+                {/* Agregar lo que el modelo no vio: una guarnición tapada,
+                    el aceite de cocción, el pan que va aparte. */}
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl
+                                border border-dashed border-surface-line">
+                  <input
+                    value={nuevoNombre}
+                    onChange={e => setNuevoNombre(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') agregar() }}
+                    placeholder="Agregar un alimento"
+                    aria-label="Nombre del alimento a agregar"
+                    className="flex-1 min-w-[140px] px-2.5 py-2 rounded-lg bg-surface-sunk
+                               border border-surface-line text-[16px] text-ink-primary
+                               focus:outline-none focus:border-accent"
+                  />
+                  <input
+                    type="number" min={1} step={10} value={nuevoGramos}
+                    onChange={e => setNuevoGramos(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') agregar() }}
+                    placeholder="g"
+                    aria-label="Gramos del alimento a agregar"
+                    className="w-[86px] px-2.5 py-2 rounded-lg bg-surface-sunk border
+                               border-surface-line text-[16px] text-ink-primary tabular-nums
+                               focus:outline-none focus:border-accent"
+                  />
+                  <button
+                    onClick={agregar}
+                    disabled={!nuevoNombre.trim() || !(Number(nuevoGramos) > 0) || buscando === -1}
+                    className="px-3.5 py-2 rounded-lg border border-accent text-accent text-[14px]
+                               font-semibold hover:bg-accent hover:text-white transition-colors
+                               disabled:opacity-40 disabled:hover:bg-transparent
+                               disabled:hover:text-accent"
+                  >
+                    {buscando === -1 ? 'Buscando…' : 'Agregar'}
+                  </button>
+                </div>
               </div>
 
               {analisis.nota && <p className="label-plain">{analisis.nota}</p>}

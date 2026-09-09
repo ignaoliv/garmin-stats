@@ -24,6 +24,12 @@
     },
     "api/pantalla/analizar.py": {
       "maxDuration": 60
+    },
+    "api/comida/texto.py": {
+      "maxDuration": 60
+    },
+    "api/comida/alimento.py": {
+      "maxDuration": 30
     }
   },
   "crons": [

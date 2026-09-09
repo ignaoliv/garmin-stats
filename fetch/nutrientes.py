@@ -117,6 +117,17 @@ _MARCAS = ("BURGER KING", "MCDONALD", "WENDY", "KFC", "TACO BELL",
            "DENNY", "PAPA JOHN", "PIZZA HUT", "SUBWAY", "DOMINO")
 
 
+# Palabras que describen la COCCIÓN o el corte, no el alimento. Se separan
+# para poder exigir que el alimento esté presente sin exigir que la cocción
+# coincida palabra por palabra.
+_PREPARACION = {
+    "breaded", "battered", "fried", "cooked", "raw", "boiled", "roasted",
+    "grilled", "baked", "steamed", "broiled", "sliced", "chopped", "ground",
+    "whole", "fresh", "frozen", "canned", "dried", "cured", "smoked",
+    "prepared", "homemade", "mashed", "diced", "shredded", "peeled",
+}
+
+
 def puntuar(consulta: str, descripcion: str) -> float:
     """Cuánto se parece un candidato de USDA a lo que buscábamos.
 
@@ -140,10 +151,37 @@ def puntuar(consulta: str, descripcion: str) -> float:
     d = descripcion.lower()
     dpal = [w.strip(",") for w in d.replace(",", " ").split()]
 
-    # El sustantivo principal es la última palabra en inglés: "grilled chicken
-    # BREAST", "beef BURGER". Se compara tolerando el plural.
-    nucleo = palabras[-1].rstrip("s")
-    empieza = bool(dpal) and dpal[0].rstrip("s") == nucleo
+    # Qué palabras nombran el ALIMENTO y cuáles sólo su cocción. Separarlas es
+    # lo que permite exigir que el alimento esté; pedir que estén todas las
+    # palabras sería demasiado estricto, porque la tabla escribe la cocción con
+    # otros términos que los que usa el modelo.
+    comida_q = [w for w in palabras if w.rstrip("s") not in _PREPARACION]
+    if not comida_q:
+        comida_q = palabras
+
+    # VETO. Si ninguna palabra del alimento aparece en la descripción, no es
+    # ese alimento por más que el resto calce.
+    #
+    # Es el arreglo de un caso real: "beef cutlet breaded fried" devolvía 25
+    # candidatos y el ganador era *Turkey sticks, breaded, battered, fried*.
+    # Ninguno decía "beef", pero todos decían "breaded" y "fried", así que el
+    # puntaje elegía al mejor de una lista equivocada. Mejor no encontrar nada
+    # —la pantalla lo declara y se puede corregir a mano— que devolver pavo
+    # cuando comiste carne.
+    # Se exige la PRIMERA, que es la que nombra el ingrediente; las que siguen
+    # son el corte. Pedir cualquiera era demasiado flojo: "beef cutlet breaded
+    # fried" pasaba el filtro con *BREADED CHIK'N CUTLETS* porque "cutlet"
+    # estaba, y eso es pollo. Las dos convenciones caen bien acá: en "beef,
+    # ground, cooked" el ingrediente va primero, y en "grilled chicken breast"
+    # también, porque "grilled" es cocción y sale de la lista.
+    if comida_q[0].rstrip("s") not in d:
+        return float("-inf")
+
+    # Que la descripción EMPIECE por el alimento. Se mira contra cualquiera de
+    # sus palabras y no contra una posición fija, porque las dos formas
+    # conviven: "beef, ground, cooked" lo pone primero y "grilled chicken
+    # breast" lo pone último.
+    empieza = bool(dpal) and any(dpal[0].rstrip("s") == w.rstrip("s") for w in comida_q)
 
     cubiertas = sum(1 for w in palabras if w.rstrip("s") in d)
     cobertura = cubiertas / len(palabras)
@@ -195,6 +233,8 @@ def buscar_usda(consulta: str) -> dict | None:
             if por100.get("calorias") is None:
                 continue
             pts = puntuar(consulta, desc)
+            if pts == float("-inf"):
+                continue
             if pts > mejor_puntos:
                 mejor, mejor_puntos = (f, desc, por100), pts
 
