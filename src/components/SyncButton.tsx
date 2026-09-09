@@ -12,7 +12,17 @@ type Estado = 'idle' | 'sincronizando' | 'ok' | 'error'
  * duration invites a second click that would only make things worse. The
  * elapsed counter is the honest version of a progress bar we cannot draw.
  */
-export default function SyncButton({ compacto = false }: { compacto?: boolean }) {
+/**
+ * Sincronizar con Garmin.
+ *
+ * Vive en dos lados a propósito. En el escritorio, abajo del riel lateral.
+ * En el teléfono el riel no existe —`hidden lg:flex`— así que el botón se
+ * repite en la cabecera del Resumen con `enLinea`, que es donde el pulgar
+ * llega. Sin eso el botón estaba desplegado pero era invisible justo en el
+ * dispositivo desde el que se usa la app.
+ */
+export default function SyncButton({ compacto = false, enLinea = false }:
+  { compacto?: boolean; enLinea?: boolean }) {
   const [estado, setEstado] = useState<Estado>('idle')
   const [segundos, setSegundos] = useState(0)
   const [mensaje, setMensaje] = useState('')
@@ -50,8 +60,11 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
         onClick={sincronizar}
         disabled={estado === 'sincronizando'}
         title="Sincronizar con Garmin"
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] transition-colors
-                    justify-center lg:justify-start
+        className={`flex items-center gap-2.5 rounded-lg text-[13.5px] transition-colors
+                    ${enLinea
+                      ? 'px-3.5 py-2 border border-surface-line bg-surface-card hover:border-surface-line-strong'
+                      : 'w-full px-3 py-2 justify-center lg:justify-start'}
+                    
                     ${estado === 'sincronizando'
                       ? 'text-ink-muted cursor-wait'
                       : 'text-ink-secondary hover:text-ink-primary hover:bg-white/[0.05]'}`}
@@ -60,7 +73,7 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
           <Icon name="sincronizar" size={17} />
         </span>
         {!compacto && (
-          <span className="hidden lg:inline">
+          <span>
             {estado === 'sincronizando' ? `Sincronizando ${mmss}` : 'Sincronizar'}
           </span>
         )}
@@ -68,7 +81,7 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
 
       {mensaje && (
         <p
-          className="hidden lg:block text-[12px] mt-1.5 px-3 leading-relaxed"
+          className="text-[12px] mt-1.5 px-3 leading-relaxed"
           style={{ color: estado === 'error' ? 'var(--color-state-warning)' : 'var(--color-state-good)' }}
         >
           {mensaje}
@@ -76,9 +89,9 @@ export default function SyncButton({ compacto = false }: { compacto?: boolean })
       )}
 
       {estado === 'sincronizando' && (
-        <p className="hidden lg:block text-[12px] text-ink-faint mt-1.5 px-3 leading-relaxed">
-          Recorre todas las actividades y baja plan, pasos, sueño y recuperación.
-          Puede tardar varios minutos.
+        <p className="text-[12px] text-ink-faint mt-1.5 px-3 leading-relaxed">
+          Trae las actividades nuevas y actualiza pasos, sueño, recuperación y
+          peso. Suele tardar cerca de un minuto.
         </p>
       )}
     </div>

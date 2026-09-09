@@ -163,6 +163,25 @@ export function insightsPlugin(): Plugin {
         })
       })
 
+      // La sincronización, la misma que corre el cron. Está acá para que el
+      // botón se comporte igual en local que desplegado: sin esta ruta el
+      // servidor de desarrollo contestaba el index.html y el botón mostraba
+      // "el servidor respondió 200 sin JSON", que no le dice nada a nadie.
+      server.middlewares.use('/api/sincronizar', async (_req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        try {
+          if (!inFlight.has('__sinc__')) {
+            inFlight.set('__sinc__', runArgs('fetch/sincronizar.py', ['--blob', '--json'], 10 * 60_000)
+              .finally(() => inFlight.delete('__sinc__')))
+          }
+          const salida = await inFlight.get('__sinc__')!
+          res.end(salida.trim() || JSON.stringify({ error: 'sin respuesta' }))
+        } catch (e) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+        }
+      })
+
       // El brief del objetivo: recibe el digest que armó el navegador —el
       // puntaje ya viene calculado— y sólo pone el token de Cloudflare.
       server.middlewares.use('/api/objetivo/brief', async (req, res) => {

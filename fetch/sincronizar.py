@@ -298,10 +298,21 @@ def main() -> None:
     except ImportError:
         pass
 
-    r = correr(args.blob, args.limite, args.seco, callado=args.json)
     if args.json:
+        # `callado` silencia lo que imprime ESTE módulo, pero cada archivador
+        # —plan, pasos, sueño, recuperación, peso— escribe su propio progreso en
+        # stdout sin preguntarle a nadie. Mezclado con el JSON, quien lo consume
+        # recibe "Biblioteca de workouts: 41{...}" e intenta parsearlo.
+        #
+        # Se mandan a stderr en vez de silenciarlos: en los registros de Vercel
+        # ese detalle es justo lo que se quiere leer cuando algo salió mal.
+        import contextlib
+        with contextlib.redirect_stdout(sys.stderr):
+            r = correr(args.blob, args.limite, args.seco, callado=True)
         print(json.dumps(r, ensure_ascii=False))
         return
+
+    r = correr(args.blob, args.limite, args.seco, callado=False)
 
     print(f"\n{'✔' if r['ok'] else '⚠'} {r['nuevas']} nuevas · {r['detalles']} detalles "
           f"· {r['archivos_subidos']} archivos · {r['segundos']}s")

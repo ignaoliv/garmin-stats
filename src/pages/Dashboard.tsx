@@ -14,6 +14,7 @@ import { useZoneDistribution } from '../hooks/useZoneDistribution'
 import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
+import SyncButton from '../components/SyncButton'
 import ReadinessCard from '../components/ReadinessCard'
 import DescansoCard from '../components/DescansoCard'
 import FCReposoCard from '../components/FCReposoCard'
@@ -95,7 +96,15 @@ export default function Dashboard() {
               )}
             </p>
           </div>
-          <InsightsCard compacto />
+          {/* `flex-wrap` y no una fila fija: la tarjeta del insight es
+              `w-full` abajo de sm, así que al lado del botón se pasaba
+              cien píxeles del ancho del teléfono y quedaba cortada.
+              Envolviendo, el botón queda arriba y la tarjeta abajo entera. */}
+          <div className="flex flex-wrap items-start gap-3 w-full lg:w-auto min-w-0">
+            {/* Sólo hasta lg: de ahí para arriba el botón ya está en el riel. */}
+            <div className="lg:hidden shrink-0"><SyncButton enLinea /></div>
+            <InsightsCard compacto />
+          </div>
         </header>
 
         {/* Arriba de todo, antes que cualquier métrica: el resto del panel
