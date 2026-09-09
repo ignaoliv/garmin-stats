@@ -97,6 +97,20 @@ def normalize_summary(activity: dict) -> dict:
         "vo2max": _safe(activity, "vO2MaxValue"),
         "aerobicTE": _safe(activity, "aerobicTrainingEffect"),
         "anaerobicTE": _safe(activity, "anaerobicTrainingEffect"),
+        # La carga que calcula Garmin, cuando la calcula. Sólo viene en las
+        # actividades grabadas con un aparato que hace Training Effect: acá, las
+        # de bici del Edge. Las 56 de fuerza y las de tenis vienen sin nada.
+        #
+        # Por eso NO reemplaza a `tss`, que es nuestra estimación por TRIMP y
+        # cubre todas. Y tampoco se mezclan: están en escalas distintas (lo
+        # nuestro da 0,63x lo de Garmin), así que combinarlas haría que una
+        # salida en bici pese más que un gimnasio equivalente por el aparato que
+        # la grabó y no por el esfuerzo. Se guarda como referencia.
+        #
+        # Comparadas sobre las 22 que tienen las dos: r = 0,92. Coinciden en qué
+        # sesiones fueron duras y difieren en la escala, que para una razón
+        # contra tu propia base se cancela.
+        "cargaGarmin": _safe(activity, "activityTrainingLoad"),
     }
 
     # Swimming-specific

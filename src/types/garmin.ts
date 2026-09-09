@@ -75,6 +75,10 @@ export interface ActivitySummary {
   avgCadence: number | null
   vo2max: number | null
   aerobicTE: number | null
+  /** La carga que calcula Garmin. Sólo en actividades de un aparato que
+   *  hace Training Effect (acá, la bici). NO reemplaza a `tss`: está en
+   *  otra escala (0,63x) y falta en el 82% de las sesiones. */
+  cargaGarmin?: number | null
   anaerobicTE: number | null
   // Swimming only
   swolf?: number | null
