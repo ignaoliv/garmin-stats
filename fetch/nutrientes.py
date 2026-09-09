@@ -112,6 +112,21 @@ _PREPARADO = ("roll", "luncheon", "lunchmeat", "deli", "breaded", "meatless",
               # alimento entero no viene descremado.
               "fat-free", "low fat", "reduced fat", "nonfat")
 
+# Partes y subproductos del animal que USDA lista al lado de la carne y que no
+# son lo que nadie quiere decir con "pollo". La piel de pollo son 462 kcal por
+# 100 g contra 165 de la pechuga: elegir mal acá no desvía el número, lo
+# triplica.
+#
+# Es un caso real. Con la consulta genérica "chicken, cooked, roasted" el
+# candidato correcto —"meat only", 167 kcal— le ganaba a "skin (drumsticks and
+# thighs)" por 0,05 puntos. O sea que 240 g de pollo daban 1109 kcal o 400
+# según de qué lado caía la moneda. Con este castigo la diferencia deja de ser
+# un empate técnico.
+#
+# "meat only" y "meat and skin" NO están: son cortes normales del alimento.
+_PARTES = ("skin", "fat only", "separable fat", "giblets", "gizzard", "liver",
+           "heart", "neck", "back", "drippings", "tallow", "lard", "bone")
+
 # Cadenas cuyos nombres contaminan la búsqueda de alimentos simples.
 _MARCAS = ("BURGER KING", "MCDONALD", "WENDY", "KFC", "TACO BELL",
            "DENNY", "PAPA JOHN", "PIZZA HUT", "SUBWAY", "DOMINO")
@@ -200,6 +215,18 @@ def puntuar(consulta: str, descripcion: str) -> float:
     for w in _PREPARADO:
         if w in d and w not in consulta.lower():
             puntos -= 1.0
+            break
+
+    # Una parte que no pediste. Se castiga fuerte porque el error no es de
+    # matiz: cambia la densidad calórica por dos o tres veces.
+    cq = consulta.lower()
+    for w in _PARTES:
+        if w in d and w not in cq:
+            # "meat and skin" es un corte con piel, no piel sola: si la
+            # descripción lo dice, no es la parte suelta.
+            if w == "skin" and "meat and skin" in d:
+                continue
+            puntos -= 1.5
             break
 
     # Mayúsculas = nombre comercial. Un nombre de cadena de comida rápida
