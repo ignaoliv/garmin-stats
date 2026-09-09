@@ -38,9 +38,17 @@ export const requiereSesion = BASE.startsWith('/api')
  * aplicación intenta parsear HTML como JSON y revienta con un error que no
  * dice nada.
  */
-export async function leer<T = unknown>(nombre: string): Promise<T | null> {
+export async function leer<T = unknown>(nombre: string, fresco = false): Promise<T | null> {
   try {
-    const r = await fetch(rutaDe(nombre), { credentials: 'same-origin' })
+    // `fresco` esquiva la caché DEL NAVEGADOR, que es distinta de la del blob.
+    // La respuesta viaja con `max-age=60`, así que después de guardar algo el
+    // navegador devolvía su copia de hasta un minuto antes —o sea, de antes de
+    // guardar— y lo recién cargado no aparecía. Para la carga normal la caché
+    // está bien y se deja.
+    const r = await fetch(rutaDe(nombre), {
+      credentials: 'same-origin',
+      cache: fresco ? 'no-store' : 'default',
+    })
     if (!r.ok) return null
     if (!r.headers.get('content-type')?.includes('json')) return null
     return (await r.json()) as T

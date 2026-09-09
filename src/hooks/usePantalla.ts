@@ -83,7 +83,7 @@ export function usePantalla() {
   const [registros, setRegistros] = useState<Registro[] | null>(null)
 
   const recargar = useCallback(
-    () => leer<{ registros?: Registro[] }>('pantalla').then(d => setRegistros(d?.registros ?? [])),
+    () => leer<{ registros?: Registro[] }>('pantalla', true).then(d => setRegistros(d?.registros ?? [])),
     [],
   )
   useEffect(() => { recargar() }, [recargar])

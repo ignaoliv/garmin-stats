@@ -42,7 +42,9 @@ export function useComidas(dia = hoyLocal()) {
   const [cargando, setCargando] = useState(true)
 
   const recargar = useCallback(() => {
-    return leer<{ comidas?: Comida[] }>('comidas')
+    // Sin caché: esto se llama justo después de guardar o borrar, y la copia
+    // del navegador todavía tiene la versión anterior.
+    return leer<{ comidas?: Comida[] }>('comidas', true)
       .then(d => setTodas(d?.comidas ?? []))
       .finally(() => setCargando(false))
   }, [])
