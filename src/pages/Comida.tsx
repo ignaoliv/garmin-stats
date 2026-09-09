@@ -87,7 +87,20 @@ async function achicar(f: File, lado = 1024): Promise<string> {
 }
 
 export default function Comida() {
-  const { delDia, total, recargar } = useComidas()
+  // El día que se está mirando. Antes la pantalla era siempre hoy, así que una
+  // comida cargada tarde —o el día que te acordaste al otro día— no había forma
+  // de tocarla.
+  const [dia, setDia] = useState(hoyLocal)
+  const { delDia, total, recargar } = useComidas(dia)
+  const esHoy = dia === hoyLocal()
+
+  const correrDia = (pasos: number) => {
+    const d = new Date(dia + 'T12:00:00')
+    d.setDate(d.getDate() + pasos)
+    const iso = d.toISOString().slice(0, 10)
+    // No se puede editar el futuro: no comiste todavía.
+    if (iso <= hoyLocal()) setDia(iso)
+  }
   // Una sola entrada, y SIN `capture`: con capture el teléfono abre la cámara
   // directo y no deja llegar al carrete. Sin él, iOS muestra su hoja con las
   // tres opciones —fototeca, sacar foto, elegir archivo— que es la elección
@@ -104,6 +117,8 @@ export default function Comida() {
   const [nuevoGramos, setNuevoGramos] = useState('')
   /** Qué fila está esperando a la tabla; -1 es la de agregar. */
   const [buscando, setBuscando] = useState<number | null>(null)
+  /** El id de la comida guardada que se está editando, si es que hay una. */
+  const [editando, setEditando] = useState<{ id: string; hora: string } | null>(null)
 
   const analizar = async (f: File) => {
     setEstado('analizando'); setMensaje(''); setAnalisis(null)
@@ -222,11 +237,51 @@ export default function Comida() {
     }
   }
 
+  /** Traer una comida guardada al editor de arriba.
+   *
+   *  Reusa el mismo bloque de corrección que usa una foto recién analizada, en
+   *  vez de tener un segundo editor: son la misma tarea —revisar alimentos y
+   *  gramos— y dos editores se desincronizan en cuanto uno cambie. */
+  const editar = (c: typeof delDia[number]) => {
+    setEditando({ id: c.id, hora: c.hora })
+    setAnalisis({
+      alimentos: c.alimentos,
+      total: c.total ?? {},
+      sin_resolver: c.alimentos.filter(a => !a.encontrado).map(a => a.nombre),
+      nota: c.nota ?? '',
+    })
+    const m = MOMENTOS.find(x => x.toLowerCase() === (c.momento ?? '').toLowerCase())
+    setMomento(m ?? momentoProbable())
+    setVista(null); setMensaje('')
+    document.getElementById('editor-comida')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const cancelar = () => {
+    setEditando(null); setAnalisis(null); setVista(null); setMensaje('')
+  }
+
+  const borrar = async (id: string) => {
+    setEstado('guardando')
+    try {
+      await enviar('/api/comida/guardar', { id, borrar: true })
+      await recargar()
+      if (editando?.id === id) cancelar()
+      setEstado('idle'); setMensaje('Borrada')
+    } catch (e) {
+      setEstado('error'); setMensaje(explicarError(e))
+    }
+  }
+
   const guardar = async () => {
     if (!analisis) return
     setEstado('guardando'); setMensaje('')
     try {
       await enviar('/api/comida/guardar', {
+        // Con id, el servidor reemplaza en vez de agregar: eso es editar.
+        ...(editando ? { id: editando.id, hora: editando.hora } : {}),
+        // La fecha va SIEMPRE explícita. Sin esto el servidor la calcula como
+        // "ahora", y editar una comida de anteayer la mudaba a hoy.
+        fecha: dia,
         nombre: momento,
         momento: momento.toLowerCase(),
         alimentos: analisis.alimentos,
@@ -236,8 +291,8 @@ export default function Comida() {
         corregido: true,
       })
       await recargar()
-      setAnalisis(null); setVista(null); setMomento(momentoProbable())
-      setEstado('idle'); setMensaje('Guardada')
+      setAnalisis(null); setVista(null); setMomento(momentoProbable()); setEditando(null)
+      setEstado('idle'); setMensaje(editando ? 'Actualizada' : 'Guardada')
     } catch (e) {
       setEstado('error'); setMensaje(explicarError(e))
     }
@@ -248,15 +303,36 @@ export default function Comida() {
       <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-7 space-y-6 page-in">
         <header>
           <h1 className="title-page">Comida</h1>
-          <p className="label-plain mt-2">Sacá una foto o escribí lo que comiste; después corregís lo que haga falta</p>
+          <p className="label-plain mt-2">Sacá una foto o escribí lo que comiste. Elegí el día para cargar o corregir hacia atrás</p>
         </header>
 
         {/* ── Lo que va del día ──────────────────────────────────────────── */}
         <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-[15px] font-semibold text-ink-primary">Hoy</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => correrDia(-1)} aria-label="Día anterior"
+                className="w-9 h-9 rounded-lg border border-surface-line text-ink-secondary
+                           hover:text-ink-primary hover:bg-surface-hover">‹</button>
+              {/* Un campo de fecha nativo: en el teléfono abre el selector del
+                  sistema, que se maneja mejor que cualquier calendario nuestro. */}
+              <input type="date" value={dia} max={hoyLocal()}
+                onChange={e => { if (e.target.value) setDia(e.target.value) }}
+                aria-label="Día que estás mirando"
+                className="px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line
+                           text-[15px] text-ink-primary tabular-nums
+                           focus:outline-none focus:border-accent" />
+              <button onClick={() => correrDia(1)} disabled={esHoy} aria-label="Día siguiente"
+                className="w-9 h-9 rounded-lg border border-surface-line text-ink-secondary
+                           hover:text-ink-primary hover:bg-surface-hover disabled:opacity-30">›</button>
+              {!esHoy && (
+                <button onClick={() => setDia(hoyLocal())}
+                  className="ml-1 px-3 py-2 rounded-lg text-[13px] text-accent hover:bg-accent/10">
+                  Hoy
+                </button>
+              )}
+            </div>
             <span className="text-[13px] text-ink-muted">
-              {delDia.length === 0 ? 'todavía sin registrar' :
+              {delDia.length === 0 ? 'sin registrar' :
                `${delDia.length} ${delDia.length === 1 ? 'comida' : 'comidas'}`}
             </span>
           </div>
@@ -270,9 +346,11 @@ export default function Comida() {
         <BalanceCard />
 
         {/* ── Sacar la foto ──────────────────────────────────────────────── */}
-        <Card className="p-5">
+        <Card className="p-5" id="editor-comida">
           <CardHeader
-            title="Agregar una comida"
+            title={editando
+              ? `Editando la comida de las ${editando.hora}`
+              : esHoy ? 'Agregar una comida' : `Agregar una comida al ${dia.split('-').reverse().slice(0, 2).join('/')}`}
             hint="El modelo identifica los alimentos; los nutrientes salen de una tabla de composición. Todo se puede corregir antes de guardar"
           />
 
@@ -349,9 +427,9 @@ export default function Comida() {
           {analisis && (
             <div className="mt-5 pt-5 border-t border-surface-line space-y-4">
               <Insight tone="neutral">
-                De una foto no se saca el volumen: la porción es una estimación y es
-                lo que más se equivoca. Corregí los gramos antes de guardar — los
-                nutrientes se recalculan solos.
+                {editando
+                  ? 'Cambiá lo que haga falta: los nombres vuelven a buscarse en la tabla y los nutrientes se recalculan solos.'
+                  : 'De una foto no se saca el volumen: la porción es una estimación y es lo que más se equivoca. Corregí los gramos antes de guardar — los nutrientes se recalculan solos.'}
               </Insight>
 
               <div className="space-y-2">
@@ -506,11 +584,23 @@ export default function Comida() {
                 </div>
               </div>
 
-              <button onClick={guardar} disabled={estado === 'guardando' || analisis.alimentos.length === 0}
-                className="w-full py-3 rounded-xl border border-accent text-accent hover:bg-accent
-                           hover:text-white text-[15px] font-semibold transition-colors disabled:opacity-50">
-                {estado === 'guardando' ? 'Guardando…' : `Guardar ${momento.toLowerCase()}`}
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button onClick={guardar} disabled={estado === 'guardando' || analisis.alimentos.length === 0}
+                  className="flex-1 min-w-[180px] py-3 rounded-xl border border-accent text-accent
+                             hover:bg-accent hover:text-white text-[15px] font-semibold
+                             transition-colors disabled:opacity-50">
+                  {estado === 'guardando' ? 'Guardando…'
+                    : editando ? 'Guardar los cambios'
+                    : `Guardar ${momento.toLowerCase()}`}
+                </button>
+                {/* Salir sin guardar. Sin esto, abrir una comida para mirarla
+                    te dejaba encerrado en el editor. */}
+                <button onClick={cancelar}
+                  className="px-5 py-3 rounded-xl border border-surface-line text-ink-secondary
+                             hover:text-ink-primary hover:bg-surface-hover text-[15px]">
+                  Cancelar
+                </button>
+              </div>
             </div>
           )}
         </Card>
@@ -518,19 +608,35 @@ export default function Comida() {
         {/* ── Lo registrado hoy ───────────────────────────────────────────── */}
         {delDia.length > 0 && (
           <Card className="p-5">
-            <CardHeader title="Registrado hoy" hint={`${hoyLocal()}`} />
+            <CardHeader
+              title={esHoy ? 'Registrado hoy' : 'Registrado ese día'}
+              hint="Tocá una comida para corregirla"
+            />
             <div className="space-y-2">
               {delDia.map(c => (
-                <div key={c.id} className="flex items-center gap-4 px-4 py-3 rounded-xl border border-surface-line">
-                  <span className="text-[13px] text-ink-muted tabular-nums shrink-0">{c.hora}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[15px] font-medium text-ink-primary truncate">{c.nombre}</div>
-                    <div className="text-[12px] text-ink-muted truncate">
-                      {c.alimentos.map(a => a.nombre).join(' · ')}
-                    </div>
-                  </div>
-                  <span className="metric text-[18px] shrink-0">{n(c.total?.calorias)}</span>
-                  <span className="text-[12px] text-ink-muted shrink-0">kcal</span>
+                <div key={c.id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                    editando?.id === c.id
+                      ? 'border-accent bg-accent/[0.07]'
+                      : 'border-surface-line hover:border-surface-line-strong'
+                  }`}>
+                  <button onClick={() => editar(c)}
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                    aria-label={`Editar ${c.nombre}`}>
+                    <span className="text-[13px] text-ink-muted tabular-nums shrink-0">{c.hora}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-medium text-ink-primary truncate">{c.nombre}</span>
+                      <span className="block text-[12px] text-ink-muted truncate">
+                        {c.alimentos.map(a => a.nombre).join(' · ')}
+                      </span>
+                    </span>
+                    <span className="metric text-[18px] shrink-0">{n(c.total?.calorias)}</span>
+                    <span className="text-[12px] text-ink-muted shrink-0">kcal</span>
+                  </button>
+                  <button onClick={() => borrar(c.id)} title="Borrar esta comida"
+                    aria-label={`Borrar ${c.nombre}`}
+                    className="shrink-0 w-9 h-9 rounded-lg text-ink-muted hover:text-state-critical
+                               hover:bg-surface-hover transition-colors">✕</button>
                 </div>
               ))}
             </div>

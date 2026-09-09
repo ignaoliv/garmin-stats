@@ -19,8 +19,10 @@ import uuid
 from datetime import date, datetime
 from pathlib import Path
 
+import rutas
+
 ROOT = Path(__file__).parent.parent
-DATA = ROOT / "public" / "data"
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron y las pruebas la mueven
 ARCHIVO = DATA / "comidas.json"
 
 MOMENTOS = ("desayuno", "almuerzo", "merienda", "cena", "colación")
@@ -103,7 +105,17 @@ def main() -> None:
         return
 
     if args.from_stdin:
-        print(json.dumps(agregar(json.load(sys.stdin)), ensure_ascii=False))
+        pedido = json.load(sys.stdin)
+        # El mismo pedido que el endpoint desplegado: con `borrar` saca una
+        # comida, y si no, la agrega o la reemplaza por id.
+        if pedido.get("borrar") and pedido.get("id"):
+            comidas = cargar()
+            quedan = [c for c in comidas if c.get("id") != pedido["id"]]
+            guardar(quedan)
+            print(json.dumps({"ok": True, "borrada": pedido["id"],
+                              "borradas": len(comidas) - len(quedan)}, ensure_ascii=False))
+            return
+        print(json.dumps(agregar(pedido), ensure_ascii=False))
         return
 
     r = resumen_dia(date.today().isoformat())
