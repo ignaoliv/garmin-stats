@@ -30,7 +30,9 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
-DATA = ROOT / "public" / "data"
+import rutas  # noqa: E402
+
+DATA = rutas.DATA  # ver fetch/rutas.py: el cron y las funciones la mueven
 DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 
 # Las tres ventanas, de la más corta a la más larga.

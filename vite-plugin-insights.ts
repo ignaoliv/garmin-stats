@@ -95,6 +95,28 @@ export function insightsPlugin(): Plugin {
       })
 
       // Plan generation only reads local data and calls the model; no writes.
+      // La ruta la renombró el frontend al portarla a Vercel; se atienden las
+      // dos para no romper nada que todavía apunte a la vieja.
+      server.middlewares.use('/api/plan/generar', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'usa POST' }))
+          return
+        }
+        let body = ''
+        req.on('data', c => (body += c))
+        req.on('end', async () => {
+          try {
+            const out = await runWithInput('fetch/plan_ai.py', body, 180_000)
+            res.end(out.trim() || JSON.stringify({ error: 'sin respuesta' }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: (e as Error).message.slice(0, 400) }))
+          }
+        })
+      })
+
       server.middlewares.use('/api/plan-ai', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         if (req.method !== 'POST') {

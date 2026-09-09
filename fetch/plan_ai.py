@@ -161,43 +161,34 @@ Devolvés JSON válido y NADA más:
 "dia_offset" son días desde el inicio del plan (0 = primer día)."""
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--weeks", type=int, default=4)
-    ap.add_argument("--days", type=int, default=3)
-    ap.add_argument("--objetivo", type=str, default="ganar fuerza general manteniendo el ciclismo")
-    ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--evento", type=str, default="", help='JSON: {"nombre","fecha","disciplina","localidad"}')
-    ap.add_argument("--from-stdin", action="store_true")
-    ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
+def generar(weeks: int = 4, days: int = 3, objetivo: str = "",
+            evento: dict | None = None, model: str = DEFAULT_MODEL,
+            contexto: dict | None = None) -> dict:
+    """El plan, ya listo para la pantalla.
 
-    evento = None
-    if args.from_stdin:
-        req = json.load(sys.stdin)
-        args.weeks = int(req.get("weeks", args.weeks))
-        args.days = int(req.get("days", args.days))
-        args.objetivo = req.get("objetivo") or args.objetivo
-        evento = req.get("evento") or None
-    elif args.evento:
-        evento = json.loads(args.evento)
+    Está fuera de `main()` para que la función de Vercel llame exactamente el
+    mismo código que la línea de comandos. Cuando la generación vivía adentro
+    de main, la única forma de usarla desde un servidor era lanzar un proceso y
+    leerle la salida — que es lo que hacía el plugin de desarrollo, y por eso
+    esta pantalla nunca funcionó en la versión publicada.
 
+    `contexto` es el objetivo de salud que está elegido en el Resumen, con su
+    puntaje y sus piezas. Va aparte del texto libre porque no es lo mismo: el
+    texto dice qué querés, el contexto dice qué te está faltando para lograrlo.
+    """
     estado = estado_del_atleta()
     pedido = {
-        "objetivo": args.objetivo,
-        "semanas": args.weeks,
-        "dias_por_semana": args.days,
+        "objetivo": objetivo or "ganar fuerza general manteniendo el ciclismo",
+        "semanas": weeks,
+        "dias_por_semana": days,
         "estado_actual": estado,
     }
+    if contexto:
+        pedido["objetivo_de_salud"] = contexto
 
     if evento and evento.get("fecha"):
         faltan = (date.fromisoformat(evento["fecha"]) - date.today()).days
-        # El plan termina el día de la carrera, no una semana después: las
-        # semanas se calculan desde la fecha, no se piden aparte.
-        # Semanas enteras que entran antes de la fecha. Redondear para arriba
-        # daba un plan más largo que el tiempo disponible.
         semanas = max(1, min(12, faltan // 7))
-        args.weeks = semanas
         pedido["semanas"] = semanas
         pedido["evento_objetivo"] = {
             "nombre": evento.get("nombre"),
@@ -207,9 +198,6 @@ def main() -> None:
             "dias_hasta_la_carrera": faltan,
             "semanas_hasta_la_carrera": semanas,
         }
-    if args.dry_run:
-        print(json.dumps(pedido, ensure_ascii=False, indent=2))
-        return
 
     account, token = credentials()
     from strength_workout import POR_TIEMPO
@@ -221,12 +209,13 @@ def main() -> None:
     parsed, raw = None, ""
     for temperature in (0.4, 0.0):
         res = call_api(
-            f"/accounts/{account}/ai/run/{args.model}",
+            f"/accounts/{account}/ai/run/{model}",
             token,
             {
                 "messages": [
                     {"role": "system", "content": system},
-                    {"role": "user", "content": "Diseñá el plan:\n\n" + json.dumps(pedido, ensure_ascii=False, indent=1)},
+                    {"role": "user", "content": "Diseñá el plan:\n\n"
+                     + json.dumps(pedido, ensure_ascii=False, indent=1)},
                 ],
                 "max_tokens": 3000,
                 "temperature": temperature,
@@ -239,11 +228,10 @@ def main() -> None:
         print("  JSON inválido, reintentando…", file=sys.stderr)
 
     if not parsed:
-        print(f"ERROR: el modelo no devolvió JSON válido.\n{str(raw)[:800]}", file=sys.stderr)
-        sys.exit(1)
+        raise RuntimeError(f"el modelo no devolvió JSON válido: {str(raw)[:300]}")
 
-    # Drop categories the model invented rather than letting Garmin reject the
-    # upload later with a 400.
+    # Se descartan las categorías que el modelo inventó en vez de dejar que
+    # Garmin rechace la subida más tarde con un 400.
     validas = set(MUSCULOS)
     descartados = 0
     for sem in parsed.get("semanas", []):
@@ -255,8 +243,48 @@ def main() -> None:
         print(f"  aviso: {descartados} bloques descartados por categoría inválida", file=sys.stderr)
 
     parsed["generado"] = estado["hoy"]
-    parsed["modelo"] = args.model
-    print(json.dumps(parsed, ensure_ascii=False))
+    parsed["modelo"] = model
+    return parsed
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--weeks", type=int, default=4)
+    ap.add_argument("--days", type=int, default=3)
+    ap.add_argument("--objetivo", type=str, default="ganar fuerza general manteniendo el ciclismo")
+    ap.add_argument("--model", default=DEFAULT_MODEL)
+    ap.add_argument("--evento", type=str, default="", help='JSON: {"nombre","fecha","disciplina","localidad"}')
+    ap.add_argument("--from-stdin", action="store_true")
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+
+    evento, contexto = None, None
+    if args.from_stdin:
+        req = json.load(sys.stdin)
+        args.weeks = int(req.get("weeks", args.weeks))
+        args.days = int(req.get("days", args.days))
+        args.objetivo = req.get("objetivo") or args.objetivo
+        evento = req.get("evento") or None
+        # El objetivo de salud elegido en el Resumen, con su puntaje y sus
+        # piezas. Lo arma el navegador, que es donde se calcula.
+        contexto = req.get("contexto") or None
+    elif args.evento:
+        evento = json.loads(args.evento)
+
+    if args.dry_run:
+        # Sin llamar al modelo: sólo lo que se le va a mandar.
+        print(json.dumps({"objetivo": args.objetivo, "semanas": args.weeks,
+                          "dias_por_semana": args.days,
+                          "estado_actual": estado_del_atleta()},
+                         ensure_ascii=False, indent=2))
+        return
+
+    try:
+        plan = generar(args.weeks, args.days, args.objetivo, evento, args.model, contexto)
+    except RuntimeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    print(json.dumps(plan, ensure_ascii=False))
 
 
 if __name__ == "__main__":

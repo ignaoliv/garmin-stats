@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardHeader, Insight, explicarError } from './ui'
 import PlanCalendar, { type SemanaPlan, type BloquePlan } from './PlanCalendar'
 import AIProgress from './AIProgress'
-import { enviar, accionesDisponibles } from '../lib/acciones'
+import { enviar } from '../lib/acciones'
+import { useObjetivo } from '../hooks/useObjetivo'
+import { objetivoPorId } from '../lib/objetivos'
 
 interface Plan {
   titulo: string
@@ -49,11 +52,12 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
     : null
   const [semanas, setSemanas] = useState(semanasHastaCarrera ?? 4)
   const [dias, setDias] = useState(3)
-  const [objetivo, setObjetivo] = useState(
-    evento
-      ? `llegar en forma a ${evento.nombre}`
-      : 'ganar fuerza general manteniendo el ciclismo',
-  )
+  // El objetivo YA lo elegiste en el Resumen; pedirlo otra vez como texto
+  // libre era invitar a que el plan apuntara a un lado y el score a otro.
+  // Con una carrera a la vista manda la carrera, que es una fecha concreta.
+  const { elegido, puntaje } = useObjetivo()
+  const salud = objetivoPorId(elegido)
+  const objetivo = evento ? `llegar en forma a ${evento.nombre}` : salud.nombre
   const [plan, setPlan] = useState<Plan | null>(null)
   const [estado, setEstado] = useState<'idle' | 'generando' | 'enviando' | 'error'>('idle')
   const [mensaje, setMensaje] = useState('')
@@ -73,7 +77,21 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
   const generar = async () => {
     setEstado('generando'); setMensaje(''); setPlan(null)
     try {
-      const body = await enviar('/api/plan-ai', { weeks: semanas, days: dias, objetivo, evento })
+      const body = await enviar('/api/plan/generar', {
+        weeks: semanas, days: dias, objetivo, evento,
+        // El puntaje y sus piezas, ordenadas de peor a mejor. El texto dice
+        // qué querés; esto dice qué te está faltando para lograrlo, que es lo
+        // que decide qué priorizar en el plan.
+        contexto: {
+          nombre: salud.nombre,
+          resumen: salud.resumen,
+          score: puntaje.score,
+          piezas: puntaje.componentes.map(c => ({
+            que: c.label, puntos: c.puntos, peso: c.peso, ahora: c.valor, meta: c.meta,
+          })),
+          sin_datos: puntaje.faltantes,
+        },
+      })
       setPlan(body as never); setEstado('idle')
     } catch (e) {
       setEstado('error'); setMensaje(explicarError(e))
@@ -136,11 +154,21 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
       <div className={`grid grid-cols-1 gap-3 mb-3 ${
         evento ? 'sm:grid-cols-[1fr_110px]' : 'sm:grid-cols-[1fr_110px_110px]'
       }`}>
-        <label className="block">
+        <div className="block min-w-0">
           <span className="text-[13px] text-ink-muted block mb-1.5">Objetivo</span>
-          <input value={objetivo} onChange={e => setObjetivo(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line text-[15px] text-ink-primary focus:outline-none focus:border-accent" />
-        </label>
+          <div className="px-3 py-2 rounded-lg bg-surface-sunk border border-surface-line">
+            <div className="text-[15px] text-ink-primary truncate">{objetivo}</div>
+            {!evento && (
+              <div className="text-[12px] text-ink-muted mt-0.5">
+                {puntaje.score !== null
+                  ? <>tu puntaje hoy es {puntaje.score}
+                      {puntaje.componentes[0] && <> · lo más flojo: {puntaje.componentes[0].label.toLowerCase()}</>}
+                      {' · '}<Link to="/" className="text-accent hover:underline">cambiar</Link></>
+                  : <>elegido en el Resumen · <Link to="/" className="text-accent hover:underline">cambiar</Link></>}
+              </div>
+            )}
+          </div>
+        </div>
         {!evento && (
           <label className="block">
             <span className="text-[13px] text-ink-muted block mb-1.5">Semanas</span>
@@ -155,16 +183,7 @@ export default function PlanGenerator({ evento }: { evento?: EventoObjetivo } = 
         </label>
       </div>
 
-      {!accionesDisponibles && (
-        <div className="mb-3">
-          <Insight tone="neutral">
-            Generar planes necesita el servidor local: por ahora corre con
-            <code className="mx-1">npm run dev</code>, no en la versión publicada.
-          </Insight>
-        </div>
-      )}
-
-      <button onClick={generar} disabled={estado === 'generando' || !accionesDisponibles}
+      <button onClick={generar} disabled={estado === 'generando'}
         className="w-full py-2.5 rounded-xl border border-accent text-accent hover:bg-accent hover:text-white
                    text-[15px] font-semibold transition-colors disabled:opacity-60">
         {estado === 'generando' ? 'Diseñando el plan…' : plan ? 'Generar otro' : 'Generar plan'}

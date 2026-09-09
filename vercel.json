@@ -30,6 +30,9 @@
     },
     "api/comida/alimento.py": {
       "maxDuration": 30
+    },
+    "api/plan/generar.py": {
+      "maxDuration": 120
     }
   },
   "crons": [
