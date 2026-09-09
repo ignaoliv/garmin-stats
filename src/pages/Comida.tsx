@@ -119,6 +119,8 @@ export default function Comida() {
   const [buscando, setBuscando] = useState<number | null>(null)
   /** El id de la comida guardada que se está editando, si es que hay una. */
   const [editando, setEditando] = useState<{ id: string; hora: string } | null>(null)
+  /** Qué alimento tiene abiertas sus alternativas. */
+  const [abierto, setAbierto] = useState<number | null>(null)
 
   const analizar = async (f: File) => {
     setEstado('analizando'); setMensaje(''); setAnalisis(null)
@@ -168,6 +170,35 @@ export default function Comida() {
           : x.nutrientes,
       },
     ))
+  }
+
+  /** Cambiar el alimento por otro de la tabla.
+   *
+   *  No vuelve a la red: los candidatos vinieron con sus valores por 100 g en
+   *  la misma búsqueda, así que sólo hay que reescalarlos a los gramos que ya
+   *  están puestos. */
+  const cambiarAlimento = (i: number, alt: NonNullable<AlimentoRegistrado['alternativas']>[number]) => {
+    if (!analisis) return
+    const a = analisis.alimentos[i]
+    const factor = a.gramos / 100
+    // El elegido y el que estaba se intercambian de lugar: así se puede volver
+    // atrás si te arrepentís, sin perder la opción anterior.
+    const resto = (a.alternativas ?? []).filter(x => x.descripcion !== alt.descripcion)
+    const previo = a.coincidencia && a.nutrientes
+      ? [{ descripcion: a.coincidencia, fuente: a.fuente ?? 'USDA',
+           por_100g: Object.fromEntries(
+             Object.entries(a.nutrientes).map(([k, v]) => [k, Math.round((v / (factor || 1)) * 10) / 10])) }]
+      : []
+    conTotal(analisis.alimentos.map((x, j) => j !== i ? x : {
+      ...x,
+      encontrado: true,
+      fuente: alt.fuente ?? 'USDA',
+      coincidencia: alt.descripcion,
+      nutrientes: Object.fromEntries(
+        Object.entries(alt.por_100g).map(([k, v]) => [k, Math.round(v * factor * 10) / 10])),
+      alternativas: [...previo, ...resto],
+    }))
+    setAbierto(null)
   }
 
   const quitar = (i: number) => {
@@ -466,6 +497,44 @@ export default function Comida() {
                                 : <span className="text-state-warning">sin datos nutricionales para esto</span>}
                             {buscando !== i && <>{' · '}{c.texto}</>}
                           </div>
+
+                          {/* De dónde salió el número, y cómo cambiarlo.
+                              La tabla lista los derivados pegados al alimento
+                              —harina de papa, manzana deshidratada, clara de
+                              huevo— y ninguna regla los separa siempre bien.
+                              Cuando el puntaje se equivoca, elegís vos. */}
+                          {(a.alternativas?.length ?? 0) > 0 && (
+                            <div className="px-1 mt-1">
+                              <button
+                                onClick={() => setAbierto(abierto === i ? null : i)}
+                                className="text-[12px] text-accent hover:underline"
+                              >
+                                {abierto === i ? 'Cerrar' : '¿No es esto? Elegir otro'}
+                              </button>
+                              {abierto === i && (
+                                <div className="mt-1.5 space-y-1">
+                                  {a.alternativas!.map(alt => (
+                                    <button
+                                      key={alt.descripcion}
+                                      onClick={() => cambiarAlimento(i, alt)}
+                                      className="w-full flex items-baseline gap-2 text-left px-2.5 py-2
+                                                 rounded-lg border border-surface-line
+                                                 hover:border-accent hover:bg-accent/[0.06]
+                                                 transition-colors"
+                                    >
+                                      <span className="text-[13px] text-ink-secondary flex-1 min-w-0">
+                                        {alt.descripcion}
+                                      </span>
+                                      <span className="text-[13px] text-ink-primary tabular-nums shrink-0">
+                                        {Math.round((alt.por_100g.calorias ?? 0) * a.gramos / 100)}
+                                        <span className="text-ink-muted"> kcal</span>
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <button onClick={() => quitar(i)} title="Sacar este alimento"
                           aria-label={`Sacar ${a.nombre}`}

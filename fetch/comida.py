@@ -222,6 +222,9 @@ def resolver(alimentos: list[dict], nota: str = "", origen: str = MODELO) -> dic
             "fuente": encontrado.get("fuente") if encontrado else None,
             "coincidencia": encontrado.get("descripcion") if encontrado else None,
             "nutrientes": encontrado.get("nutrientes") if encontrado else None,
+            # Los otros candidatos, para poder cambiar de alimento sin volver a
+            # buscar. Salen de la misma consulta, así que son gratis.
+            "alternativas": (encontrado.get("alternativas") or []) if encontrado else [],
         })
 
     sin_resolver = [i["nombre"] for i in items if not i["encontrado"]]

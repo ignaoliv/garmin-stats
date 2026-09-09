@@ -10,6 +10,11 @@ export interface AlimentoRegistrado {
   fuente?: string | null
   coincidencia?: string | null
   nutrientes?: Record<string, number> | null
+  /** Los otros candidatos de la tabla, con sus valores por 100 g. Viajan con
+   *  el alimento porque salen de la misma búsqueda: elegir otro no cuesta una
+   *  vuelta más a la red. */
+  alternativas?: { descripcion: string; id?: number; fuente?: string;
+                   por_100g: Record<string, number> }[]
 }
 
 export interface Comida {

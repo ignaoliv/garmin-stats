@@ -101,7 +101,12 @@ _VACIAS = {"a", "of", "with", "and", "the", "in", "raw", "fresh", "sliced", "cho
 # enlatada, 32 y con azúcar y sal agregadas.
 _CONCENTRADO = ("powder", "dried", "dehydrated", "concentrate", "paste",
                 "extract", "syrup", "freeze-dried", "infant formula",
-                "canned", "sauce", "juice", "products", "entree", "soup")
+                "canned", "sauce", "juice", "products", "entree", "soup",
+                # Derivados que USDA lista pegados al alimento y que ganaban
+                # por ser singulares: la harina de papa son 357 kcal por 100 g
+                # y los panqueques de papa 268, contra 106 del puré.
+                "flour", "chips", "crisps", "fries", "pancake", "cake",
+                "cookie", "candy", "snack", "starch", "meal,")
 
 # Fiambres y preparados que USDA nombra igual que el alimento entero. "Chicken
 # breast, roll, oven-roasted" es un fiambre de 134 kcal; la pechuga de verdad
@@ -141,6 +146,25 @@ _PREPARACION = {
     "whole", "fresh", "frozen", "canned", "dried", "cured", "smoked",
     "prepared", "homemade", "mashed", "diced", "shredded", "peeled",
 }
+
+
+def _mismo(a: str, b: str) -> bool:
+    """¿Son la misma palabra, salvo por el plural?
+
+    Existe porque `rstrip("s")` —que es lo que había— convierte "tomatoes" en
+    "tomatoe", que no coincide con "tomato". Y USDA escribe casi todas las
+    verduras en plural, así que el alimento de verdad perdía el bono de
+    "empieza por el alimento" y se lo llevaba una forma singular cualquiera.
+
+    Ese fue el caso del tomate: "Tomato powder" (302 kcal por 100 g) le ganaba
+    a "Tomatoes, grape, raw" (27) aun con el castigo por ser polvo, porque el
+    polvo cobraba el +1,4 y el tomate no. 150 g daban 453 kcal.
+
+    Se compara en las dos direcciones en vez de recortar terminaciones: cortar
+    "es" a ciegas rompe palabras que terminan así de nacimiento, como "cheese".
+    """
+    a, b = a.lower(), b.lower()
+    return a == b or a == b + "s" or b == a + "s" or a == b + "es" or b == a + "es"
 
 
 def puntuar(consulta: str, descripcion: str) -> float:
@@ -196,7 +220,7 @@ def puntuar(consulta: str, descripcion: str) -> float:
     # sus palabras y no contra una posición fija, porque las dos formas
     # conviven: "beef, ground, cooked" lo pone primero y "grilled chicken
     # breast" lo pone último.
-    empieza = bool(dpal) and any(dpal[0].rstrip("s") == w.rstrip("s") for w in comida_q)
+    empieza = bool(dpal) and any(_mismo(dpal[0], w) for w in comida_q)
 
     cubiertas = sum(1 for w in palabras if w.rstrip("s") in d)
     cobertura = cubiertas / len(palabras)
@@ -222,8 +246,13 @@ def puntuar(consulta: str, descripcion: str) -> float:
     cq = consulta.lower()
     for w in _PARTES:
         if w in d and w not in cq:
-            # "meat and skin" es un corte con piel, no piel sola: si la
-            # descripción lo dice, no es la parte suelta.
+            # "sin X" es lo contrario de "X sola". Sin esta salvedad el
+            # castigo se lo comía "Apples, raw, WITHOUT skin", que es una
+            # manzana pelada y no piel de nada — y la manzana quedaba fuera de
+            # los candidatos, así que "apple" devolvía manzana deshidratada.
+            if f"without {w}" in d or f"no {w}" in d:
+                continue
+            # "meat and skin" es un corte con piel, no piel sola.
             if w == "skin" and "meat and skin" in d:
                 continue
             puntos -= 1.5
@@ -237,45 +266,22 @@ def puntuar(consulta: str, descripcion: str) -> float:
 
 
 def buscar_usda(consulta: str) -> dict | None:
-    """El mejor match entre varios candidatos, no el primero que devuelve.
+    """El mejor match, con los que quedaron atrás pegados adentro.
 
-    Pedir uno solo era el error de fondo: con `pageSize=1` te quedás con lo que
-    el ranking de USDA puso arriba, que para un alimento simple suele ser un
-    plato preparado con nombre largo. Se piden 25 y se elige con `puntuar`.
+    Las alternativas salen de la MISMA búsqueda que ya se hizo y se estaban
+    tirando, así que no cuestan ni una llamada más. Van adjuntas porque el
+    puntaje acierta casi siempre pero no siempre, y cuando falla la persona
+    tiene que poder elegir: es la única salida que no depende de seguir
+    afinando reglas para el resto de la eternidad.
     """
-    for tipos in ("Foundation,SR%20Legacy", "Branded"):
-        q = urllib.parse.quote(consulta)
-        d = _get(f"{USDA}/foods/search?api_key={clave_usda()}&query={q}"
-                 f"&dataType={tipos}&pageSize=25")
-        comidas = (d or {}).get("foods") or []
-        if not comidas:
-            continue
-
-        mejor, mejor_puntos = None, float("-inf")
-        for f in comidas:
-            desc = f.get("description") or ""
-            por100 = {k: _valor(f.get("foodNutrients") or [], n, u)
-                      for k, (n, u) in INTERES.items()}
-            # Un candidato sin calorías no sirve por más que el nombre calce.
-            if por100.get("calorias") is None:
-                continue
-            pts = puntuar(consulta, desc)
-            if pts == float("-inf"):
-                continue
-            if pts > mejor_puntos:
-                mejor, mejor_puntos = (f, desc, por100), pts
-
-        if mejor:
-            f, desc, por100 = mejor
-            return {
-                "fuente": "USDA",
-                "tipo": tipos.replace("%20", " "),
-                "descripcion": desc,
-                "id": f.get("fdcId"),
-                "puntaje": round(mejor_puntos, 2),
-                "por_100g": {k: v for k, v in por100.items() if v is not None},
-            }
-    return None
+    lista = candidatos(consulta, 7)
+    if not lista:
+        return None
+    mejor = lista[0]
+    return mejor | {"alternativas": [
+        {k: c[k] for k in ("descripcion", "id", "por_100g", "fuente")}
+        for c in lista[1:]
+    ]}
 
 
 def buscar_off(consulta: str) -> dict | None:
@@ -319,6 +325,71 @@ def buscar_off(consulta: str) -> dict | None:
         "id": None,
         "por_100g": por100,
     }
+
+
+def candidatos(consulta: str, cuantos: int = 6) -> list[dict]:
+    """Los mejores candidatos de la tabla, no sólo el ganador.
+
+    EXISTE PORQUE EL PUNTAJE TIENE UN TECHO. USDA lista los derivados pegados
+    al alimento —harina de papa, manzana deshidratada, clara de huevo— y
+    ninguna regla los separa siempre bien: cada vez que se arregla un caso
+    aparece otro. Después de arreglar el tomate apareció la papa, después de la
+    papa apareció la manzana.
+
+    En vez de seguir afinando reglas para siempre, se muestran las opciones y
+    elige la persona, que sabe qué comió. El puntaje sigue decidiendo el orden
+    —acierta la mayoría de las veces— pero deja de ser la última palabra.
+
+    Vienen con sus nutrientes por 100 g adentro para que cambiar de alimento
+    sea instantáneo y no otra vuelta a la red.
+    """
+    # A USDA se le manda sólo lo que significa algo. Las palabras de _VACIAS ya
+    # están declaradas como sin valor para puntuar, así que tampoco deberían
+    # dirigir la búsqueda — y sí la dirigían: "tomato, fresh" devolvía un
+    # conjunto de candidatos donde el tomate común no estaba y ganaba
+    # "Tomato powder", mientras que "tomato" a secas lo devolvía primero.
+    utiles = [w for w in consulta.lower().replace(",", " ").split() if w not in _VACIAS]
+    busqueda = " ".join(utiles) or consulta
+
+    vistos: list[dict] = []
+    for tipos in ("Foundation,SR%20Legacy", "Branded"):
+        q = urllib.parse.quote(busqueda)
+        d = _get(f"{USDA}/foods/search?api_key={clave_usda()}&query={q}"
+                 f"&dataType={tipos}&pageSize=25")
+        for f in (d or {}).get("foods") or []:
+            desc = f.get("description") or ""
+            por100 = {k: _valor(f.get("foodNutrients") or [], n, u)
+                      for k, (n, u) in INTERES.items()}
+            if por100.get("calorias") is None:
+                continue
+            pts = puntuar(consulta, desc)
+            if pts == float("-inf"):
+                continue
+            vistos.append({
+                "fuente": "USDA",
+                "tipo": tipos.replace("%20", " "),
+                "descripcion": desc,
+                "id": f.get("fdcId"),
+                "puntaje": round(pts, 2),
+                "por_100g": {k: v for k, v in por100.items() if v is not None},
+            })
+        # Con resultados de la tabla de referencia no hace falta mirar marcas.
+        if vistos:
+            break
+
+    vistos.sort(key=lambda x: -x["puntaje"])
+    # Una misma comida aparece repetida con nombres casi iguales; alcanza con
+    # una de cada descripción.
+    unicos, nombres = [], set()
+    for v in vistos:
+        clave = v["descripcion"].lower()
+        if clave in nombres:
+            continue
+        nombres.add(clave)
+        unicos.append(v)
+        if len(unicos) >= cuantos:
+            break
+    return unicos
 
 
 def nutrientes_de(consulta: str, gramos: float) -> dict | None:
