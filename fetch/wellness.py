@@ -58,6 +58,12 @@ FIELDS = {
     # mínimo y máximo dicen dónde estuvo; estos dicen cuánto se movió.
     "bateriaCargada": ["bodyBatteryChargedValue"],
     "bateriaGastada": ["bodyBatteryDrainedValue"],
+    # Con cuánta batería arrancaste el día. Es la señal más parecida a la
+    # "recuperación" que Garmin usa para su Training Readiness, y es de las
+    # pocas de esa familia que un Venu original sí calcula: el HRV status y el
+    # recovery time necesitan un reloj más nuevo y vuelven vacíos.
+    "bateriaAlDespertar": ["bodyBatteryAtWakeTime"],
+    "bateriaEnSueno":     ["bodyBatteryDuringSleep"],
     "bateriaMin":    ["bodyBatteryLowestValue"],
     "bateriaMax":    ["bodyBatteryHighestValue"],
     "minutosIntensos": ["vigorousIntensityMinutes"],

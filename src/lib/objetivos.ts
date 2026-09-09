@@ -85,18 +85,18 @@ export const METRICAS_VACIAS: Metricas = {
 // convierte 7.900 en un cero y esconde todo el progreso; las rampas dan crédito
 // parcial, que es lo que hace que el número se mueva cuando uno mejora.
 
-const acotar = (v: number) => Math.max(0, Math.min(100, Math.round(v)))
+export const acotar = (v: number) => Math.max(0, Math.min(100, Math.round(v)))
 
 /** Más es mejor: en `piso` da 0, en `techo` da 100. */
-const subiendo = (v: number, piso: number, techo: number) =>
+export const subiendo = (v: number, piso: number, techo: number) =>
   acotar(((v - piso) / (techo - piso)) * 100)
 
 /** Menos es mejor: en `peor` da 0, en `mejor` da 100. */
-const bajando = (v: number, peor: number, mejor: number) =>
+export const bajando = (v: number, peor: number, mejor: number) =>
   acotar(((peor - v) / (peor - mejor)) * 100)
 
 /** Dentro de la banda da 100 y afuera cae linealmente a lo largo de `margen`. */
-const banda = (v: number, min: number, max: number, margen: number) =>
+export const banda = (v: number, min: number, max: number, margen: number) =>
   v >= min && v <= max ? 100 : acotar(100 - ((v < min ? min - v : v - max) / margen) * 100)
 
 const uno = (n: number, d = 1) => n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d })

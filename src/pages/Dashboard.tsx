@@ -14,6 +14,7 @@ import { useZoneDistribution } from '../hooks/useZoneDistribution'
 import { useACWR } from '../hooks/useTrainingInsights'
 import { Card, CardHeader, StatTile, LegendItem, ChartTooltip, Insight } from '../components/ui'
 import InsightsCard from '../components/InsightsCard'
+import ReadinessCard from '../components/ReadinessCard'
 import DescansoCard from '../components/DescansoCard'
 import FCReposoCard from '../components/FCReposoCard'
 import CaloriasCard from '../components/CaloriasCard'
@@ -101,6 +102,11 @@ export default function Dashboard() {
             dice cómo venís, y esta tarjeta dice cómo venís para lo que querés.
             Leído después, cada número ya se leyó sin marco. */}
         <ObjetivoCard />
+
+        {/* Con qué cuerpo arrancás hoy, antes que cualquier resumen del
+            período: es lo único de esta página que cambia lo que hacés en las
+            próximas horas. */}
+        <ReadinessCard />
 
         {/* ── This week ──────────────────────────────────────────────────── */}
         <section>
