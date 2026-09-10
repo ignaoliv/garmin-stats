@@ -83,6 +83,62 @@ def pick(summary: dict, names: list[str]):
     return None
 
 
+def archive_readiness(api, days: int = 14) -> int:
+    """El Training Readiness que calcula Garmin, cuando el reloj lo calcula.
+
+    NO todos los dispositivos lo producen: hace falta un Forerunner 255/955,
+    un Fenix 7, un Venu 3 o superior. En un Venu original el endpoint devuelve
+    lista vacía, igual que el estado de HRV y el tiempo de recuperación. Por eso
+    la app tiene su propio cálculo (src/lib/readiness.ts) — pero si el aparato
+    da el número de verdad, ese manda: lo calcula Garmin con sensores que
+    nosotros no tenemos.
+
+    Se prueba UN día primero. Si vuelve vacío, el dispositivo no lo soporta y se
+    sale sin gastar treinta llamadas en algo que nunca va a contestar.
+    """
+    hoy = date.today()
+    try:
+        prueba = api.get_training_readiness(hoy.isoformat())
+    except Exception as e:
+        print(f"  aviso: no se pudo consultar la preparación ({str(e)[:60]})")
+        return 0
+    if not prueba:
+        print("  preparación de Garmin: este dispositivo no la calcula")
+        return 0
+
+    filas: dict[str, dict] = {}
+    for i in range(days, -1, -1):
+        d = (hoy - timedelta(days=i)).isoformat()
+        try:
+            r = api.get_training_readiness(d)
+        except Exception:
+            continue
+        item = (r[0] if isinstance(r, list) and r else r) or {}
+        puntaje = item.get("score")
+        if isinstance(puntaje, (int, float)):
+            filas[d] = {
+                "readinessGarmin": int(puntaje),
+                "readinessNivel": item.get("level"),
+            }
+        time.sleep(0.35)
+
+    if not filas:
+        return 0
+
+    out_file = DATA / "wellness.json"
+    try:
+        datos = json.loads(out_file.read_text())
+    except (ValueError, OSError):
+        return 0
+    por_fecha = {r["fecha"]: r for r in datos.get("dias", [])}
+    for fecha, extra in filas.items():
+        por_fecha.setdefault(fecha, {"fecha": fecha}).update(extra)
+    datos["dias"] = sorted(por_fecha.values(), key=lambda r: r["fecha"])
+    out_file.write_text(json.dumps(datos, ensure_ascii=False))
+    print(f"  Preparación de Garmin: {len(filas)} días")
+    return len(filas)
+
+
 def archive_wellness(api, days: int = 90) -> int:
     hoy = date.today()
     filas: dict[str, dict] = {}

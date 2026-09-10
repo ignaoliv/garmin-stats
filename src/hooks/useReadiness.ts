@@ -9,6 +9,10 @@ interface Dia {
   fcReposo?: number
   estresMedio?: number
   bateriaMin?: number
+  /** El Training Readiness que calcula Garmin, si el reloj lo produce.
+   *  Sólo lo dan Forerunner 255/955, Fenix 7, Venu 3 y superiores. */
+  readinessGarmin?: number
+  readinessNivel?: string
 }
 
 const DIA = 86_400_000
@@ -17,6 +21,8 @@ const dias = (fecha: string) =>
 
 export interface Readiness extends Preparacion {
   cargado: boolean
+  /** De dónde salió el número. Cambia lo que la tarjeta puede prometer. */
+  fuente: 'garmin' | 'propio'
   /** De qué día es la lectura: una FC de hace cuatro días no es "hoy". */
   fecha: string | null
   hace: number | null
@@ -32,7 +38,7 @@ export function useReadiness(): Readiness {
   }, [])
 
   return useMemo(() => {
-    const vacio = { cargado: false, fecha: null, hace: null }
+    const vacio = { cargado: false, fecha: null, hace: null, fuente: 'propio' as const }
     if (!datos) return { ...preparacion({ fcHoy: null, fcBase: null, tsb: null, estres3d: null, bateriaMin: null, sueñoHoras: null }), ...vacio }
 
     const orden = [...datos].sort((a, b) => a.fecha.localeCompare(b.fecha))
@@ -61,18 +67,29 @@ export function useReadiness(): Readiness {
     const anoche = sueño.ultima && dias(sueño.ultima.fecha) <= 1 ? sueño.ultima : null
     const sueñoHoras = anoche?.total_s ? Math.round((anoche.total_s / 3600) * 10) / 10 : null
 
+    const propio = preparacion({
+      fcHoy: ultimo?.fcReposo ?? null,
+      fcBase,
+      tsb: fitness?.tsb ?? null,
+      estres3d,
+      bateriaMin: ayer?.bateriaMin ?? null,
+      sueñoHoras,
+    })
+
+    // Si el reloj calcula el Training Readiness de verdad, ese manda: lo hace
+    // Garmin con sensores que nosotros no tenemos —el estado del HRV, sobre
+    // todo—. El desglose propio se sigue mostrando, porque explica de dónde
+    // sale el número aunque el número no sea nuestro.
+    const deGarmin = [...orden].reverse()
+      .find(d => typeof d.readinessGarmin === 'number' && dias(d.fecha) <= 1)
+
     return {
-      ...preparacion({
-        fcHoy: ultimo?.fcReposo ?? null,
-        fcBase,
-        tsb: fitness?.tsb ?? null,
-        estres3d,
-        bateriaMin: ayer?.bateriaMin ?? null,
-        sueñoHoras,
-      }),
+      ...propio,
+      ...(deGarmin ? { score: deGarmin.readinessGarmin! } : {}),
+      fuente: deGarmin ? ('garmin' as const) : ('propio' as const),
       cargado: true,
-      fecha: ultimo?.fecha ?? null,
-      hace: ultimo ? dias(ultimo.fecha) : null,
+      fecha: deGarmin?.fecha ?? ultimo?.fecha ?? null,
+      hace: dias((deGarmin ?? ultimo)?.fecha ?? new Date().toISOString().slice(0, 10)),
     }
   }, [datos, sueño, fitness])
 }

@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { useDescanso } from '../hooks/useDescanso'
 import { Card, CardHeader, ChartTooltip } from './ui'
+import SinSensor from './SinSensor'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -17,7 +18,12 @@ const FC = 'var(--color-metric-fc)'
  */
 export default function FCReposoCard() {
   const d = useDescanso()
-  if (!d.cargado || d.fcReposo === null) return null
+  if (!d.cargado) return null
+  if (d.fcReposo === null) return (
+    <SinSensor titulo="FC en reposo"
+      necesita="La mide un reloj de muñeca con sensor óptico, durante la noche."
+      nota="Un ciclocomputador no la registra." />
+  )
 
   const hayCurva = d.serieFC.some(p => p.media7 !== null)
   const delta = d.fcReposoPrevia !== null ? d.fcReposo - d.fcReposoPrevia : null

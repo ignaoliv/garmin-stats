@@ -3,6 +3,7 @@ import { useDescanso } from '../hooks/useDescanso'
 import { Card, CardHeader, Insight } from './ui'
 import Ring from './Ring'
 import Icon from './Icon'
+import SinSensor from './SinSensor'
 
 const TONO = {
   bien:        'var(--color-state-good)',
@@ -24,7 +25,11 @@ const h = (s: number) => `${Math.floor(s / 3600)}h ${String(Math.round((s % 3600
  */
 export default function DescansoCard() {
   const d = useDescanso()
-  if (!d.cargado || d.estado === 'sin-datos') return null
+  if (!d.cargado) return null
+  if (d.estado === 'sin-datos') return (
+    <SinSensor titulo="Descanso"
+      necesita="Se arma con el pulso en reposo y el sueño, que mide un reloj de muñeca usado de noche." />
+  )
 
   const color = TONO[d.estado]
   const nocheReciente = d.ultimaNoche && d.diasDesdeUltimaNoche !== null && d.diasDesdeUltimaNoche <= 2

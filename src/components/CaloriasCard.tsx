@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { useCalorias } from '../hooks/useCalorias'
 import { Card, CardHeader, ChartTooltip, Delta } from './ui'
+import SinSensor from './SinSensor'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -17,7 +18,11 @@ const GRID = '#28334a'
  */
 export default function CaloriasCard() {
   const c = useCalorias()
-  if (!c.cargado || c.media === null) return null
+  if (!c.cargado) return null
+  if (c.media === null) return (
+    <SinSensor titulo="Calorías"
+      necesita="Vienen del resumen diario de Garmin, que necesita un dispositivo puesto durante el día." />
+  )
 
   const basal = c.media !== null && c.activasMedia !== null ? c.media - c.activasMedia : null
   const parcial = c.cobertura.conDato < c.cobertura.dias

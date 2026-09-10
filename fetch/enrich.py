@@ -31,9 +31,20 @@ import rutas
 ROOT = Path(__file__).parent.parent
 DATA = rutas.DATA  # ver fetch/rutas.py: el cron la mueve con GARMIN_DATA_DIR
 
-# Mirrors DEFAULT_SETTINGS in src/types/garmin.ts.
-DEFAULT_MAX_HR = 185
-DEFAULT_LTHR = 165
+# La fisiología sale del perfil de quien usa el panel, no de una constante.
+# Estaban escritos acá —185 y 165— y venían del repositorio original, o sea de
+# otra persona: con eso se calculaba el TSS del 98% de las actividades, y de ahí
+# el fitness, la fatiga, el estado de forma y el ACWR. El mismo esfuerzo a 150
+# ppm puntúa 0,68 con una máxima de 185 y 0,92 con 170.
+import perfil as _perfil
+
+
+def valores() -> tuple[int, int]:
+    p = _perfil.leer()
+    return p["maxHR"], p["lthr"]
+
+
+DEFAULT_MAX_HR, DEFAULT_LTHR = valores()
 
 
 def trimp_from_stream(streams: list[dict], duration: int, max_hr: int, lthr: int) -> float | None:
@@ -64,6 +75,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-hr", type=int, default=DEFAULT_MAX_HR)
     ap.add_argument("--lthr", type=int, default=DEFAULT_LTHR)
+    ap.add_argument("--rehacer", action="store_true",
+                    help="recalcular el TSS que habíamos calculado nosotros, "
+                         "para cuando cambia la FC máxima del perfil")
     args = ap.parse_args()
 
     path = DATA / "activities.json"
@@ -88,6 +102,15 @@ def main() -> None:
             con_zonas += 1
 
         # Garmin's own trainingStressScore wins when it exists.
+        #
+        # `--rehacer` recalcula lo que habíamos calculado NOSOTROS, y sólo eso:
+        # se reconoce por `tssOrigen == "trimp-stream"`. Hace falta cuando cambia
+        # la fisiología del perfil, porque el TSS ya está escrito en el archivo y
+        # sin esto se quedaría con la máxima anterior para siempre. Lo que vino
+        # de Garmin no se toca: ese número es suyo y no depende de nuestra
+        # fórmula.
+        if args.rehacer and a.get("tssOrigen") == "trimp-stream":
+            a["tss"] = None
         if a.get("tss") is None:
             t = trimp_from_stream(d.get("streams") or [], a["duration"], args.max_hr, args.lthr)
             if t is not None:
@@ -96,6 +119,7 @@ def main() -> None:
                 con_tss += 1
 
     path.write_text(json.dumps(acts, ensure_ascii=False, separators=(",", ":")))
+    print(f"  Con FC máxima {args.max_hr} y umbral {args.lthr}")
     print(f"  Enriquecidas {len(acts)} actividades:")
     print(f"    zonas de FC reales:  {con_zonas}")
     print(f"    TSS desde el stream: {con_tss}")

@@ -25,7 +25,7 @@ export class AccionNoDisponible extends Error {
 }
 
 /** Las que ya viven como funciones de Vercel y andan en los dos lados. */
-const PORTADAS = ['/api/comida/', '/api/objetivo/', '/api/pantalla/', '/api/plan/', '/api/sincronizar']
+const PORTADAS = ['/api/comida/', '/api/objetivo/', '/api/pantalla/', '/api/plan/', '/api/perfil', '/api/sincronizar']
 
 const estaPortada = (ruta: string) => PORTADAS.some(p => ruta.startsWith(p))
 

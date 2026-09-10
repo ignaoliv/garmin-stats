@@ -41,7 +41,7 @@ const RESUMEN = ['activities', 'stats', 'steps', 'sleep', 'wellness', 'plan', 'e
  *
  * Si querés la copia de arriba en local, va en el otro sentido: bajala.
  */
-const DEL_SERVIDOR = ['comidas.json', 'pantalla.json']
+const DEL_SERVIDOR = ['comidas.json', 'pantalla.json', 'perfil.json']
 
 /** Cuántas subidas en paralelo. Más que esto y Blob empieza a cortar. */
 const EN_PARALELO = 8
@@ -81,14 +81,16 @@ async function main() {
     process.exit(1)
   }
 
-  // Lo que ya está arriba, para no resubir lo que no cambió. Una carga inicial
-  // interrumpida se retoma donde quedó en vez de empezar de nuevo.
+  // Lo que ya está arriba: el tamaño, para no resubir lo que no cambió, y la
+  // fecha, para no pisar lo que el servidor escribió después.
   const yaEsta = new Map()
   if (!simulacro) {
     let cursor
     do {
       const página = await list({ prefix: `${PREFIJO}/`, cursor, limit: 1000, token: TOKEN })
-      for (const b of página.blobs) yaEsta.set(b.pathname, b.size)
+      for (const b of página.blobs) {
+        yaEsta.set(b.pathname, { size: b.size, subido: new Date(b.uploadedAt).getTime() })
+      }
       cursor = página.hasMore ? página.cursor : undefined
     } while (cursor)
     console.log(`Ya hay ${yaEsta.size} archivos en el blob.`)
@@ -96,13 +98,33 @@ async function main() {
 
   let subidos = 0, saltados = 0, bytes = 0
   const errores = []
+  /** Los que se saltearon porque el blob los tiene más nuevos. */
+  const pisados = []
 
   const subir = async nombre => {
     const ruta = join(ORIGEN, nombre)
     const destino = `${PREFIJO}/${nombre}`
     const info = await stat(ruta)
 
-    if (yaEsta.get(destino) === info.size) { saltados++; return }
+    const arriba = yaEsta.get(destino)
+    if (arriba?.size === info.size) { saltados++; return }
+
+    // NO pisar lo que el servidor escribió después que esta copia.
+    //
+    // Este script era de la carga inicial, cuando el único que escribía era uno
+    // mismo. Ahora el cron y la app también escriben, y una publicación desde
+    // acá manda una copia vieja encima de la buena. Pasó de verdad: subió un
+    // wellness.json sin el reparto de estrés y borró 127 días de un dato que
+    // había costado media hora rellenar. La lista DEL_SERVIDOR tapaba tres
+    // nombres; el problema era de todos los archivos.
+    //
+    // Se comparan fechas, que es lo que el caso pide: si arriba es más nuevo,
+    // acá hay algo desactualizado y publicarlo es perder trabajo.
+    if (arriba && arriba.subido > info.mtimeMs + 60_000) {
+      pisados.push(nombre)
+      saltados++
+      return
+    }
 
     if (simulacro) { subidos++; bytes += info.size; return }
 
@@ -143,6 +165,14 @@ async function main() {
 
   const mb = (bytes / 1024 / 1024).toFixed(1)
   console.log(`\n✔ ${subidos} subidos (${mb} MB) · ${saltados} sin cambios`)
+  if (pisados.length) {
+    console.log(
+      `\n⚠ ${pisados.length} NO se subieron porque el blob los tiene más nuevos:\n` +
+      `   ${pisados.slice(0, 8).join(', ')}${pisados.length > 8 ? '…' : ''}\n` +
+      `   Los escribió el servidor —el cron o la app— después que tu copia.\n` +
+      `   Si de verdad querés publicar los tuyos, bajá primero los de arriba.`,
+    )
+  }
   if (errores.length) {
     console.error(`\n⚠ ${errores.length} fallaron:`)
     for (const e of errores.slice(0, 10)) console.error('   ', e)

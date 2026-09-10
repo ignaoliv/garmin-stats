@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { useEstres, duracion } from '../hooks/useEstres'
 import { Card, CardHeader, ChartTooltip } from './ui'
+import SinSensor from './SinSensor'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -25,7 +26,12 @@ const ESTADO = {
  */
 export default function EstresCard() {
   const e = useEstres(90)
-  if (!e.cargado || e.nivel === null) return null
+  if (!e.cargado) return null
+  if (e.nivel === null) return (
+    <SinSensor titulo="Estrés"
+      necesita="Lo estima un reloj de muñeca a partir de la variabilidad del pulso."
+      nota="Los ciclocomputadores no lo calculan." />
+  )
 
   const estado = e.estado ? ESTADO[e.estado] : ESTADO.calmo
   const delta = e.media30 !== null ? e.nivel - e.media30 : null

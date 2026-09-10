@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { usePeso } from '../hooks/usePeso'
 import { Card, CardHeader, ChartTooltip, Insight } from './ui'
+import SinSensor from './SinSensor'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -25,7 +26,11 @@ const fechaLarga = (f: string) => {
  */
 export default function PesoCard() {
   const p = usePeso()
-  if (!p.cargado || p.actual === null) return null
+  if (!p.cargado) return null
+  if (p.actual === null) return (
+    <SinSensor titulo="Peso"
+      necesita="Sale de una balanza conectada o de lo que cargues a mano en Garmin Connect." />
+  )
 
   const baja = (p.cambioUltimo ?? 0) < 0
   const dominio: [string, string] = ['dataMin - 1.5', 'dataMax + 1.5']

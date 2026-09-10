@@ -181,6 +181,8 @@ def sincronizar(api, carpeta: Path, limite: int, callado: bool) -> dict:
         ("sueño", lambda: __import__("sleep").archive_sleep(api, days=21)),
         ("recuperación", lambda: __import__("wellness").archive_wellness(api, days=30)),
         ("peso", lambda: __import__("peso").archive_peso(api, dias=730)),
+        # Va después de recuperación porque escribe sobre el mismo archivo.
+        ("preparación", lambda: __import__("wellness").archive_readiness(api, days=14)),
     ]
     fallos = []
     for nombre, tarea in tareas:
@@ -205,9 +207,9 @@ def sincronizar(api, carpeta: Path, limite: int, callado: bool) -> dict:
                 if sum(segundos) > 0:
                     a["zonasFC"] = segundos
                 if a.get("tss") is None:
+                    maxhr, lthr = enrich.valores()
                     t = enrich.trimp_from_stream(
-                        d.get("streams") or [], a["duration"],
-                        enrich.DEFAULT_MAX_HR, enrich.DEFAULT_LTHR)
+                        d.get("streams") or [], a["duration"], maxhr, lthr)
                     if t is not None:
                         a["tss"], a["tssOrigen"] = t, "trimp-stream"
             ruta_acts.write_text(json.dumps(acts, ensure_ascii=False, separators=(",", ":")))

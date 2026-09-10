@@ -33,6 +33,9 @@
     },
     "api/plan/generar.py": {
       "maxDuration": 120
+    },
+    "api/perfil.ts": {
+      "maxDuration": 15
     }
   },
   "crons": [

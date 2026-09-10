@@ -2,6 +2,7 @@ import { ComposedChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useSteps } from '../hooks/useSteps'
 import { Card, CardHeader, ChartTooltip, LegendItem, Delta } from './ui'
 import Ring from './Ring'
+import SinSensor from './SinSensor'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
 const GRID = '#28334a'
@@ -14,7 +15,12 @@ export default function StepsCard({
   const s = useSteps(windowDays)
 
   // Nothing to show until fetch/steps.py has run at least once.
-  if (!s.loaded || s.dias.length === 0) return null
+  if (!s.loaded) return null
+  if (s.dias.length === 0) return (
+    <SinSensor titulo="Pasos"
+      necesita="Los cuenta un reloj o una pulsera de actividad."
+      nota="Un ciclocomputador no los registra." />
+  )
 
   const pct = Math.round((s.diasCumplidos / s.ventana.length) * 100)
   const pctHoy = Math.round(((s.hoy?.pasos ?? 0) / s.objetivo) * 100)

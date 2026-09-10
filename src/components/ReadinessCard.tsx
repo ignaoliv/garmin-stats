@@ -1,5 +1,6 @@
 import { Card, CardHeader } from './ui'
 import { useReadiness } from '../hooks/useReadiness'
+import SinSensor from './SinSensor'
 
 function colorDe(puntos: number) {
   if (puntos >= 75) return '#34d399'
@@ -21,7 +22,12 @@ function colorDe(puntos: number) {
  */
 export default function ReadinessCard() {
   const r = useReadiness()
-  if (!r.cargado || r.score === null) return null
+  if (!r.cargado) return null
+  if (r.score === null) return (
+    <SinSensor titulo="Preparación"
+      necesita="Se calcula con el pulso en reposo, el estrés y la batería corporal, además de tu carga."
+      nota={`Faltan datos para: ${r.faltantes.join(', ').toLowerCase()}.`} />
+  )
 
   return (
     <Card className="p-5">
@@ -54,11 +60,12 @@ export default function ReadinessCard() {
 
           <p className="text-[14px] text-ink-secondary leading-relaxed">{r.banda.texto}</p>
 
-          {/* Que el número no venga de Garmin hay que decirlo, no dejarlo
-              suponer: alguien podría compararlo con el de otro reloj. */}
+          {/* De dónde sale el número hay que decirlo, no dejarlo suponer:
+              alguien podría compararlo con lo que muestra su reloj. */}
           <p className="label-plain mt-3">
-            Las franjas son las de Garmin, pero el cálculo es nuestro: tu Venu no
-            produce el Training Readiness original.
+            {r.fuente === 'garmin'
+              ? 'Este es el Training Readiness que calcula tu reloj. El desglose de al lado es nuestro y sirve para ver qué lo está moviendo.'
+              : 'Las franjas son las de Garmin, pero el cálculo es nuestro: tu reloj no produce el Training Readiness original.'}
           </p>
         </div>
 
