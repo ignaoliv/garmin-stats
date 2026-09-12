@@ -21,6 +21,7 @@ import FCReposoCard from '../components/FCReposoCard'
 import CaloriasCard from '../components/CaloriasCard'
 import StepsCard from '../components/StepsCard'
 import ProximoEvento from '../components/ProximoEvento'
+import RachaCard from '../components/RachaCard'
 import ObjetivoCard from '../components/ObjetivoCard'
 
 const AXIS = { fill: '#94a3b8', fontSize: 12 }
@@ -134,6 +135,8 @@ export default function Dashboard() {
             <StatTile label="Carga"     value={String(Math.round(week.tss))} unit="TSS" delta={week.tss - lastWeek.tss} />
           </div>
         </section>
+
+        <RachaCard compacto />
 
         <ProximoEvento />
 

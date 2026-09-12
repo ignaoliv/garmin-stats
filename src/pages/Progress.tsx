@@ -6,6 +6,8 @@ import { useState } from 'react'
 import { useYearComparison, useTrainingPatterns, useConsistencyHeatmap } from '../hooks/useTrainingInsights'
 import { useActivityStore } from '../stores/activityStore'
 import Heatmap from '../components/Heatmap'
+import ComparacionCard from '../components/ComparacionCard'
+import RachaCard from '../components/RachaCard'
 import PeriodDetail, { type Period } from '../components/PeriodDetail'
 import { Card, CardHeader, StatTile, ChartTooltip, Insight, LegendItem } from '../components/ui'
 
@@ -49,6 +51,14 @@ export default function Progress() {
     <div className="pb-2">
       <div className="max-w-[1180px] mx-auto px-6 py-6 space-y-6 page-in">
 
+
+        {/* Las tres escalas, de la más corta a la más larga: semana y mes
+            arriba, el año debajo. Antes sólo estaba el año, que es la que menos
+            se puede accionar — de un 66% anual no sale ninguna decisión para
+            mañana. */}
+        <ComparacionCard />
+
+        <RachaCard />
 
         {/* ── Year to date ───────────────────────────────────────────────── */}
         <section>
